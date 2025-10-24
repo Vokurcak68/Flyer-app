@@ -1,0 +1,212 @@
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Check, XCircle, Eye, FileText } from 'lucide-react';
+import { approvalsService } from '../../services/approvalsService';
+import { flyersService } from '../../services/flyersService';
+import { Button } from '../../components/ui/Button';
+import { Modal } from '../../components/ui/Modal';
+import { FlyerPageView } from '../../components/flyer/FlyerPageView';
+import { Approval } from '../../types';
+import { formatDate } from '../../utils/helpers';
+
+export const ApprovalsPage: React.FC = () => {
+  const queryClient = useQueryClient();
+  const [selectedApproval, setSelectedApproval] = useState<Approval | null>(null);
+  const [comment, setComment] = useState('');
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  const { data: approvals = [], isLoading } = useQuery({
+    queryKey: ['approvals', 'pending'],
+    queryFn: () => approvalsService.getPendingApprovals(),
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: (id: string) => approvalsService.approve(id, { comment }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['approvals'] });
+      setSelectedApproval(null);
+      setComment('');
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: (id: string) => approvalsService.reject(id, { comment }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['approvals'] });
+      setSelectedApproval(null);
+      setComment('');
+    },
+  });
+
+  const handleApprove = async () => {
+    if (selectedApproval) {
+      await approveMutation.mutateAsync(selectedApproval.id);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!selectedApproval) return;
+    if (!comment.trim()) {
+      alert('Prosím uveďte důvod zamítnutí');
+      return;
+    }
+    await rejectMutation.mutateAsync(selectedApproval.id);
+  };
+
+  const handleViewPdf = async (flyerId: string) => {
+    try {
+      setIsGeneratingPdf(true);
+
+      // Try to get existing PDF first
+      let pdfBlob: Blob;
+      try {
+        pdfBlob = await flyersService.getPdfBlob(flyerId);
+      } catch (error: any) {
+        // If PDF doesn't exist (404), generate it first
+        if (error.response?.status === 404) {
+          await flyersService.generatePdf(flyerId);
+          pdfBlob = await flyersService.getPdfBlob(flyerId);
+        } else {
+          throw error;
+        }
+      }
+
+      // Create blob URL and open in new window
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      const newWindow = window.open(blobUrl, '_blank');
+
+      if (!newWindow) {
+        alert('Prosím povolte vyskakovací okna pro zobrazení PDF');
+        URL.revokeObjectURL(blobUrl);
+      } else {
+        // Clean up blob URL after window loads
+        newWindow.addEventListener('load', () => {
+          URL.revokeObjectURL(blobUrl);
+        });
+      }
+    } catch (error: any) {
+      console.error('Chyba při zobrazení PDF:', error);
+      alert('Nepodařilo se zobrazit PDF náhled. Ujistěte se, že leták má alespoň jednu stránku.');
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">Schvalování</h1>
+        <p className="mt-2 text-gray-600">{approvals.length} letáků čeká na vaše schválení</p>
+      </div>
+
+      {approvals.length === 0 ? (
+        <div className="bg-white rounded-lg shadow p-12 text-center">
+          <Check className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Vše hotovo!</h3>
+          <p className="text-gray-600">Žádná čekající schválení</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow divide-y">
+          {approvals.map(approval => (
+            <div key={approval.id} className="p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-2">{approval.flyer?.name}</h3>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <div>Platnost: {approval.flyer ? `${formatDate(approval.flyer.validFrom)} - ${formatDate(approval.flyer.validTo)}` : 'N/A'}</div>
+                    <div>Stránek: {approval.flyer?.pages.length || 0}</div>
+                    <div>Odesláno: {formatDate(approval.createdAt)}</div>
+                  </div>
+                </div>
+                <Button onClick={() => { setSelectedApproval(approval); setCurrentPageIndex(0); }}>
+                  <Eye className="w-4 h-4 mr-2" />
+                  Kontrolovat
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Approval Modal */}
+      <Modal
+        isOpen={!!selectedApproval}
+        onClose={() => { setSelectedApproval(null); setComment(''); }}
+        title={selectedApproval?.flyer?.name}
+        size="xl"
+      >
+        {selectedApproval?.flyer && (
+          <div>
+            <div className="mb-4 text-sm text-gray-600">
+              <div>Platnost: {formatDate(selectedApproval.flyer.validFrom)} - {formatDate(selectedApproval.flyer.validTo)}</div>
+              <div>Strana {currentPageIndex + 1} z {selectedApproval.flyer.pages.length}</div>
+            </div>
+
+            <FlyerPageView
+              page={selectedApproval.flyer.pages[currentPageIndex]}
+              pageIndex={currentPageIndex}
+              isEditable={false}
+            />
+
+            <div className="mt-4 flex justify-center space-x-2">
+              {selectedApproval.flyer.pages.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentPageIndex(index)}
+                  className={`w-10 h-10 rounded ${
+                    currentPageIndex === index ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  {index + 1}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Komentář (volitelný)</label>
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={3}
+                placeholder="Přidat komentář..."
+              />
+            </div>
+
+            <div className="mt-6 flex justify-between">
+              <Button
+                variant="secondary"
+                onClick={() => selectedApproval?.flyer && handleViewPdf(selectedApproval.flyer.id)}
+                isLoading={isGeneratingPdf}
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Zobrazit PDF
+              </Button>
+              <div className="flex space-x-3">
+                <Button variant="danger" onClick={handleReject} isLoading={rejectMutation.isPending}>
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Zamítnout
+                </Button>
+                <Button variant="success" onClick={handleApprove} isLoading={approveMutation.isPending}>
+                  <Check className="w-4 h-4 mr-2" />
+                  Schválit
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+};

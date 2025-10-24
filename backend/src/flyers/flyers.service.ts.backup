@@ -1,0 +1,1084 @@
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { ApprovalsService } from '../approvals/approvals.service';
+import {
+  CreateFlyerDto,
+  UpdateFlyerDto,
+  AddPageDto,
+  AddProductToPageDto,
+  AddProductToSlotDto,
+  AddPromoToSlotDto,
+  PromoSlotSize,
+  FlyerFilterDto,
+  UpdateProductPositionDto,
+} from './dto';
+import { FlyerStatus, UserRole, FlyerActionType, SlotType } from '@prisma/client';
+
+@Injectable()
+export class FlyersService {
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => ApprovalsService))
+    private approvalsService: ApprovalsService,
+  ) {}
+
+  // ========================================
+  // CREATE & UPDATE FLYER METADATA
+  // ========================================
+
+  async create(createFlyerDto: CreateFlyerDto, userId: string) {
+    const flyer = await this.prisma.flyer.create({
+      data: {
+        name: createFlyerDto.name,
+        validFrom: createFlyerDto.validFrom
+          ? new Date(createFlyerDto.validFrom)
+          : null,
+        validTo: createFlyerDto.validTo ? new Date(createFlyerDto.validTo) : null,
+        supplierId: userId,
+        status: FlyerStatus.draft,
+        isDraft: true,
+      },
+      include: {
+        pages: {
+          include: {
+            products: {
+              include: {
+                product: {
+                  include: {
+                    brand: true,
+                    icons: true,
+                  },
+                },
+              },
+            },
+            promoImage: true,
+          },
+          orderBy: {
+            pageNumber: 'asc',
+          },
+        },
+      },
+    });
+
+    // Track creation in edit history
+    await this.createEditHistory(flyer.id, userId, FlyerActionType.update_info, {
+      action: 'created',
+      name: createFlyerDto.name,
+    });
+
+    return this.transformFlyerForFrontend(flyer);
+  }
+
+  async findAll(filterDto: FlyerFilterDto, userId: string, userRole: UserRole) {
+    const where: any = {};
+
+    // Role-based filtering
+    if (userRole === UserRole.supplier) {
+      // Suppliers see only their own flyers
+      where.supplierId = userId;
+    } else if (userRole === UserRole.approver) {
+      // Approvers see flyers pending approval
+      where.status = {
+        in: [FlyerStatus.pending_approval, FlyerStatus.approved],
+      };
+    } else if (userRole === UserRole.end_user) {
+      // End users see only active flyers
+      where.status = FlyerStatus.active;
+    }
+
+    // Apply additional filters
+    if (filterDto.status) {
+      where.status = filterDto.status;
+    }
+
+    if (filterDto.isDraft !== undefined) {
+      where.isDraft = filterDto.isDraft;
+    }
+
+    if (filterDto.validFrom) {
+      where.validFrom = {
+        gte: new Date(filterDto.validFrom),
+      };
+    }
+
+    if (filterDto.validTo) {
+      where.validTo = {
+        lte: new Date(filterDto.validTo),
+      };
+    }
+
+    // Get total count
+    const total = await this.prisma.flyer.count({ where });
+
+    // Get flyers
+    const flyers = await this.prisma.flyer.findMany({
+      where,
+      include: {
+        supplier: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        pages: {
+          select: {
+            id: true,
+            pageNumber: true,
+            layoutType: true,
+          },
+          orderBy: {
+            pageNumber: 'asc',
+          },
+        },
+        _count: {
+          select: {
+            pages: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    // Transform flyers for frontend
+    const transformedFlyers = flyers.map(flyer => this.transformFlyerForFrontend(flyer));
+
+    // Return paginated response
+    return {
+      data: transformedFlyers,
+      meta: {
+        total,
+        page: 1,
+        limit: total,
+        totalPages: 1,
+      },
+    };
+  }
+
+  async findOne(id: string, userId: string, userRole: UserRole) {
+    const flyer = await this.prisma.flyer.findUnique({
+      where: { id },
+      include: {
+        supplier: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        pages: {
+          include: {
+            products: {
+              include: {
+                product: {
+                  select: {
+                    id: true,
+                    name: true,
+                    price: true,
+                    originalPrice: true,
+                    imageData: true,
+                    imageMimeType: true,
+                    brandId: true,
+                    supplierId: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    brand: true,
+                    icons: true,
+                  },
+                },
+              },
+              orderBy: {
+                position: 'asc',
+              },
+            },
+            promoImage: {
+              select: {
+                id: true,
+                name: true,
+                imageData: true,
+                imageMimeType: true,
+                supplierId: true,
+                createdAt: true,
+              },
+            },
+          },
+          orderBy: {
+            pageNumber: 'asc',
+          },
+        },
+        verificationLogs: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 5,
+        },
+        approvals: {
+          include: {
+            approver: {
+              select: {
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+        approvalWorkflow: true,
+      },
+    });
+
+    if (!flyer) {
+      throw new NotFoundException('Flyer not found');
+    }
+
+    // Check access permissions
+    this.checkAccessPermission(flyer, userId, userRole);
+
+    // Transform pages to frontend format
+    return this.transformFlyerForFrontend(flyer);
+  }
+
+  async update(
+    id: string,
+    updateFlyerDto: UpdateFlyerDto,
+    userId: string,
+    userRole: UserRole,
+  ) {
+    const flyer = await this.prisma.flyer.findUnique({ where: { id } });
+
+    if (!flyer) {
+      throw new NotFoundException('Flyer not found');
+    }
+
+    // Only suppliers can update their own flyers
+    if (userRole !== UserRole.supplier || flyer.supplierId !== userId) {
+      throw new ForbiddenException('You do not have permission to update this flyer');
+    }
+
+    // Only draft flyers can be updated
+    if (flyer.status !== FlyerStatus.draft) {
+      throw new BadRequestException('Only draft flyers can be updated');
+    }
+
+    // Prepare data object
+    const data: any = {
+      name: updateFlyerDto.name,
+      validFrom: updateFlyerDto.validFrom
+        ? new Date(updateFlyerDto.validFrom)
+        : undefined,
+      validTo: updateFlyerDto.validTo
+        ? new Date(updateFlyerDto.validTo)
+        : undefined,
+      lastEditedAt: new Date(),
+    };
+
+    // Store PDF data if provided
+    if (updateFlyerDto.pdfData && updateFlyerDto.pdfMimeType) {
+      data.pdfData = updateFlyerDto.pdfData;
+      data.pdfMimeType = updateFlyerDto.pdfMimeType;
+    }
+
+    // Handle pages if provided
+    if (updateFlyerDto.pages) {
+      await this.syncPages(id, updateFlyerDto.pages, userId);
+    }
+
+    const updated = await this.prisma.flyer.update({
+      where: { id },
+      data,
+      include: {
+        pages: {
+          include: {
+            products: {
+              include: {
+                product: {
+                  include: {
+                    brand: true,
+                    icons: true,
+                  },
+                },
+              },
+            },
+            promoImage: true,
+          },
+          orderBy: {
+            pageNumber: 'asc',
+          },
+        },
+      },
+    });
+
+    // Track update in edit history
+    await this.createEditHistory(id, userId, FlyerActionType.update_info, {
+      changes: updateFlyerDto,
+    });
+
+    // Recalculate completion percentage
+    await this.updateCompletionPercentage(id);
+
+    return this.transformFlyerForFrontend(updated);
+  }
+
+  async remove(id: string, userId: string, userRole: UserRole) {
+    const flyer = await this.prisma.flyer.findUnique({ where: { id } });
+
+    if (!flyer) {
+      throw new NotFoundException('Flyer not found');
+    }
+
+    // Only suppliers can delete their own flyers
+    if (userRole !== UserRole.supplier || flyer.supplierId !== userId) {
+      throw new ForbiddenException('You do not have permission to delete this flyer');
+    }
+
+    // Only draft flyers can be deleted
+    if (flyer.status !== FlyerStatus.draft) {
+      throw new BadRequestException('Only draft flyers can be deleted');
+    }
+
+    await this.prisma.flyer.delete({ where: { id } });
+
+    return { message: 'Flyer deleted successfully' };
+  }
+
+  // ========================================
+  // PAGE MANAGEMENT
+  // ========================================
+
+  async addPage(flyerId: string, addPageDto: AddPageDto, userId: string) {
+    const flyer = await this.prisma.flyer.findUnique({ where: { id: flyerId } });
+
+    if (!flyer) {
+      throw new NotFoundException('Flyer not found');
+    }
+
+    if (flyer.supplierId !== userId) {
+      throw new ForbiddenException('You do not have permission to modify this flyer');
+    }
+
+    if (flyer.status !== FlyerStatus.draft) {
+      throw new BadRequestException('Only draft flyers can be modified');
+    }
+
+    // Check if page number already exists
+    const existingPage = await this.prisma.flyerPage.findUnique({
+      where: {
+        flyerId_pageNumber: {
+          flyerId,
+          pageNumber: addPageDto.pageNumber,
+        },
+      },
+    });
+
+    if (existingPage) {
+      throw new BadRequestException(
+        `Page ${addPageDto.pageNumber} already exists`,
+      );
+    }
+
+    // Validate promo image if provided
+    if (addPageDto.promoImageId) {
+      await this.validatePromoImage(addPageDto.promoImageId, userId);
+    }
+
+    const page = await this.prisma.flyerPage.create({
+      data: {
+        flyerId,
+        pageNumber: addPageDto.pageNumber,
+        layoutType: addPageDto.layoutType,
+        promoImageId: addPageDto.promoImageId,
+      },
+      include: {
+        promoImage: true,
+        products: {
+          include: {
+            product: {
+              include: {
+                brand: true,
+                icons: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Update flyer's lastEditedAt
+    await this.prisma.flyer.update({
+      where: { id: flyerId },
+      data: { lastEditedAt: new Date() },
+    });
+
+    // Track page addition
+    await this.createEditHistory(flyerId, userId, FlyerActionType.add_page, {
+      pageNumber: addPageDto.pageNumber,
+      layoutType: addPageDto.layoutType,
+    });
+
+    // Recalculate completion percentage
+    await this.updateCompletionPercentage(flyerId);
+
+    return page;
+  }
+
+  async removePage(pageId: string, userId: string) {
+    const page = await this.prisma.flyerPage.findUnique({
+      where: { id: pageId },
+      include: { flyer: true },
+    });
+
+    if (!page) {
+      throw new NotFoundException('Page not found');
+    }
+
+    if (page.flyer.supplierId !== userId) {
+      throw new ForbiddenException('You do not have permission to modify this flyer');
+    }
+
+    if (page.flyer.status !== FlyerStatus.draft) {
+      throw new BadRequestException('Only draft flyers can be modified');
+    }
+
+    await this.prisma.flyerPage.delete({ where: { id: pageId } });
+
+    // Update flyer's lastEditedAt
+    await this.prisma.flyer.update({
+      where: { id: page.flyerId },
+      data: { lastEditedAt: new Date() },
+    });
+
+    // Track page removal
+    await this.createEditHistory(
+      page.flyerId,
+      userId,
+      FlyerActionType.remove_page,
+      {
+        pageNumber: page.pageNumber,
+      },
+    );
+
+    // Recalculate completion percentage
+    await this.updateCompletionPercentage(page.flyerId);
+
+    return { message: 'Page removed successfully' };
+  }
+
+  // ========================================
+  // PRODUCT MANAGEMENT
+  // ========================================
+
+  async addProductToPage(
+    pageId: string,
+    addProductDto: AddProductToPageDto,
+    userId: string,
+  ) {
+    const page = await this.prisma.flyerPage.findUnique({
+      where: { id: pageId },
+      include: {
+        flyer: true,
+        products: true,
+      },
+    });
+
+    if (!page) {
+      throw new NotFoundException('Page not found');
+    }
+
+    if (page.flyer.supplierId !== userId) {
+      throw new ForbiddenException('You do not have permission to modify this flyer');
+    }
+
+    if (page.flyer.status !== FlyerStatus.draft) {
+      throw new BadRequestException('Only draft flyers can be modified');
+    }
+
+    // Validate page layout capacity
+    this.validatePageCapacity(page.layoutType, page.products.length);
+
+    // Check if position is already taken
+    const existingProduct = await this.prisma.flyerPageProduct.findUnique({
+      where: {
+        pageId_position: {
+          pageId,
+          position: addProductDto.position,
+        },
+      },
+    });
+
+    if (existingProduct) {
+      throw new BadRequestException(
+        `Position ${addProductDto.position} is already occupied`,
+      );
+    }
+
+    // Verify product exists and belongs to the supplier
+    const product = await this.prisma.product.findUnique({
+      where: { id: addProductDto.productId },
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    if (product.supplierId !== userId) {
+      throw new ForbiddenException('You can only add your own products');
+    }
+
+    const flyerPageProduct = await this.prisma.flyerPageProduct.create({
+      data: {
+        pageId,
+        productId: addProductDto.productId,
+        position: addProductDto.position,
+      },
+      include: {
+        product: {
+          include: {
+            brand: true,
+            icons: true,
+          },
+        },
+      },
+    });
+
+    // Update flyer's lastEditedAt
+    await this.prisma.flyer.update({
+      where: { id: page.flyerId },
+      data: { lastEditedAt: new Date() },
+    });
+
+    // Track product addition
+    await this.createEditHistory(
+      page.flyerId,
+      userId,
+      FlyerActionType.add_product,
+      {
+        pageId,
+        productId: addProductDto.productId,
+        position: addProductDto.position,
+      },
+    );
+
+    // Recalculate completion percentage
+    await this.updateCompletionPercentage(page.flyerId);
+
+    return flyerPageProduct;
+  }
+
+  async removeProductFromPage(productId: string, userId: string) {
+    const flyerPageProduct = await this.prisma.flyerPageProduct.findUnique({
+      where: { id: productId },
+      include: {
+        page: {
+          include: {
+            flyer: true,
+          },
+        },
+      },
+    });
+
+    if (!flyerPageProduct) {
+      throw new NotFoundException('Product not found on page');
+    }
+
+    if (flyerPageProduct.page.flyer.supplierId !== userId) {
+      throw new ForbiddenException('You do not have permission to modify this flyer');
+    }
+
+    if (flyerPageProduct.page.flyer.status !== FlyerStatus.draft) {
+      throw new BadRequestException('Only draft flyers can be modified');
+    }
+
+    await this.prisma.flyerPageProduct.delete({ where: { id: productId } });
+
+    // Update flyer's lastEditedAt
+    await this.prisma.flyer.update({
+      where: { id: flyerPageProduct.page.flyerId },
+      data: { lastEditedAt: new Date() },
+    });
+
+    // Track product removal
+    await this.createEditHistory(
+      flyerPageProduct.page.flyerId,
+      userId,
+      FlyerActionType.remove_product,
+      {
+        pageId: flyerPageProduct.pageId,
+        productId: flyerPageProduct.productId,
+      },
+    );
+
+    // Recalculate completion percentage
+    await this.updateCompletionPercentage(flyerPageProduct.page.flyerId);
+
+    return { message: 'Product removed from page successfully' };
+  }
+
+  async updateProductPosition(
+    productId: string,
+    updatePositionDto: UpdateProductPositionDto,
+    userId: string,
+  ) {
+    const flyerPageProduct = await this.prisma.flyerPageProduct.findUnique({
+      where: { id: productId },
+      include: {
+        page: {
+          include: {
+            flyer: true,
+          },
+        },
+      },
+    });
+
+    if (!flyerPageProduct) {
+      throw new NotFoundException('Product not found on page');
+    }
+
+    if (flyerPageProduct.page.flyer.supplierId !== userId) {
+      throw new ForbiddenException('You do not have permission to modify this flyer');
+    }
+
+    if (flyerPageProduct.page.flyer.status !== FlyerStatus.draft) {
+      throw new BadRequestException('Only draft flyers can be modified');
+    }
+
+    // Check if new position is already taken by another product
+    const existingProduct = await this.prisma.flyerPageProduct.findUnique({
+      where: {
+        pageId_position: {
+          pageId: flyerPageProduct.pageId,
+          position: updatePositionDto.position,
+        },
+      },
+    });
+
+    if (existingProduct && existingProduct.id !== productId) {
+      // Swap positions
+      await this.prisma.flyerPageProduct.update({
+        where: { id: existingProduct.id },
+        data: { position: flyerPageProduct.position },
+      });
+    }
+
+    const updated = await this.prisma.flyerPageProduct.update({
+      where: { id: productId },
+      data: { position: updatePositionDto.position },
+      include: {
+        product: {
+          include: {
+            brand: true,
+            icons: true,
+          },
+        },
+      },
+    });
+
+    // Update flyer's lastEditedAt
+    await this.prisma.flyer.update({
+      where: { id: flyerPageProduct.page.flyerId },
+      data: { lastEditedAt: new Date() },
+    });
+
+    // Track reorder
+    await this.createEditHistory(
+      flyerPageProduct.page.flyerId,
+      userId,
+      FlyerActionType.reorder,
+      {
+        productId,
+        oldPosition: flyerPageProduct.position,
+        newPosition: updatePositionDto.position,
+      },
+    );
+
+    return updated;
+  }
+
+  // ========================================
+  // WORKFLOW MANAGEMENT
+  // ========================================
+
+  async submitForVerification(flyerId: string, userId: string) {
+    const flyer = await this.prisma.flyer.findUnique({
+      where: { id: flyerId },
+      include: {
+        pages: {
+          include: {
+            products: true,
+          },
+        },
+      },
+    });
+
+    if (!flyer) {
+      throw new NotFoundException('Flyer not found');
+    }
+
+    if (flyer.supplierId !== userId) {
+      throw new ForbiddenException('You do not have permission to submit this flyer');
+    }
+
+    if (flyer.status !== FlyerStatus.draft) {
+      throw new BadRequestException('Only draft flyers can be submitted');
+    }
+
+    // Validate flyer is complete enough to submit
+    if (!flyer.validFrom || !flyer.validTo) {
+      throw new BadRequestException('Flyer must have valid dates set');
+    }
+
+    if (flyer.pages.length === 0) {
+      throw new BadRequestException('Flyer must have at least one page');
+    }
+
+    // Create a version snapshot before submission
+    await this.createVersionSnapshot(flyerId, userId, 'Submitted for verification');
+
+    // Update flyer status
+    const updated = await this.prisma.flyer.update({
+      where: { id: flyerId },
+      data: {
+        status: FlyerStatus.pending_verification,
+        isDraft: false,
+      },
+      include: {
+        pages: {
+          include: {
+            products: {
+              include: {
+                product: {
+                  include: {
+                    brand: true,
+                    icons: true,
+                  },
+                },
+              },
+            },
+            promoImage: true,
+          },
+        },
+      },
+    });
+
+    // Get all approvers and create approval requests
+    const approvers = await this.prisma.user.findMany({
+      where: { role: UserRole.approver },
+    });
+
+    // Create approval workflow
+    await this.approvalsService.createApprovalWorkflow(flyerId, 1); // Require 1 approval
+
+    // Create approval requests for all approvers
+    for (const approver of approvers) {
+      await this.approvalsService.requestApproval(flyerId, approver.id);
+    }
+
+    return updated;
+  }
+
+  async getPreview(flyerId: string, userId: string, userRole: UserRole) {
+    const flyer = await this.findOne(flyerId, userId, userRole);
+
+    // Return formatted preview data
+    return {
+      id: flyer.id,
+      name: flyer.name,
+      validFrom: flyer.validFrom,
+      validTo: flyer.validTo,
+      status: flyer.status,
+      completionPercentage: flyer.completionPercentage,
+      pages: flyer.pages.map((page) => ({
+        pageNumber: page.pageNumber,
+        layoutType: page.layoutType,
+        promoImage: page.promoImage,
+        products: page.products.map((p) => ({
+          position: p.position,
+          product: p.product,
+        })),
+      })),
+    };
+  }
+
+  async autoSave(flyerId: string, userId: string) {
+    const flyer = await this.prisma.flyer.findUnique({ where: { id: flyerId } });
+
+    if (!flyer) {
+      throw new NotFoundException('Flyer not found');
+    }
+
+    if (flyer.supplierId !== userId) {
+      throw new ForbiddenException('You do not have permission to modify this flyer');
+    }
+
+    const updated = await this.prisma.flyer.update({
+      where: { id: flyerId },
+      data: {
+        lastEditedAt: new Date(),
+        autoSaveVersion: {
+          increment: 1,
+        },
+      },
+      select: {
+        id: true,
+        lastEditedAt: true,
+        autoSaveVersion: true,
+      },
+    });
+
+    return {
+      message: 'Flyer auto-saved successfully',
+      ...updated,
+    };
+  }
+
+  // ========================================
+  // HELPER METHODS
+  // ========================================
+
+  private async updateCompletionPercentage(flyerId: string) {
+    const flyer = await this.prisma.flyer.findUnique({
+      where: { id: flyerId },
+      include: {
+        pages: {
+          include: {
+            products: true,
+          },
+        },
+      },
+    });
+
+    if (!flyer) return;
+
+    let totalScore = 0;
+    const maxScore = 100;
+
+    // Name and dates: 30 points
+    if (flyer.name) totalScore += 10;
+    if (flyer.validFrom) totalScore += 10;
+    if (flyer.validTo) totalScore += 10;
+
+    // Pages: 30 points (at least 2 pages)
+    const pageScore = Math.min((flyer.pages.length / 2) * 30, 30);
+    totalScore += pageScore;
+
+    // Products: 40 points (at least 8 products total)
+    const totalProducts = flyer.pages.reduce(
+      (sum, page) => sum + page.products.length,
+      0,
+    );
+    const productScore = Math.min((totalProducts / 8) * 40, 40);
+    totalScore += productScore;
+
+    const completionPercentage = Math.round(totalScore);
+
+    await this.prisma.flyer.update({
+      where: { id: flyerId },
+      data: { completionPercentage },
+    });
+  }
+
+  private validatePageCapacity(layoutType: string, currentProductCount: number) {
+    const maxProducts = this.getMaxProductsForLayout(layoutType);
+
+    if (currentProductCount >= maxProducts) {
+      throw new BadRequestException(
+        `Page layout ${layoutType} can only hold ${maxProducts} products`,
+      );
+    }
+  }
+
+  private getMaxProductsForLayout(layoutType: string): number {
+    const layoutCapacity: Record<string, number> = {
+      products_8: 8,
+      products_4: 4,
+      products_2: 2,
+      products_1: 1,
+      promo_8: 8,
+      promo_4: 4,
+      promo_2: 2,
+      promo_1: 1,
+    };
+
+    return layoutCapacity[layoutType] || 8;
+  }
+
+  private async validatePromoImage(promoImageId: string, userId: string) {
+    const promoImage = await this.prisma.promoImage.findUnique({
+      where: { id: promoImageId },
+    });
+
+    if (!promoImage) {
+      throw new NotFoundException('Promo image not found');
+    }
+
+    if (promoImage.supplierId !== userId) {
+      throw new ForbiddenException('You can only use your own promo images');
+    }
+  }
+
+  private async syncPages(flyerId: string, pages: any[], userId: string) {
+    // Delete all existing pages and their products (cascade will handle products)
+    await this.prisma.flyerPage.deleteMany({
+      where: { flyerId },
+    });
+
+    // Create new pages with products
+    for (const page of pages) {
+      const createdPage = await this.prisma.flyerPage.create({
+        data: {
+          flyerId,
+          pageNumber: page.pageNumber,
+          layoutType: page.layoutType || 'products_8',
+          promoImageId: page.promoImageId || null,
+        },
+      });
+
+      // Add products to the page
+      if (page.products && Array.isArray(page.products)) {
+        for (let position = 0; position < page.products.length; position++) {
+          const product = page.products[position];
+          if (product && product.id) {
+            // Verify product belongs to the supplier
+            const dbProduct = await this.prisma.product.findUnique({
+              where: { id: product.id },
+            });
+
+            if (dbProduct && dbProduct.supplierId === userId) {
+              await this.prisma.flyerPageProduct.create({
+                data: {
+                  pageId: createdPage.id,
+                  productId: product.id,
+                  position,
+                },
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private transformFlyerForFrontend(flyer: any) {
+    // Handle case where flyer.pages might not exist or be empty
+    if (!flyer.pages) {
+      return flyer;
+    }
+
+    // Transform pages to match frontend expected format
+    const transformedPages = flyer.pages.map((page: any) => {
+      // Get max products based on layout
+      const maxProducts = this.getMaxProductsForLayout(page.layoutType);
+
+      // Create an array with null values for empty slots
+      const productsArray = new Array(maxProducts).fill(null);
+
+      // Fill in products at their positions (if products exist)
+      if (page.products && Array.isArray(page.products)) {
+        page.products.forEach((flyerPageProduct: any) => {
+          if (flyerPageProduct.position < maxProducts) {
+            productsArray[flyerPageProduct.position] = flyerPageProduct.product;
+          }
+        });
+      }
+
+      return {
+        ...page,
+        products: productsArray,
+        maxProducts,
+      };
+    });
+
+    return {
+      ...flyer,
+      pages: transformedPages,
+    };
+  }
+
+  private checkAccessPermission(
+    flyer: any,
+    userId: string,
+    userRole: UserRole,
+  ) {
+    if (userRole === UserRole.supplier) {
+      // Suppliers can only access their own flyers
+      if (flyer.supplierId !== userId) {
+        throw new ForbiddenException('You do not have access to this flyer');
+      }
+    } else if (userRole === UserRole.end_user) {
+      // End users can only access active flyers
+      if (flyer.status !== FlyerStatus.active) {
+        throw new ForbiddenException('This flyer is not available');
+      }
+    }
+    // Approvers can access all flyers (no restriction)
+  }
+
+  private async createEditHistory(
+    flyerId: string,
+    userId: string,
+    actionType: FlyerActionType,
+    details: any,
+  ) {
+    await this.prisma.flyerEditHistory.create({
+      data: {
+        flyerId,
+        userId,
+        actionType,
+        details,
+      },
+    });
+  }
+
+  private async createVersionSnapshot(
+    flyerId: string,
+    userId: string,
+    description: string,
+  ) {
+    const flyer = await this.prisma.flyer.findUnique({
+      where: { id: flyerId },
+      include: {
+        pages: {
+          include: {
+            products: {
+              include: {
+                product: true,
+              },
+            },
+            promoImage: true,
+          },
+        },
+      },
+    });
+
+    if (!flyer) return;
+
+    // Get the next version number
+    const lastVersion = await this.prisma.flyerVersion.findFirst({
+      where: { flyerId },
+      orderBy: { versionNumber: 'desc' },
+    });
+
+    const versionNumber = lastVersion ? lastVersion.versionNumber + 1 : 1;
+
+    await this.prisma.flyerVersion.create({
+      data: {
+        flyerId,
+        versionNumber,
+        snapshotData: flyer,
+        createdBy: userId,
+        changeDescription: description,
+      },
+    });
+  }
+}

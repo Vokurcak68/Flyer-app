@@ -1,6 +1,82 @@
-# Getting Started with Create React App
+# Flyer Manager - Professional Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A complete, production-ready React frontend application for managing promotional flyers.
+
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![React](https://img.shields.io/badge/React-19.2.0-61dafb)
+![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-blue)
+
+## Tech Stack
+
+- **React 19** with TypeScript
+- **React Router v6** for navigation
+- **TailwindCSS** for styling
+- **TanStack Query (React Query)** for API state management
+- **Zustand** for global state (authentication)
+- **@dnd-kit** for drag-and-drop functionality
+- **Axios** for API calls
+- **Lucide React** for icons
+
+## Features
+
+### Role-Based Access Control
+
+- **Supplier**: Create and manage products and flyers
+- **Approver**: Review and approve/reject flyers
+- **End User**: Browse active flyers and create custom flyers
+
+## Project Structure
+
+```
+src/
+├── components/         # Reusable UI components
+│   ├── ui/            # Basic UI components (Button, Input, Modal, etc.)
+│   ├── product/       # Product-specific components
+│   └── flyer/         # Flyer-specific components (Drag & Drop)
+├── pages/             # Page components
+│   ├── products/      # Product management pages
+│   ├── flyers/        # Flyer management pages
+│   ├── approvals/     # Approval pages
+│   └── user-flyers/   # End user flyer pages
+├── services/          # API services
+├── store/             # Zustand stores
+├── hooks/             # Custom hooks
+├── layouts/           # Layout components
+├── types/             # TypeScript interfaces
+└── utils/             # Utility functions
+```
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 16+
+- npm or yarn
+- Backend API running on http://localhost:4000/api
+
+### Installation
+
+1. Install dependencies (already done):
+```bash
+npm install
+```
+
+2. Create `.env` file:
+```bash
+cp .env.example .env
+```
+
+3. Configure API URL in `.env`:
+```
+REACT_APP_API_URL=http://localhost:4000/api
+```
+
+## Demo Accounts
+
+Once the backend is running, use these accounts:
+- Supplier: `supplier@example.com` / `password`
+- Approver: `approver@example.com` / `password`
+- End User: `user@example.com` / `password`
 
 ## Available Scripts
 

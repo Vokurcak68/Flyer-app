@@ -1,0 +1,41 @@
+import React from 'react';
+import { useDraggable } from '@dnd-kit/core';
+import { Product } from '../../types';
+import { formatCurrency, getProductImageUrl } from '../../utils/helpers';
+
+interface DraggableProductProps {
+  product: Product;
+}
+
+export const DraggableProduct: React.FC<DraggableProductProps> = ({ product }) => {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: product.id,
+    data: product,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={`border rounded-lg p-2 cursor-move hover:shadow-md transition-shadow bg-white ${
+        isDragging ? 'opacity-50' : ''
+      }`}
+    >
+      <div className="flex items-start gap-2">
+        <img
+          src={getProductImageUrl(product.id)}
+          alt={product.name}
+          className="w-12 h-12 object-contain"
+          onError={(e) => {
+            e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><rect width="48" height="48" fill="%23E5E7EB"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%239CA3AF" font-size="10">No Img</text></svg>';
+          }}
+        />
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-xs truncate">{product.name}</div>
+          <div className="text-blue-600 font-bold text-sm">{formatCurrency(product.price)}</div>
+        </div>
+      </div>
+    </div>
+  );
+};
