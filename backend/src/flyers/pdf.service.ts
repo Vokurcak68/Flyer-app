@@ -234,57 +234,79 @@ export class PdfService {
 
     // Prices area (below image)
     const pricesY = leftY + imageHeight + 4; // mb-1 = 4px gap
-    const priceBoxWidth = leftWidth - 12;
-    const priceBoxHeight = 20; // Fixed height matching React (py-0.5 + text)
+    const priceBoxWidth = leftWidth; // Full width - no horizontal padding
+    const priceBoxHeight = 20; // Increased height (was 16)
+    const priceBoxWidthPercent = priceBoxWidth * 0.6; // 60% for price
+    const labelBoxWidthPercent = priceBoxWidth * 0.4; // 40% for label
+    const pricesX = x; // Start from left edge of product
 
-    // Original price (if exists)
+    // Helper function to format price with space-separated thousands (Czech format)
+    const formatPrice = (price: number): string => {
+      const rounded = Math.round(price);
+      return rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' Kč';
+    };
+
+    // Original price (if exists) - Black box + Gray label
     let currentPriceY = pricesY;
     if (product.originalPrice && parseFloat(product.originalPrice) > parseFloat(product.price)) {
-      // Gray box for original price - matches bg-gray-200
-      doc.rect(leftX, currentPriceY, priceBoxWidth, priceBoxHeight)
+      // Black box with white price (60% width) - NO rounded corners
+      doc.rect(pricesX, currentPriceY, priceBoxWidthPercent, priceBoxHeight)
+         .fill('#000000');
+
+      doc.fontSize(12) // text-[0.75rem] = 12px
+         .font('Arial-Bold')
+         .fillColor('#FFFFFF')
+         .text(formatPrice(parseFloat(product.originalPrice)), pricesX, currentPriceY + (priceBoxHeight - 12) / 2, {
+           width: priceBoxWidthPercent,
+           align: 'center',
+           valign: 'center',
+         });
+
+      // Gray box with label (40% width)
+      doc.rect(pricesX + priceBoxWidthPercent + 2, currentPriceY, labelBoxWidthPercent - 2, priceBoxHeight)
          .fill('#E5E7EB');
 
-      doc.fontSize(8) // text-[0.5rem] = 8px
+      doc.fontSize(6.5) // Smaller font to prevent wrapping
          .font('Arial')
-         .fillColor('#6B7280')
-         .text('Doporučená cena', leftX, currentPriceY + 2, {
-           width: priceBoxWidth,
-           align: 'center',
-         });
-
-      doc.fontSize(9.6) // text-[0.6rem] = ~9.6px
-         .font('Arial-Bold')
          .fillColor('#374151')
-         .text(`${parseFloat(product.originalPrice).toFixed(2)} Kč`, leftX, currentPriceY + 10, {
-           width: priceBoxWidth,
-           align: 'center',
+         .text('Doporučená\ncena', pricesX + priceBoxWidthPercent + 2 + 2, currentPriceY + 3, {
+           width: labelBoxWidthPercent - 6,
+           align: 'left',
+           lineGap: -1,
          });
 
-      currentPriceY += priceBoxHeight + 2; // space-y-0.5 = 2px gap
+      currentPriceY += priceBoxHeight + 1; // space-y-px = 1px gap
     }
 
-    // Red box for current price - matches bg-red-600
-    doc.rect(leftX, currentPriceY, priceBoxWidth, priceBoxHeight)
-       .fill('#DC2626');
-
+    // Red box with white price + Gray label
     const promoText = product.originalPrice && parseFloat(product.originalPrice) > parseFloat(product.price)
-      ? 'Akční cena Oresi'
+      ? 'Akční cena\nOresi'
       : 'Akční cena';
 
-    doc.fontSize(8) // text-[0.5rem] = 8px
-       .font('Arial')
-       .fillColor('#FFFFFF')
-       .text(promoText, leftX, currentPriceY + 2, {
-         width: priceBoxWidth,
-         align: 'center',
-       });
+    // Red box with white price (60% width) - NO rounded corners
+    doc.rect(pricesX, currentPriceY, priceBoxWidthPercent, priceBoxHeight)
+       .fill('#DC2626');
 
     doc.fontSize(12) // text-[0.75rem] = 12px
        .font('Arial-Bold')
        .fillColor('#FFFFFF')
-       .text(`${parseFloat(product.price).toFixed(2)} Kč`, leftX, currentPriceY + 10, {
-         width: priceBoxWidth,
+       .text(formatPrice(parseFloat(product.price)), pricesX, currentPriceY + (priceBoxHeight - 12) / 2, {
+         width: priceBoxWidthPercent,
          align: 'center',
+         valign: 'center',
+       });
+
+    // Gray box with label (40% width)
+    doc.rect(pricesX + priceBoxWidthPercent + 2, currentPriceY, labelBoxWidthPercent - 2, priceBoxHeight)
+       .fill('#E5E7EB');
+
+    doc.fontSize(6.5) // Smaller font to prevent wrapping
+       .font('Arial')
+       .fillColor('#374151')
+       .text(promoText, pricesX + priceBoxWidthPercent + 2 + 2, currentPriceY + 3, {
+         width: labelBoxWidthPercent - 6,
+         align: 'left',
+         lineGap: -1,
        });
 
     // Right side (55% width): Description

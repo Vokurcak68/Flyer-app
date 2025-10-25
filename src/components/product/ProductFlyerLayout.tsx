@@ -1,6 +1,5 @@
 import React from 'react';
 import { Product } from '../../types';
-import { formatCurrency } from '../../utils/helpers';
 
 interface ProductFlyerLayoutProps {
   product: Product;
@@ -35,9 +34,9 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
       {/* Main content area */}
       <div className="flex flex-1 min-h-0">
         {/* Left side: Image and prices (45%) */}
-        <div className="flex flex-col p-2" style={{ width: '45%' }}>
+        <div className="flex flex-col" style={{ width: '45%' }}>
           {/* Product image */}
-          <div className="flex-1 mb-1 min-h-0 flex items-center justify-center">
+          <div className="flex-1 mb-1 min-h-0 flex items-center justify-center p-2">
             <img
               src={getProductImageUrl(product.id)}
               alt={product.name}
@@ -50,7 +49,7 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
 
           {/* Icons if present */}
           {product.icons && product.icons.length > 0 && (
-            <div className="flex gap-0.5 mb-1 justify-center flex-none">
+            <div className="flex gap-0.5 mb-1 justify-center flex-none px-2">
               {product.icons.slice(0, 4).map((icon) => (
                 <img
                   key={icon.id}
@@ -63,22 +62,37 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
             </div>
           )}
 
-          {/* Prices section */}
-          <div className="space-y-0.5 flex-none">
+          {/* Prices section - no horizontal padding to align with product edge */}
+          <div className="space-y-px flex-none pb-2">
             {product.originalPrice && product.originalPrice > product.price && (
-              <div className="bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-center">
-                <div className="text-[0.5rem] text-gray-600">Doporučená cena</div>
-                <div className="text-[0.6rem] font-semibold">
-                  {formatCurrency(product.originalPrice)}
+              <div className="flex gap-0.5">
+                {/* Black box with white price - 60% width */}
+                <div className="bg-black text-white px-0.5 py-1.5 flex items-center justify-center" style={{ width: '60%' }}>
+                  <div className="text-[0.75rem] font-bold leading-none">
+                    {Math.round(product.originalPrice).toLocaleString('cs-CZ')} Kč
+                  </div>
+                </div>
+                {/* Gray box with label - 40% width */}
+                <div className="bg-gray-200 text-gray-700 px-0.5 py-1 flex items-center justify-start" style={{ width: '40%' }}>
+                  <div className="text-[0.5rem] leading-none">
+                    Doporučená<br/>cena
+                  </div>
                 </div>
               </div>
             )}
-            <div className="bg-red-600 text-white px-1.5 py-0.5 rounded text-center">
-              <div className="text-[0.5rem]">
-                Akční cena {product.originalPrice && product.originalPrice > product.price ? 'Oresi' : ''}
+            {/* Red box with white price + gray label */}
+            <div className="flex gap-0.5">
+              {/* Red box with white price - 60% width */}
+              <div className="bg-red-600 text-white px-0.5 py-1.5 flex items-center justify-center" style={{ width: '60%' }}>
+                <div className="text-[0.75rem] font-bold leading-none">
+                  {Math.round(product.price).toLocaleString('cs-CZ')} Kč
+                </div>
               </div>
-              <div className="text-[0.75rem] font-bold">
-                {formatCurrency(product.price)}
+              {/* Gray box with label - 40% width */}
+              <div className="bg-gray-200 text-gray-700 px-0.5 py-1 flex items-center justify-start" style={{ width: '40%' }}>
+                <div className="text-[0.5rem] leading-none">
+                  Akční cena<br/>{product.originalPrice && product.originalPrice > product.price ? 'Oresi' : ''}
+                </div>
               </div>
             </div>
           </div>
