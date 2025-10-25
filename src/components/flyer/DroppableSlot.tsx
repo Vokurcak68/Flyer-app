@@ -1,8 +1,8 @@
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { FlyerSlot } from '../../types';
-import { formatCurrency, getProductImageUrl, getIconImageUrl } from '../../utils/helpers';
 import { X, Image as ImageIcon } from 'lucide-react';
+import { ProductFlyerLayout } from '../product/ProductFlyerLayout';
 
 interface DroppableSlotProps {
   id: string;
@@ -38,7 +38,7 @@ export const DroppableSlot: React.FC<DroppableSlotProps> = ({ id, slot, onRemove
       }`}
     >
       {slot?.type === 'product' && product ? (
-        <div className="relative h-full flex flex-col">
+        <div className="relative h-full">
           {onRemove && (
             <button
               onClick={onRemove}
@@ -47,43 +47,7 @@ export const DroppableSlot: React.FC<DroppableSlotProps> = ({ id, slot, onRemove
               <X className="w-3 h-3" />
             </button>
           )}
-
-          <div className="flex gap-1 mb-1">
-            {product.icons?.map((icon, i) => (
-              <img
-                key={i}
-                src={getIconImageUrl(icon.id)}
-                alt={icon.name}
-                className="w-4 h-4"
-                title={icon.name}
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            ))}
-          </div>
-
-          <div className="flex-1 mb-1 min-h-0 overflow-hidden">
-            <img
-              src={getProductImageUrl(product.id)}
-              alt={product.name}
-              className="w-full h-full object-contain"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-          </div>
-
-          <div className="text-xs font-semibold truncate mb-1">{product.name}</div>
-
-          <div className="flex-none">
-            {product.originalPrice && product.originalPrice > product.price && (
-              <div className="text-xs text-gray-400 line-through">
-                {formatCurrency(product.originalPrice)}
-              </div>
-            )}
-            <div className="text-base font-bold text-red-600">{formatCurrency(product.price)}</div>
-          </div>
+          <ProductFlyerLayout product={product} />
         </div>
       ) : slot?.type === 'promo' && promoImage ? (
         <div className="relative h-full">

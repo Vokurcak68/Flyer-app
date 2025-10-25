@@ -176,49 +176,131 @@ export class PdfService {
   }
 
   /**
-   * Render product slot (no border)
+   * Render product slot with new layout:
+   * - Black header with product name (8% height)
+   * - Left side (45% width): Image + prices
+   * - Right side (55% width): Description
    */
   private renderProductSlot(doc: any, x: number, y: number, width: number, height: number, product: any) {
-    // Add product image
+    const padding = 6; // Fixed 6px padding (matches px-2 in React)
+
+    // Black header - matches React: py-1.5 (6px) + text-xs (~12px) + py-1.5 (6px) = ~24px
+    const headerHeight = 24;
+    doc.rect(x, y, width, headerHeight)
+       .fill('#000000');
+
+    // Product name in header - text-xs = 12px font size, centered
+    doc.fontSize(9) // Smaller font for better fit in header
+       .font('Arial-Bold')
+       .fillColor('#FFFFFF')
+       .text(product.name, x + padding, y + 6, { // 6px top padding (py-1.5)
+         width: width - (padding * 2),
+         height: headerHeight - 12, // 6px top + 6px bottom padding
+         align: 'center', // Center align text
+         ellipsis: true,
+         lineBreak: true,
+       });
+
+    // Content area below header
+    const contentY = y + headerHeight;
+    const contentHeight = height - headerHeight;
+
+    // Left side (45% width): Image + prices - matches React layout
+    const leftWidth = width * 0.45;
+    const leftX = x + 6; // p-2 = 8px, but using 6px for tighter fit
+    const leftY = contentY + 6;
+
+    // Image area - flex-1 takes remaining space after prices
+    // Prices take roughly: icon (12px if present) + 2 price boxes (20px each) + gaps = ~56px
+    const pricesReservedHeight = 56;
+    const imageHeight = contentHeight - pricesReservedHeight - 12; // 12px total padding
+
     if (product.imageData) {
       try {
         const imageBuffer = Buffer.isBuffer(product.imageData)
           ? product.imageData
           : Buffer.from(product.imageData);
 
-        doc.image(imageBuffer, x + 5, y + 5, {
-          fit: [width - 10, height - 80],
+        const imageWidth = leftWidth - 12;
+        doc.image(imageBuffer, leftX, leftY, {
+          fit: [imageWidth, imageHeight],
           align: 'center',
+          valign: 'center',
         });
       } catch (error) {
         this.logger.error(`Failed to add product image for ${product.name}: ${error.message}`);
       }
     }
 
-    // Add product info
-    const infoY = y + height - 70;
-    doc.fontSize(10)
-       .font('Arial-Bold')
-       .fillColor('#000')
-       .text(product.name, x + 5, infoY, {
-         width: width - 10,
-         height: 25,
-         ellipsis: true,
-       });
+    // Prices area (below image)
+    const pricesY = leftY + imageHeight + 4; // mb-1 = 4px gap
+    const priceBoxWidth = leftWidth - 12;
+    const priceBoxHeight = 20; // Fixed height matching React (py-0.5 + text)
 
-    // Add price
-    const priceY = infoY + 28;
-    if (product.originalPrice && parseFloat(product.originalPrice) > 0) {
-      doc.fontSize(8)
+    // Original price (if exists)
+    let currentPriceY = pricesY;
+    if (product.originalPrice && parseFloat(product.originalPrice) > parseFloat(product.price)) {
+      // Gray box for original price - matches bg-gray-200
+      doc.rect(leftX, currentPriceY, priceBoxWidth, priceBoxHeight)
+         .fill('#E5E7EB');
+
+      doc.fontSize(8) // text-[0.5rem] = 8px
          .font('Arial')
-         .fillColor('#999')
-         .text(`${parseFloat(product.originalPrice).toFixed(2)} Kč`, x + 5, priceY);
+         .fillColor('#6B7280')
+         .text('Doporučená cena', leftX, currentPriceY + 2, {
+           width: priceBoxWidth,
+           align: 'center',
+         });
+
+      doc.fontSize(9.6) // text-[0.6rem] = ~9.6px
+         .font('Arial-Bold')
+         .fillColor('#374151')
+         .text(`${parseFloat(product.originalPrice).toFixed(2)} Kč`, leftX, currentPriceY + 10, {
+           width: priceBoxWidth,
+           align: 'center',
+         });
+
+      currentPriceY += priceBoxHeight + 2; // space-y-0.5 = 2px gap
     }
 
-    doc.fontSize(13)
+    // Red box for current price - matches bg-red-600
+    doc.rect(leftX, currentPriceY, priceBoxWidth, priceBoxHeight)
+       .fill('#DC2626');
+
+    const promoText = product.originalPrice && parseFloat(product.originalPrice) > parseFloat(product.price)
+      ? 'Akční cena Oresi'
+      : 'Akční cena';
+
+    doc.fontSize(8) // text-[0.5rem] = 8px
+       .font('Arial')
+       .fillColor('#FFFFFF')
+       .text(promoText, leftX, currentPriceY + 2, {
+         width: priceBoxWidth,
+         align: 'center',
+       });
+
+    doc.fontSize(12) // text-[0.75rem] = 12px
        .font('Arial-Bold')
-       .fillColor('#e74c3c')
-       .text(`${parseFloat(product.price).toFixed(2)} Kč`, x + 5, priceY + 12);
+       .fillColor('#FFFFFF')
+       .text(`${parseFloat(product.price).toFixed(2)} Kč`, leftX, currentPriceY + 10, {
+         width: priceBoxWidth,
+         align: 'center',
+       });
+
+    // Right side (55% width): Description
+    if (product.description) {
+      const rightX = x + leftWidth;
+      const rightWidth = width * 0.55;
+
+      doc.fontSize(8.8) // text-[0.55rem] = ~8.8px
+         .font('Arial')
+         .fillColor('#000000')
+         .text(product.description, rightX + 6, leftY, {
+           width: rightWidth - 12,
+           height: contentHeight - 12,
+           lineGap: 1, // leading-tight
+         });
+    }
 
     // Reset color
     doc.fillColor('#000');

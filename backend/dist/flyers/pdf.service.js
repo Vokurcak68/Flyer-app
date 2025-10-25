@@ -133,40 +133,97 @@ let PdfService = PdfService_1 = class PdfService {
     renderEmptySlot(_doc, _x, _y, _width, _height) {
     }
     renderProductSlot(doc, x, y, width, height, product) {
+        const padding = 6;
+        const headerHeight = 24;
+        doc.rect(x, y, width, headerHeight)
+            .fill('#000000');
+        doc.fontSize(9)
+            .font('Arial-Bold')
+            .fillColor('#FFFFFF')
+            .text(product.name, x + padding, y + 6, {
+            width: width - (padding * 2),
+            height: headerHeight - 12,
+            align: 'center',
+            ellipsis: true,
+            lineBreak: true,
+        });
+        const contentY = y + headerHeight;
+        const contentHeight = height - headerHeight;
+        const leftWidth = width * 0.45;
+        const leftX = x + 6;
+        const leftY = contentY + 6;
+        const pricesReservedHeight = 56;
+        const imageHeight = contentHeight - pricesReservedHeight - 12;
         if (product.imageData) {
             try {
                 const imageBuffer = Buffer.isBuffer(product.imageData)
                     ? product.imageData
                     : Buffer.from(product.imageData);
-                doc.image(imageBuffer, x + 5, y + 5, {
-                    fit: [width - 10, height - 80],
+                const imageWidth = leftWidth - 12;
+                doc.image(imageBuffer, leftX, leftY, {
+                    fit: [imageWidth, imageHeight],
                     align: 'center',
+                    valign: 'center',
                 });
             }
             catch (error) {
                 this.logger.error(`Failed to add product image for ${product.name}: ${error.message}`);
             }
         }
-        const infoY = y + height - 70;
-        doc.fontSize(10)
-            .font('Arial-Bold')
-            .fillColor('#000')
-            .text(product.name, x + 5, infoY, {
-            width: width - 10,
-            height: 25,
-            ellipsis: true,
-        });
-        const priceY = infoY + 28;
-        if (product.originalPrice && parseFloat(product.originalPrice) > 0) {
+        const pricesY = leftY + imageHeight + 4;
+        const priceBoxWidth = leftWidth - 12;
+        const priceBoxHeight = 20;
+        let currentPriceY = pricesY;
+        if (product.originalPrice && parseFloat(product.originalPrice) > parseFloat(product.price)) {
+            doc.rect(leftX, currentPriceY, priceBoxWidth, priceBoxHeight)
+                .fill('#E5E7EB');
             doc.fontSize(8)
                 .font('Arial')
-                .fillColor('#999')
-                .text(`${parseFloat(product.originalPrice).toFixed(2)} Kč`, x + 5, priceY);
+                .fillColor('#6B7280')
+                .text('Doporučená cena', leftX, currentPriceY + 2, {
+                width: priceBoxWidth,
+                align: 'center',
+            });
+            doc.fontSize(9.6)
+                .font('Arial-Bold')
+                .fillColor('#374151')
+                .text(`${parseFloat(product.originalPrice).toFixed(2)} Kč`, leftX, currentPriceY + 10, {
+                width: priceBoxWidth,
+                align: 'center',
+            });
+            currentPriceY += priceBoxHeight + 2;
         }
-        doc.fontSize(13)
+        doc.rect(leftX, currentPriceY, priceBoxWidth, priceBoxHeight)
+            .fill('#DC2626');
+        const promoText = product.originalPrice && parseFloat(product.originalPrice) > parseFloat(product.price)
+            ? 'Akční cena Oresi'
+            : 'Akční cena';
+        doc.fontSize(8)
+            .font('Arial')
+            .fillColor('#FFFFFF')
+            .text(promoText, leftX, currentPriceY + 2, {
+            width: priceBoxWidth,
+            align: 'center',
+        });
+        doc.fontSize(12)
             .font('Arial-Bold')
-            .fillColor('#e74c3c')
-            .text(`${parseFloat(product.price).toFixed(2)} Kč`, x + 5, priceY + 12);
+            .fillColor('#FFFFFF')
+            .text(`${parseFloat(product.price).toFixed(2)} Kč`, leftX, currentPriceY + 10, {
+            width: priceBoxWidth,
+            align: 'center',
+        });
+        if (product.description) {
+            const rightX = x + leftWidth;
+            const rightWidth = width * 0.55;
+            doc.fontSize(8.8)
+                .font('Arial')
+                .fillColor('#000000')
+                .text(product.description, rightX + 6, leftY, {
+                width: rightWidth - 12,
+                height: contentHeight - 12,
+                lineGap: 1,
+            });
+        }
         doc.fillColor('#000');
     }
     renderPromoSlot(doc, x, y, width, height, promoImage) {

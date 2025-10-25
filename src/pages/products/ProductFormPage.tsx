@@ -6,7 +6,8 @@ import { productsService } from '../../services/productsService';
 import { brandsService } from '../../services/brandsService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { formatCurrency } from '../../utils/helpers';
+import { ProductFlyerLayout } from '../../components/product/ProductFlyerLayout';
+import { Product } from '../../types';
 
 export const ProductFormPage: React.FC = () => {
   const { id } = useParams();
@@ -106,13 +107,17 @@ export const ProductFormPage: React.FC = () => {
       });
 
       const payload: any = {
-        eanCode: data.ean,  // Backend expects eanCode
         name: data.name,
         description: data.description,
-        brandId: data.brandId,
         price: data.price,
         originalPrice: data.originalPrice,
       };
+
+      // Only include eanCode and brandId when creating (not when editing)
+      if (!isEdit) {
+        payload.eanCode = data.ean;  // Backend expects eanCode
+        payload.brandId = data.brandId;
+      }
 
       // Only include image data if a new file was uploaded
       if (data.imageData && data.imageMimeType) {
@@ -190,13 +195,19 @@ export const ProductFormPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Popis</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Popis produktu (vpravo v letáku)
+              </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows={3}
+                rows={8}
+                placeholder="• Bullet point 1&#10;• Bullet point 2&#10;• Specifikace&#10;• Výhody produktu"
               />
+              <p className="mt-1 text-xs text-gray-500">
+                Tento text se zobrazí vpravo vedle obrázku v letáku. Použijte bullet points (•) pro přehlednější formátování.
+              </p>
             </div>
 
             <div>
@@ -248,30 +259,29 @@ export const ProductFormPage: React.FC = () => {
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold mb-4">Náhled v letáku</h3>
-            <div className="border-2 border-gray-300 rounded-lg p-4 bg-gray-50">
-              <div className="bg-white rounded-lg p-4 shadow">
-                {imagePreview ? (
-                  <img src={imagePreview} alt="Náhled" className="w-full h-40 object-contain mb-3" />
-                ) : (
-                  <div className="w-full h-40 bg-gray-200 rounded flex items-center justify-center mb-3">
-                    <span className="text-gray-400">Bez obrázku</span>
-                  </div>
-                )}
-                <h4 className="font-semibold text-base mb-1">{formData.name || 'Název produktu'}</h4>
-                {formData.description && (
-                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">{formData.description}</p>
-                )}
-                <div>
-                  {formData.originalPrice > 0 && formData.originalPrice > formData.price && (
-                    <div className="text-sm text-gray-400 line-through">
-                      {formatCurrency(formData.originalPrice)}
-                    </div>
-                  )}
-                  <div className="text-2xl font-bold text-red-600">
-                    {formatCurrency(formData.price)}
-                  </div>
-                </div>
+            <h3 className="text-lg font-semibold mb-4">Náhled v letáku (skutečná velikost)</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Takto bude produkt vypadat v jednom slotu letáku - zobrazeno ve skutečné velikosti.
+            </p>
+            <div className="border-2 border-gray-300 rounded-lg bg-gray-50 p-4 flex justify-center">
+              {/* Show actual slot size: ~333px width, 210px height */}
+              <div className="bg-white rounded shadow overflow-hidden" style={{ width: '333px', height: '210px' }}>
+                <ProductFlyerLayout
+                  product={{
+                    id: id || 'preview',
+                    name: formData.name || 'Název produktu',
+                    description: formData.description || 'Zde se zobrazí popis produktu.\n\nPopis může obsahovat několik řádků s detaily o produktu, specifikacemi, výhodami a dalšími informacemi.',
+                    price: formData.price,
+                    originalPrice: formData.originalPrice,
+                    eanCode: formData.ean,
+                    brandId: formData.brandId,
+                    supplierId: '',
+                    icons: [],
+                    createdAt: '',
+                    updatedAt: '',
+                  } as Product}
+                  customImageUrl={imagePreview}
+                />
               </div>
             </div>
           </div>

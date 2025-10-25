@@ -24,6 +24,7 @@ export const FlyerEditorPage: React.FC = () => {
 
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [search, setSearch] = useState('');
+  const [promoSearch, setPromoSearch] = useState('');
   const [activeProduct, setActiveProduct] = useState<Product | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
@@ -288,6 +289,10 @@ export const FlyerEditorPage: React.FC = () => {
     p.name.toLowerCase().includes(search.toLowerCase()) || p.eanCode.includes(search)
   );
 
+  const filteredPromoImages = promoImages.filter(p =>
+    p.name.toLowerCase().includes(promoSearch.toLowerCase())
+  );
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -409,14 +414,23 @@ export const FlyerEditorPage: React.FC = () => {
                 <FileText className="w-4 h-4 mr-2" />
                 Promo obrázky
               </h3>
-              <div className="space-y-2">
-                {promoImages.length === 0 ? (
+              <Input
+                placeholder="Hledat promo..."
+                value={promoSearch}
+                onChange={(e) => setPromoSearch(e.target.value)}
+                className="mb-4"
+              />
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {filteredPromoImages.length === 0 ? (
                   <p className="text-sm text-gray-500 text-center py-8">
-                    Žádné promo obrázky.<br />
-                    Nahrajte je v sekci "Promo obrázky"
+                    {promoImages.length === 0 ? (
+                      <>Žádné promo obrázky.<br />Nahrajte je v sekci "Promo obrázky"</>
+                    ) : (
+                      'Nenalezeny žádné výsledky'
+                    )}
                   </p>
                 ) : (
-                  promoImages.map(promo => <DraggablePromoImage key={promo.id} promoImage={promo} />)
+                  filteredPromoImages.map(promo => <DraggablePromoImage key={promo.id} promoImage={promo} />)
                 )}
               </div>
             </div>

@@ -53,30 +53,60 @@ export const DraggablePromoImage: React.FC<DraggablePromoImageProps> = ({ promoI
     }
   };
 
+  // Aspect ratio based on actual slot dimensions
+  const getImageContainerClass = (size: string) => {
+    switch (size) {
+      case 'single':
+        // 1×1 slot: square aspect ratio
+        return 'aspect-square';
+      case 'horizontal':
+        // 2×1 slots: wide rectangle (2:1 ratio)
+        return 'aspect-[2/1]';
+      case 'square':
+        // 2×2 slots: square aspect ratio
+        return 'aspect-square';
+      case 'full_page':
+        // 2×4 slots (full page): A4 aspect ratio (1:1.414)
+        return 'aspect-[1/1.414]';
+      case 'footer':
+        // Footer: very wide (full width, 60px height) - roughly 12:1 ratio
+        return 'aspect-[12/1]';
+      default:
+        return 'aspect-square';
+    }
+  };
+
   return (
     <div
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={`border rounded-lg p-2 cursor-move hover:shadow-md transition-shadow bg-white ${
+      className={`border rounded p-1.5 cursor-move hover:shadow-md transition-shadow bg-white ${
         isDragging ? 'opacity-50' : ''
       }`}
     >
-      <div className="flex flex-col gap-2">
-        <div className="relative">
-          <img
-            src={getPromoImageUrl(promoImage.id)}
-            alt={promoImage.name}
-            className="w-full h-20 object-cover rounded"
-            onError={(e) => {
-              e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="80"><rect width="100" height="80" fill="%23E5E7EB"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%239CA3AF" font-size="10">No Img</text></svg>';
-            }}
-          />
-          <span className={`absolute top-1 right-1 px-2 py-0.5 rounded text-xs font-semibold ${getSizeBadgeColor(promoImage.defaultSize)}`}>
+      <div className="flex items-center gap-2">
+        {/* Thumbnail with fixed width */}
+        <div className="relative flex-shrink-0 w-16">
+          <div className={`relative w-full ${getImageContainerClass(promoImage.defaultSize)} overflow-hidden rounded`}>
+            <img
+              src={getPromoImageUrl(promoImage.id)}
+              alt={promoImage.name}
+              className="absolute inset-0 w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="80"><rect width="100" height="80" fill="%23E5E7EB"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%239CA3AF" font-size="10">No Img</text></svg>';
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Text content */}
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-xs truncate mb-0.5">{promoImage.name}</div>
+          <span className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium ${getSizeBadgeColor(promoImage.defaultSize)}`}>
             {getSizeLabel(promoImage.defaultSize)}
           </span>
         </div>
-        <div className="font-semibold text-xs truncate">{promoImage.name}</div>
       </div>
     </div>
   );

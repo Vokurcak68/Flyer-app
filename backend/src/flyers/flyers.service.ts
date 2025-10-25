@@ -187,6 +187,8 @@ export class FlyersService {
                   select: {
                     id: true,
                     name: true,
+                    description: true, // ADDED: Product description for right panel
+                    eanCode: true, // ADDED: EAN code
                     price: true,
                     originalPrice: true,
                     imageData: true,

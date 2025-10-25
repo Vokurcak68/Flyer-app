@@ -26,27 +26,27 @@ export declare class FlyersController {
             product: {
                 brand: {
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    name: string;
                     logoData: Buffer | null;
                     logoMimeType: string | null;
                 };
                 icons: {
                     id: string;
                     productId: string;
-                    position: number;
                     iconType: import(".prisma/client").$Enums.IconType;
                     iconData: Buffer;
                     iconMimeType: string;
+                    position: number;
                 }[];
             } & {
                 id: string;
-                isActive: boolean;
+                name: string;
                 createdAt: Date;
                 updatedAt: Date;
-                name: string;
                 supplierId: string;
+                isActive: boolean;
                 brandId: string;
                 eanCode: string;
                 description: string | null;
@@ -57,8 +57,8 @@ export declare class FlyersController {
             };
             promoImage: {
                 id: string;
-                createdAt: Date;
                 name: string;
+                createdAt: Date;
                 supplierId: string;
                 brandId: string | null;
                 imageData: Buffer;
@@ -78,8 +78,8 @@ export declare class FlyersController {
         })[];
     } & {
         id: string;
-        flyerId: string;
         pageNumber: number;
+        flyerId: string;
         footerPromoImageId: string | null;
     }>;
     removePage(pageId: string, req: any): Promise<{
@@ -89,27 +89,27 @@ export declare class FlyersController {
         product: {
             brand: {
                 id: string;
+                name: string;
                 createdAt: Date;
                 updatedAt: Date;
-                name: string;
                 logoData: Buffer | null;
                 logoMimeType: string | null;
             };
             icons: {
                 id: string;
                 productId: string;
-                position: number;
                 iconType: import(".prisma/client").$Enums.IconType;
                 iconData: Buffer;
                 iconMimeType: string;
+                position: number;
             }[];
         } & {
             id: string;
-            isActive: boolean;
+            name: string;
             createdAt: Date;
             updatedAt: Date;
-            name: string;
             supplierId: string;
+            isActive: boolean;
             brandId: string;
             eanCode: string;
             description: string | null;
@@ -136,27 +136,27 @@ export declare class FlyersController {
         product: {
             brand: {
                 id: string;
+                name: string;
                 createdAt: Date;
                 updatedAt: Date;
-                name: string;
                 logoData: Buffer | null;
                 logoMimeType: string | null;
             };
             icons: {
                 id: string;
                 productId: string;
-                position: number;
                 iconType: import(".prisma/client").$Enums.IconType;
                 iconData: Buffer;
                 iconMimeType: string;
+                position: number;
             }[];
         } & {
             id: string;
-            isActive: boolean;
+            name: string;
             createdAt: Date;
             updatedAt: Date;
-            name: string;
             supplierId: string;
+            isActive: boolean;
             brandId: string;
             eanCode: string;
             description: string | null;
@@ -167,8 +167,8 @@ export declare class FlyersController {
         };
         promoImage: {
             id: string;
-            createdAt: Date;
             name: string;
+            createdAt: Date;
             supplierId: string;
             brandId: string | null;
             imageData: Buffer;
@@ -192,27 +192,27 @@ export declare class FlyersController {
                 product: {
                     brand: {
                         id: string;
+                        name: string;
                         createdAt: Date;
                         updatedAt: Date;
-                        name: string;
                         logoData: Buffer | null;
                         logoMimeType: string | null;
                     };
                     icons: {
                         id: string;
                         productId: string;
-                        position: number;
                         iconType: import(".prisma/client").$Enums.IconType;
                         iconData: Buffer;
                         iconMimeType: string;
+                        position: number;
                     }[];
                 } & {
                     id: string;
-                    isActive: boolean;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    name: string;
                     supplierId: string;
+                    isActive: boolean;
                     brandId: string;
                     eanCode: string;
                     description: string | null;
@@ -223,8 +223,8 @@ export declare class FlyersController {
                 };
                 promoImage: {
                     id: string;
-                    createdAt: Date;
                     name: string;
+                    createdAt: Date;
                     supplierId: string;
                     brandId: string | null;
                     imageData: Buffer;
@@ -244,19 +244,16 @@ export declare class FlyersController {
             })[];
         } & {
             id: string;
-            flyerId: string;
             pageNumber: number;
+            flyerId: string;
             footerPromoImageId: string | null;
         })[];
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         name: string;
-        status: import(".prisma/client").$Enums.FlyerStatus;
-        supplierId: string;
         validFrom: Date | null;
         validTo: Date | null;
+        status: import(".prisma/client").$Enums.FlyerStatus;
         isDraft: boolean;
         rejectionReason: string | null;
         pdfData: Buffer | null;
@@ -264,7 +261,10 @@ export declare class FlyersController {
         lastEditedAt: Date;
         autoSaveVersion: number;
         completionPercentage: number;
+        createdAt: Date;
+        updatedAt: Date;
         publishedAt: Date | null;
+        supplierId: string;
     }>;
     getPreview(flyerId: string, req: any): Promise<{
         id: any;

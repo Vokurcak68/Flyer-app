@@ -38,7 +38,7 @@ export const productsService = {
   },
 
   async updateProduct(id: string, data: UpdateProductDTO): Promise<Product> {
-    const response = await api.put<Product>(`/products/${id}`, data);
+    const response = await api.patch<Product>(`/products/${id}`, data);
     return response.data;
   },
 

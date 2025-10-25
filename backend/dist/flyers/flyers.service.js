@@ -155,6 +155,8 @@ let FlyersService = class FlyersService {
                                     select: {
                                         id: true,
                                         name: true,
+                                        description: true,
+                                        eanCode: true,
                                         price: true,
                                         originalPrice: true,
                                         imageData: true,
