@@ -8,6 +8,7 @@ import { ApprovalsModule } from './approvals/approvals.module';
 import { ProductsModule } from './products/products.module';
 import { BrandsModule } from './brands/brands.module';
 import { PromoImagesModule } from './promo-images/promo-images.module';
+import { IconsModule } from './icons/icons.module';
 import { UsersModule } from './users/users.module';
 import { UploadService } from './common/upload.service';
 import { UploadController } from './common/upload.controller';
@@ -21,6 +22,7 @@ import { UploadController } from './common/upload.controller';
     ProductsModule,
     BrandsModule,
     PromoImagesModule,
+    IconsModule,
     FlyersModule,
     VerificationModule,
     ApprovalsModule,

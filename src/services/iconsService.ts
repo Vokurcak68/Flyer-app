@@ -1,0 +1,47 @@
+import api from './api';
+import { Icon } from '../types';
+
+export interface CreateIconData {
+  name: string;
+  imageData: string; // Base64
+  imageMimeType: string;
+}
+
+export interface UpdateIconData {
+  name?: string;
+  imageData?: string; // Base64
+  imageMimeType?: string;
+}
+
+class IconsService {
+  async getAllIcons(): Promise<Icon[]> {
+    const response = await api.get<Icon[]>('/icons');
+    return response.data;
+  }
+
+  async getIcon(id: string): Promise<Icon> {
+    const response = await api.get<Icon>(`/icons/${id}`);
+    return response.data;
+  }
+
+  async createIcon(data: CreateIconData): Promise<Icon> {
+    const response = await api.post<Icon>('/icons', data);
+    return response.data;
+  }
+
+  async updateIcon(id: string, data: UpdateIconData): Promise<Icon> {
+    const response = await api.patch<Icon>(`/icons/${id}`, data);
+    return response.data;
+  }
+
+  async deleteIcon(id: string): Promise<void> {
+    await api.delete(`/icons/${id}`);
+  }
+
+  getIconImageUrl(id: string): string {
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
+    return `${API_URL}/icons/${id}/image`;
+  }
+}
+
+export default new IconsService();

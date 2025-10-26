@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateProductDto, UpdateProductDto, ProductFilterDto, AddIconDto } from './dto';
+import { CreateProductDto, UpdateProductDto, ProductFilterDto } from './dto';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -23,13 +23,13 @@ export class ProductsService {
     // Verify user has access to this brand
     await this.validateUserBrandAccess(userId, createProductDto.brandId);
 
-    // Validate icons if provided
-    if (createProductDto.icons && createProductDto.icons.length > 0) {
-      this.validateIcons(createProductDto.icons);
+    // Validate icon IDs if provided
+    if (createProductDto.iconIds && createProductDto.iconIds.length > 0) {
+      await this.validateIconIds(createProductDto.iconIds);
     }
 
     // Create product with icons
-    const { icons, imageData, imageMimeType, ...productData } = createProductDto;
+    const { iconIds, imageData, imageMimeType, ...productData } = createProductDto;
 
     const product = await this.prisma.product.create({
       data: {
@@ -37,17 +37,18 @@ export class ProductsService {
         supplierId: userId,
         imageData: Buffer.from(imageData, 'base64'),
         imageMimeType,
-        icons: icons ? {
-          create: icons.map(icon => ({
-            iconType: icon.iconType,
-            iconData: Buffer.from(icon.iconData, 'base64'),
-            iconMimeType: icon.iconMimeType,
-            position: icon.position,
+        icons: iconIds && iconIds.length > 0 ? {
+          create: iconIds.map((iconId, index) => ({
+            iconId,
+            position: index,
           })),
         } : undefined,
       },
       include: {
         icons: {
+          include: {
+            icon: true,
+          },
           orderBy: { position: 'asc' },
         },
         brand: true,
@@ -118,6 +119,9 @@ export class ProductsService {
       orderBy: { [sortBy]: sortOrder },
       include: {
         icons: {
+          include: {
+            icon: true,
+          },
           orderBy: { position: 'asc' },
         },
         brand: true,
@@ -148,6 +152,9 @@ export class ProductsService {
       where: { id },
       include: {
         icons: {
+          include: {
+            icon: true,
+          },
           orderBy: { position: 'asc' },
         },
         brand: true,
@@ -182,19 +189,33 @@ export class ProductsService {
     // Verify user owns this product (through brand access)
     await this.validateUserBrandAccess(userId, product.brandId);
 
+    // Validate icon IDs if provided
+    if (updateProductDto.iconIds && updateProductDto.iconIds.length > 0) {
+      await this.validateIconIds(updateProductDto.iconIds);
+    }
+
     // Note: brandId cannot be changed after creation (excluded from UpdateProductDto)
 
     // Prepare data object
-    const data: any = { ...updateProductDto };
+    const { iconIds, imageData, imageMimeType, ...productData } = updateProductDto;
+    const data: any = { ...productData };
 
     // Convert base64 image data to Buffer if provided
-    if (updateProductDto.imageData && updateProductDto.imageMimeType) {
-      data.imageData = Buffer.from(updateProductDto.imageData, 'base64');
-      data.imageMimeType = updateProductDto.imageMimeType;
-    } else {
-      // Remove imageData and imageMimeType from update if not provided
-      delete data.imageData;
-      delete data.imageMimeType;
+    if (imageData && imageMimeType) {
+      data.imageData = Buffer.from(imageData, 'base64');
+      data.imageMimeType = imageMimeType;
+    }
+
+    // Handle icon updates if provided
+    if (iconIds !== undefined) {
+      // Delete existing icons and create new ones
+      data.icons = {
+        deleteMany: {}, // Delete all existing icons
+        create: iconIds.map((iconId, index) => ({
+          iconId,
+          position: index,
+        })),
+      };
     }
 
     const updatedProduct = await this.prisma.product.update({
@@ -202,6 +223,9 @@ export class ProductsService {
       data,
       include: {
         icons: {
+          include: {
+            icon: true,
+          },
           orderBy: { position: 'asc' },
         },
         brand: true,
@@ -237,6 +261,9 @@ export class ProductsService {
       data: { isActive: false },
       include: {
         icons: {
+          include: {
+            icon: true,
+          },
           orderBy: { position: 'asc' },
         },
         brand: true,
@@ -254,78 +281,8 @@ export class ProductsService {
     return this.formatProductResponse(deletedProduct);
   }
 
-  async addIcon(productId: string, addIconDto: AddIconDto, userId: string) {
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId },
-      include: {
-        icons: true,
-      },
-    });
-
-    if (!product) {
-      throw new NotFoundException(`Product with ID ${productId} not found`);
-    }
-
-    // Verify user owns this product
-    await this.validateUserBrandAccess(userId, product.brandId);
-
-    // Check if already has 4 icons
-    if (product.icons.length >= 4) {
-      throw new BadRequestException('Product already has maximum of 4 icons');
-    }
-
-    // Check if position is already taken
-    const positionTaken = product.icons.some(icon => icon.position === addIconDto.position);
-    if (positionTaken) {
-      throw new ConflictException(`Icon position ${addIconDto.position} is already taken`);
-    }
-
-    const icon = await this.prisma.productIcon.create({
-      data: {
-        productId,
-        iconType: addIconDto.iconType,
-        iconData: addIconDto.iconData ? Buffer.from(addIconDto.iconData, 'base64') : Buffer.alloc(0),
-        iconMimeType: addIconDto.iconMimeType || 'image/png',
-        position: addIconDto.position,
-      },
-    });
-
-    return icon;
-  }
-
-  async findIcon(iconId: string) {
-    const icon = await this.prisma.productIcon.findUnique({
-      where: { id: iconId },
-    });
-
-    if (!icon) {
-      throw new NotFoundException(`Icon with ID ${iconId} not found`);
-    }
-
-    return icon;
-  }
-
-  async removeIcon(iconId: string, userId: string) {
-    const icon = await this.prisma.productIcon.findUnique({
-      where: { id: iconId },
-      include: {
-        product: true,
-      },
-    });
-
-    if (!icon) {
-      throw new NotFoundException(`Icon with ID ${iconId} not found`);
-    }
-
-    // Verify user owns the product
-    await this.validateUserBrandAccess(userId, icon.product.brandId);
-
-    await this.prisma.productIcon.delete({
-      where: { id: iconId },
-    });
-
-    return { message: 'Icon removed successfully' };
-  }
+  // Icon management methods removed - icons are now managed through global icon library
+  // Icons are assigned during product create/update via iconIds array
 
   async getProductImageData(id: string) {
     const product = await this.prisma.product.findUnique({
@@ -368,28 +325,28 @@ export class ProductsService {
     }
   }
 
-  private validateIcons(icons: any[]) {
-    if (icons.length > 4) {
+  private async validateIconIds(iconIds: string[]) {
+    if (iconIds.length > 4) {
       throw new BadRequestException('Maximum 4 icons allowed per product');
     }
 
-    // Check for duplicate positions
-    const positions = icons.map(icon => icon.position);
-    const uniquePositions = new Set(positions);
-    if (positions.length !== uniquePositions.size) {
-      throw new BadRequestException('Icon positions must be unique');
-    }
+    // Check that all icon IDs exist in global icon library
+    const icons = await this.prisma.icon.findMany({
+      where: {
+        id: {
+          in: iconIds,
+        },
+      },
+    });
 
-    // Validate icon types
-    const validTypes = ['energy_class', 'feature'];
-    for (const icon of icons) {
-      if (!validTypes.includes(icon.iconType)) {
-        throw new BadRequestException(`Invalid icon type: ${icon.iconType}`);
-      }
+    if (icons.length !== iconIds.length) {
+      throw new BadRequestException('One or more icon IDs are invalid');
     }
   }
 
   private formatProductResponse(product: any) {
+    const baseUrl = process.env.API_URL || 'http://localhost:4000';
+
     return {
       id: product.id,
       eanCode: product.eanCode,
@@ -409,7 +366,12 @@ export class ProductsService {
         firstName: product.supplier.firstName,
         lastName: product.supplier.lastName,
       } : null,
-      icons: product.icons || [],
+      icons: product.icons ? product.icons.map(pi => ({
+        id: pi.icon.id,
+        name: pi.icon.name,
+        imageUrl: `${baseUrl}/api/icons/${pi.icon.id}/image`,
+        position: pi.position,
+      })) : [],
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     };

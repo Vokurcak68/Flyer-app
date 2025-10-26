@@ -32,11 +32,22 @@ export interface Brand {
   };
 }
 
+// Global icon library
+export interface Icon {
+  id: string;
+  name: string;
+  imageUrl: string;
+  imageMimeType?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Product icon assignment
 export interface ProductIcon {
   id: string;
   name: string;
   imageUrl: string;
-  category: string;
+  position: number;
 }
 
 export interface Product {

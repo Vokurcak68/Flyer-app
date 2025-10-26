@@ -53,7 +53,14 @@ export class FlyersService {
                 product: {
                   include: {
                     brand: true,
-                    icons: true,
+                    icons: {
+                      include: {
+                        icon: true,
+                      },
+                      orderBy: {
+                        position: 'asc',
+                      },
+                    },
                   },
                 },
                 promoImage: true,
@@ -198,7 +205,14 @@ export class FlyersService {
                     createdAt: true,
                     updatedAt: true,
                     brand: true,
-                    icons: true,
+                    icons: {
+                      include: {
+                        icon: true,
+                      },
+                      orderBy: {
+                        position: 'asc',
+                      },
+                    },
                   },
                 },
                 promoImage: {
@@ -320,7 +334,14 @@ export class FlyersService {
                 product: {
                   include: {
                     brand: true,
-                    icons: true,
+                    icons: {
+                      include: {
+                        icon: true,
+                      },
+                      orderBy: {
+                        position: 'asc',
+                      },
+                    },
                   },
                 },
                 promoImage: true,
@@ -823,7 +844,14 @@ export class FlyersService {
                 product: {
                   include: {
                     brand: true,
-                    icons: true,
+                    icons: {
+                      include: {
+                        icon: true,
+                      },
+                      orderBy: {
+                        position: 'asc',
+                      },
+                    },
                   },
                 },
                 promoImage: true,
@@ -1043,6 +1071,8 @@ export class FlyersService {
       return flyer;
     }
 
+    const baseUrl = process.env.API_URL || 'http://localhost:4000';
+
     // Transform pages to match frontend expected format
     const transformedPages = flyer.pages.map((page: any) => {
       // Create an array of 8 empty slots
@@ -1052,9 +1082,23 @@ export class FlyersService {
       if (page.slots && Array.isArray(page.slots)) {
         page.slots.forEach((slot: any) => {
           if (slot.slotPosition >= 0 && slot.slotPosition < 8) {
+            // Format product with icon URLs if present
+            let formattedProduct = slot.product;
+            if (slot.product && slot.product.icons) {
+              formattedProduct = {
+                ...slot.product,
+                icons: slot.product.icons.map((productIcon: any) => ({
+                  id: productIcon.icon.id,
+                  name: productIcon.icon.name,
+                  imageUrl: `${baseUrl}/api/icons/${productIcon.icon.id}/image`,
+                  position: productIcon.position,
+                })),
+              };
+            }
+
             slotsArray[slot.slotPosition] = {
               type: slot.slotType,
-              product: slot.product || null,
+              product: formattedProduct,
               promoImage: slot.promoImage || null,
               promoSize: slot.promoSize || null,
             } as any;

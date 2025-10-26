@@ -16,7 +16,7 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ProductsService } from './products.service';
-import { CreateProductDto, UpdateProductDto, ProductFilterDto, AddIconDto } from './dto';
+import { CreateProductDto, UpdateProductDto, ProductFilterDto } from './dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -57,20 +57,6 @@ export class ProductsController {
     res.send(imageData.imageData);
   }
 
-  // Public endpoint - no auth required for images
-  @Get('icons/:iconId/image')
-  async getIconImage(@Param('iconId') iconId: string, @Res() res: Response) {
-    const icon = await this.productsService.findIcon(iconId);
-
-    if (!icon.iconData || !icon.iconMimeType) {
-      throw new NotFoundException('Icon image not found');
-    }
-
-    res.set('Content-Type', icon.iconMimeType);
-    res.set('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
-    res.send(icon.iconData);
-  }
-
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   async findOne(@Param('id') id: string) {
@@ -96,23 +82,6 @@ export class ProductsController {
     return this.productsService.remove(id, req.user.userId);
   }
 
-  @Post(':id/icons')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('supplier')
-  @HttpCode(HttpStatus.CREATED)
-  async addIcon(
-    @Param('id') id: string,
-    @Body() addIconDto: AddIconDto,
-    @Request() req: any,
-  ) {
-    return this.productsService.addIcon(id, addIconDto, req.user.userId);
-  }
-
-  @Delete('icons/:iconId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('supplier')
-  @HttpCode(HttpStatus.OK)
-  async removeIcon(@Param('iconId') iconId: string, @Request() req: any) {
-    return this.productsService.removeIcon(iconId, req.user.userId);
-  }
+  // Icon management removed - icons are now managed via /icons endpoint
+  // and assigned to products via iconIds array in create/update
 }

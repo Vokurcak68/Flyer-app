@@ -35,8 +35,9 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
       <div className="flex flex-1 min-h-0">
         {/* Left side: Image and prices (45%) */}
         <div className="flex flex-col" style={{ width: '45%' }}>
-          {/* Product image */}
-          <div className="flex-1 mb-1 min-h-0 flex items-center justify-center p-2">
+          {/* Product image with icons overlay */}
+          <div className="flex-1 mb-1 min-h-0 relative p-2">
+            {/* Product image */}
             <img
               src={getProductImageUrl(product.id)}
               alt={product.name}
@@ -45,22 +46,22 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
                 e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23E5E7EB"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%239CA3AF" font-size="12">No Img</text></svg>';
               }}
             />
-          </div>
 
-          {/* Icons if present */}
-          {product.icons && product.icons.length > 0 && (
-            <div className="flex gap-0.5 mb-1 justify-center flex-none px-2">
-              {product.icons.slice(0, 4).map((icon) => (
-                <img
-                  key={icon.id}
-                  src={icon.imageUrl}
-                  alt={icon.name}
-                  className="w-3 h-3 object-contain"
-                  title={icon.name}
-                />
-              ))}
-            </div>
-          )}
+            {/* Icons overlaid on left side - vertically aligned */}
+            {product.icons && product.icons.length > 0 && (
+              <div className="absolute left-2 top-2 flex flex-col gap-0">
+                {product.icons.slice(0, 4).map((icon) => (
+                  <img
+                    key={icon.id}
+                    src={icon.imageUrl}
+                    alt={icon.name}
+                    className="w-6 h-6 object-contain bg-white/80 rounded"
+                    title={icon.name}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Prices section - no horizontal padding to align with product edge */}
           <div className="space-y-px flex-none pb-2">

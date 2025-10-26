@@ -100,23 +100,32 @@ model Product {
   @@map("products")
 }
 
+// Global icon library managed by admin
+model Icon {
+  id            String   @id @default(uuid())
+  name          String
+  imageData     Bytes    @map("image_data")
+  imageMimeType String   @map("image_mime_type")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  productIcons ProductIcon[]
+
+  @@map("icons")
+}
+
+// Junction table for products and icons (up to 4 icons per product)
 model ProductIcon {
-  id           String   @id @default(uuid())
-  productId    String   @map("product_id")
-  iconType     IconType @map("icon_type")
-  iconData     Bytes    @map("icon_data")
-  iconMimeType String   @map("icon_mime_type")
-  position     Int
+  id        String   @id @default(uuid())
+  productId String   @map("product_id")
+  iconId    String   @map("icon_id")
+  position  Int      // 0-3 (max 4 icons)
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  icon    Icon    @relation(fields: [iconId], references: [id])
 
   @@unique([productId, position])
   @@map("product_icons")
-}
-
-enum IconType {
-  energy_class
-  feature
 }
 
 // ========================================

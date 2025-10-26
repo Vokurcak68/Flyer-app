@@ -232,6 +232,44 @@ export class PdfService {
       }
     }
 
+    // Icons overlaid on left side of image - vertically aligned
+    if (product.icons && product.icons.length > 0) {
+      try {
+        const iconSize = 18; // w-6 h-6 = 24px, but using 18 for PDF
+        const iconsX = leftX;
+        let iconsY = leftY;
+        const iconGap = 0; // gap-0 = no gap
+
+        // Render up to 4 icons vertically
+        const iconsToRender = product.icons.slice(0, 4);
+        for (const productIcon of iconsToRender) {
+          const icon = productIcon.icon || productIcon;
+
+          if (icon.imageData) {
+            const iconBuffer = Buffer.isBuffer(icon.imageData)
+              ? icon.imageData
+              : Buffer.from(icon.imageData);
+
+            // White background for icon visibility
+            doc.rect(iconsX, iconsY, iconSize, iconSize)
+               .fillOpacity(0.8)
+               .fill('#FFFFFF')
+               .fillOpacity(1);
+
+            doc.image(iconBuffer, iconsX, iconsY, {
+              width: iconSize,
+              height: iconSize,
+              fit: [iconSize, iconSize],
+            });
+
+            iconsY += iconSize + iconGap;
+          }
+        }
+      } catch (error) {
+        this.logger.error(`Failed to add product icons for ${product.name}: ${error.message}`);
+      }
+    }
+
     // Prices area (below image)
     const pricesY = leftY + imageHeight + 4; // mb-1 = 4px gap
     const priceBoxWidth = leftWidth; // Full width - no horizontal padding

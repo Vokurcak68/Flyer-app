@@ -1,23 +1,5 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsUrl, IsArray, ValidateNested, ArrayMaxSize, Matches, IsDecimal, Min } from 'class-validator';
-import { Type, Transform } from 'class-transformer';
-
-class ProductIconDto {
-  @IsString()
-  @IsNotEmpty()
-  iconType: 'energy_class' | 'feature';
-
-  @IsString()
-  @IsNotEmpty()
-  iconData: string; // Base64 encoded icon data
-
-  @IsString()
-  @IsNotEmpty()
-  iconMimeType: string; // e.g., 'image/png'
-
-  @IsNumber()
-  @Min(0)
-  position: number;
-}
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsArray, ArrayMaxSize, Matches, Min, IsUUID } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateProductDto {
   @IsString()
@@ -57,9 +39,8 @@ export class CreateProductDto {
   brandId: string;
 
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => ProductIconDto)
+  @IsUUID('4', { each: true })
   @ArrayMaxSize(4, { message: 'Maximum 4 icons allowed per product' })
   @IsOptional()
-  icons?: ProductIconDto[];
+  iconIds?: string[]; // Array of icon IDs from global icon library
 }

@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Save, ArrowLeft, Upload } from 'lucide-react';
 import { productsService } from '../../services/productsService';
 import { brandsService } from '../../services/brandsService';
+import iconsService from '../../services/iconsService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { ProductFlyerLayout } from '../../components/product/ProductFlyerLayout';
@@ -31,6 +32,11 @@ export const ProductFormPage: React.FC = () => {
   const { data: brands = [] } = useQuery({
     queryKey: ['brands', 'my'],
     queryFn: () => brandsService.getMyBrands(),
+  });
+
+  const { data: icons = [] } = useQuery({
+    queryKey: ['icons'],
+    queryFn: () => iconsService.getAllIcons(),
   });
 
   const { data: product } = useQuery({
@@ -111,6 +117,7 @@ export const ProductFormPage: React.FC = () => {
         description: data.description,
         price: data.price,
         originalPrice: data.originalPrice,
+        iconIds: data.iconIds,
       };
 
       // Only include eanCode and brandId when creating (not when editing)
@@ -212,6 +219,70 @@ export const ProductFormPage: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                Ikony produktu (max. 4)
+              </label>
+              <div className="grid grid-cols-4 gap-3">
+                {icons.map((icon) => {
+                  const isSelected = formData.iconIds.includes(icon.id);
+                  const canSelect = formData.iconIds.length < 4 || isSelected;
+
+                  return (
+                    <div
+                      key={icon.id}
+                      onClick={() => {
+                        if (isSelected) {
+                          setFormData({
+                            ...formData,
+                            iconIds: formData.iconIds.filter(id => id !== icon.id),
+                          });
+                        } else if (canSelect) {
+                          setFormData({
+                            ...formData,
+                            iconIds: [...formData.iconIds, icon.id],
+                          });
+                        }
+                      }}
+                      className={`
+                        relative cursor-pointer rounded-lg border-2 p-3 transition-all
+                        ${isSelected
+                          ? 'border-blue-500 bg-blue-50'
+                          : canSelect
+                            ? 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                            : 'border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed'
+                        }
+                      `}
+                    >
+                      <div className="aspect-square flex items-center justify-center">
+                        <img
+                          src={icon.imageUrl}
+                          alt={icon.name}
+                          className="max-w-full max-h-full object-contain"
+                        />
+                      </div>
+                      <p className="mt-2 text-xs text-center text-gray-700 truncate" title={icon.name}>
+                        {icon.name}
+                      </p>
+                      {isSelected && (
+                        <div className="absolute top-1 right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">✓</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {icons.length === 0 && (
+                <p className="text-sm text-gray-500 italic">
+                  Zatím nejsou k dispozici žádné ikony. Můžete je vytvořit v administraci.
+                </p>
+              )}
+              <p className="mt-2 text-xs text-gray-500">
+                Ikony se zobrazí v levé části obrázku produktu, zarovnané vertikálně.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Obrázek produktu
               </label>
               <div className="flex items-center space-x-4">
@@ -276,7 +347,15 @@ export const ProductFormPage: React.FC = () => {
                     eanCode: formData.ean,
                     brandId: formData.brandId,
                     supplierId: '',
-                    icons: [],
+                    icons: formData.iconIds.map((iconId, index) => {
+                      const icon = icons.find(i => i.id === iconId);
+                      return icon ? {
+                        id: icon.id,
+                        name: icon.name,
+                        imageUrl: icon.imageUrl,
+                        position: index,
+                      } : null;
+                    }).filter(Boolean) as any,
                     createdAt: '',
                     updatedAt: '',
                   } as Product}

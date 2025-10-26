@@ -16,6 +16,7 @@ import { ApprovalsPage } from './pages/approvals/ApprovalsPage';
 import { UserFlyersPage } from './pages/user-flyers/UserFlyersPage';
 import { UsersListPage } from './pages/admin/UsersListPage';
 import { UserFormPage } from './pages/admin/UserFormPage';
+import { IconsManagementPage } from './pages/admin/IconsManagementPage';
 
 function App() {
   const { loadFromStorage, isAuthenticated } = useAuthStore();
@@ -69,6 +70,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <UserFormPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="admin/icons"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <IconsManagementPage />
               </ProtectedRoute>
             }
           />
