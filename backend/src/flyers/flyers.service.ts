@@ -1092,6 +1092,7 @@ export class FlyersService {
                   name: productIcon.icon.name,
                   imageUrl: `${baseUrl}/api/icons/${productIcon.icon.id}/image`,
                   position: productIcon.position,
+                  icon: productIcon.icon, // Keep full icon object for PDF generation
                 })),
               };
             }

@@ -55,7 +55,7 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
                     key={icon.id}
                     src={icon.imageUrl}
                     alt={icon.name}
-                    className="w-6 h-6 object-contain bg-white/80 rounded"
+                    className="w-6 h-6 object-contain"
                     title={icon.name}
                   />
                 ))}

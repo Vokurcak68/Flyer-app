@@ -232,16 +232,28 @@ export class PdfService {
       }
     }
 
-    // Icons overlaid on left side of image - vertically aligned
+    // Icons overlaid on left side of image - vertically aligned and evenly distributed
     if (product.icons && product.icons.length > 0) {
       try {
-        const iconSize = 18; // w-6 h-6 = 24px, but using 18 for PDF
+        const iconSize = 24; // w-6 h-6 = 24px
         const iconsX = leftX;
-        let iconsY = leftY;
-        const iconGap = 0; // gap-0 = no gap
 
         // Render up to 4 icons vertically
         const iconsToRender = product.icons.slice(0, 4);
+        const iconCount = iconsToRender.length;
+
+        // Leave margin at top and bottom (8% of image height each)
+        const topMargin = imageHeight * 0.08;
+        const bottomMargin = imageHeight * 0.08;
+        const usableHeight = imageHeight - topMargin - bottomMargin;
+
+        // Calculate spacing to distribute icons evenly in the usable space
+        const totalIconSpace = iconCount * iconSize;
+        const availableSpace = usableHeight - totalIconSpace;
+        const iconGap = iconCount > 1 ? availableSpace / (iconCount - 1) : 0;
+
+        let iconsY = leftY + topMargin; // Start with top margin
+
         for (const productIcon of iconsToRender) {
           const icon = productIcon.icon || productIcon;
 
@@ -250,18 +262,14 @@ export class PdfService {
               ? icon.imageData
               : Buffer.from(icon.imageData);
 
-            // White background for icon visibility
-            doc.rect(iconsX, iconsY, iconSize, iconSize)
-               .fillOpacity(0.8)
-               .fill('#FFFFFF')
-               .fillOpacity(1);
-
+            // Draw icon with fit to maintain aspect ratio
             doc.image(iconBuffer, iconsX, iconsY, {
-              width: iconSize,
-              height: iconSize,
               fit: [iconSize, iconSize],
+              align: 'left',
+              valign: 'top',
             });
 
+            // Move Y position down by icon size + gap for next icon
             iconsY += iconSize + iconGap;
           }
         }
