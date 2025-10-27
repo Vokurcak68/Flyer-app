@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import * as PDFDocument from 'pdfkit';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as sharp from 'sharp';
 
 @Injectable()
 export class PdfService {
@@ -24,10 +25,23 @@ export class PdfService {
   }
 
   /**
+   * Convert image to PNG format if needed (for WebP and other formats PDFKit doesn't support)
+   */
+  private async convertImageToPNG(imageBuffer: Buffer): Promise<Buffer> {
+    try {
+      // Use sharp to convert any image format to PNG
+      return await sharp(imageBuffer).png().toBuffer();
+    } catch (error) {
+      this.logger.error(`Failed to convert image: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
    * Generate PDF for a flyer using PDFKit with 2x4 slot-based layout
    */
   async generateFlyerPDF(flyer: any): Promise<Buffer> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
         this.logger.log(`Generating PDF for flyer ${flyer.id}`);
         this.logger.log(`Flyer structure: pages count = ${flyer.pages?.length || 0}`);
@@ -72,13 +86,13 @@ export class PdfService {
         // Generate pages
         const pages = flyer.pages.sort((a: any, b: any) => a.pageNumber - b.pageNumber);
 
-        pages.forEach((page: any) => {
+        for (const page of pages) {
           // Add new page
           doc.addPage();
 
           // Render 2x4 slot grid (full bleed, no header)
-          this.renderSlotGrid(doc, page);
-        });
+          await this.renderSlotGrid(doc, page);
+        }
 
         // Finalize PDF
         doc.end();
@@ -96,7 +110,7 @@ export class PdfService {
    * Full bleed layout - no margins, no gaps
    * Page 1: Has 2cm footer for promo image
    */
-  private renderSlotGrid(doc: any, page: any) {
+  private async renderSlotGrid(doc: any, page: any) {
     const startX = 0;
     const startY = 0;
     const pageWidth = 595; // A4 width in points (210mm)
@@ -147,7 +161,7 @@ export class PdfService {
         this.renderEmptySlot(doc, x, y, slotWidth, slotHeight);
       } else if (slot.type === 'product' && slot.product) {
         // Render product slot
-        this.renderProductSlot(doc, x, y, slotWidth, slotHeight, slot.product);
+        await this.renderProductSlot(doc, x, y, slotWidth, slotHeight, slot.product);
       } else if (slot.type === 'promo' && slot.promoImage) {
         // Render promo slot (may span multiple slots)
         const spannedSlots = this.getPromoSpannedSlots(position, slot.promoSize);
@@ -156,14 +170,14 @@ export class PdfService {
         const promoWidth = this.getPromoWidth(slot.promoSize, slotWidth);
         const promoHeight = this.getPromoHeight(slot.promoSize, slotHeight);
 
-        this.renderPromoSlot(doc, x, y, promoWidth, promoHeight, slot.promoImage);
+        await this.renderPromoSlot(doc, x, y, promoWidth, promoHeight, slot.promoImage);
       }
     }
 
     // Render footer promo on page 1 if present
     if (isFirstPage && page.footerPromoImage) {
       const footerY = availableHeight;
-      this.renderPromoSlot(doc, 0, footerY, pageWidth, footerHeight, page.footerPromoImage);
+      await this.renderPromoSlot(doc, 0, footerY, pageWidth, footerHeight, page.footerPromoImage);
       this.logger.log(`Rendered footer promo on page 1: ${page.footerPromoImage.name}`);
     }
   }
@@ -181,7 +195,7 @@ export class PdfService {
    * - Left side (45% width): Image + prices
    * - Right side (55% width): Description
    */
-  private renderProductSlot(doc: any, x: number, y: number, width: number, height: number, product: any) {
+  private async renderProductSlot(doc: any, x: number, y: number, width: number, height: number, product: any) {
     const padding = 6; // Fixed 6px padding (matches px-2 in React)
 
     // Black header - matches React: py-1.5 (6px) + text-xs (~12px) + py-1.5 (6px) = ~24px
@@ -217,12 +231,25 @@ export class PdfService {
 
     if (product.imageData) {
       try {
-        const imageBuffer = Buffer.isBuffer(product.imageData)
-          ? product.imageData
-          : Buffer.from(product.imageData);
+        // Parse imageData - handle Buffer, base64 string, or data URL
+        let imageBuffer: Buffer;
+        if (Buffer.isBuffer(product.imageData)) {
+          imageBuffer = product.imageData;
+        } else if (typeof product.imageData === 'string') {
+          // Handle data URL format (data:image/...;base64,...)
+          const base64Data = product.imageData.includes('base64,')
+            ? product.imageData.split('base64,')[1]
+            : product.imageData;
+          imageBuffer = Buffer.from(base64Data, 'base64');
+        } else {
+          imageBuffer = Buffer.from(product.imageData);
+        }
+
+        // Convert to PNG (handles WebP and other formats)
+        const pngBuffer = await this.convertImageToPNG(imageBuffer);
 
         const imageWidth = leftWidth - 12;
-        doc.image(imageBuffer, leftX, leftY, {
+        doc.image(pngBuffer, leftX, leftY, {
           fit: [imageWidth, imageHeight],
           align: 'center',
           valign: 'center',
@@ -236,15 +263,15 @@ export class PdfService {
     if (product.icons && product.icons.length > 0) {
       try {
         const iconSize = 24; // w-6 h-6 = 24px
-        const iconsX = leftX;
+        const iconsX = x; // Left edge of slot (matching frontend left-0)
 
         // Render up to 4 icons vertically
         const iconsToRender = product.icons.slice(0, 4);
         const iconCount = iconsToRender.length;
 
-        // Leave margin at top and bottom (8% of image height each)
-        const topMargin = imageHeight * 0.08;
-        const bottomMargin = imageHeight * 0.08;
+        // Leave 8px margin at top and bottom (matching frontend: top: '8px', height: 'calc(100% - 16px)')
+        const topMargin = 8;
+        const bottomMargin = 8;
         const usableHeight = imageHeight - topMargin - bottomMargin;
 
         // Calculate spacing to distribute icons evenly in the usable space
@@ -258,12 +285,25 @@ export class PdfService {
           const icon = productIcon.icon || productIcon;
 
           if (icon.imageData) {
-            const iconBuffer = Buffer.isBuffer(icon.imageData)
-              ? icon.imageData
-              : Buffer.from(icon.imageData);
+            // Parse iconData - handle Buffer, base64 string, or data URL
+            let iconBuffer: Buffer;
+            if (Buffer.isBuffer(icon.imageData)) {
+              iconBuffer = icon.imageData;
+            } else if (typeof icon.imageData === 'string') {
+              // Handle data URL format (data:image/...;base64,...)
+              const base64Data = icon.imageData.includes('base64,')
+                ? icon.imageData.split('base64,')[1]
+                : icon.imageData;
+              iconBuffer = Buffer.from(base64Data, 'base64');
+            } else {
+              iconBuffer = Buffer.from(icon.imageData);
+            }
+
+            // Convert to PNG (handles WebP and other formats)
+            const pngIconBuffer = await this.convertImageToPNG(iconBuffer);
 
             // Draw icon with fit to maintain aspect ratio
-            doc.image(iconBuffer, iconsX, iconsY, {
+            doc.image(pngIconBuffer, iconsX, iconsY, {
               fit: [iconSize, iconSize],
               align: 'left',
               valign: 'top',
@@ -378,16 +418,29 @@ export class PdfService {
    * Render promo image slot (can span multiple slots)
    * Full bleed - no borders, no padding
    */
-  private renderPromoSlot(doc: any, x: number, y: number, width: number, height: number, promoImage: any) {
+  private async renderPromoSlot(doc: any, x: number, y: number, width: number, height: number, promoImage: any) {
     // Add promo image (full bleed, no padding)
     if (promoImage.imageData) {
       try {
-        const imageBuffer = Buffer.isBuffer(promoImage.imageData)
-          ? promoImage.imageData
-          : Buffer.from(promoImage.imageData);
+        // Parse imageData - handle Buffer, base64 string, or data URL
+        let imageBuffer: Buffer;
+        if (Buffer.isBuffer(promoImage.imageData)) {
+          imageBuffer = promoImage.imageData;
+        } else if (typeof promoImage.imageData === 'string') {
+          // Handle data URL format (data:image/...;base64,...)
+          const base64Data = promoImage.imageData.includes('base64,')
+            ? promoImage.imageData.split('base64,')[1]
+            : promoImage.imageData;
+          imageBuffer = Buffer.from(base64Data, 'base64');
+        } else {
+          imageBuffer = Buffer.from(promoImage.imageData);
+        }
+
+        // Convert to PNG (handles WebP and other formats)
+        const pngBuffer = await this.convertImageToPNG(imageBuffer);
 
         // Use exact width and height to fill entire area without white space
-        doc.image(imageBuffer, x, y, {
+        doc.image(pngBuffer, x, y, {
           width: width,
           height: height,
         });
