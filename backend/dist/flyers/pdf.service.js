@@ -16,6 +16,7 @@ const config_1 = require("@nestjs/config");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
+const sharp = require("sharp");
 let PdfService = PdfService_1 = class PdfService {
     constructor(configService) {
         this.configService = configService;
@@ -32,8 +33,17 @@ let PdfService = PdfService_1 = class PdfService {
             this.logger.log(`Created uploads directory: ${this.uploadsDir}`);
         }
     }
+    async convertImageToPNG(imageBuffer) {
+        try {
+            return await sharp(imageBuffer).png().toBuffer();
+        }
+        catch (error) {
+            this.logger.error(`Failed to convert image: ${error.message}`);
+            throw error;
+        }
+    }
     async generateFlyerPDF(flyer) {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             try {
                 this.logger.log(`Generating PDF for flyer ${flyer.id}`);
                 this.logger.log(`Flyer structure: pages count = ${flyer.pages?.length || 0}`);
@@ -67,10 +77,10 @@ let PdfService = PdfService_1 = class PdfService {
                 });
                 doc.on('error', reject);
                 const pages = flyer.pages.sort((a, b) => a.pageNumber - b.pageNumber);
-                pages.forEach((page) => {
+                for (const page of pages) {
                     doc.addPage();
-                    this.renderSlotGrid(doc, page);
-                });
+                    await this.renderSlotGrid(doc, page);
+                }
                 doc.end();
             }
             catch (error) {
@@ -79,7 +89,7 @@ let PdfService = PdfService_1 = class PdfService {
             }
         });
     }
-    renderSlotGrid(doc, page) {
+    async renderSlotGrid(doc, page) {
         const startX = 0;
         const startY = 0;
         const pageWidth = 595;
@@ -87,12 +97,20 @@ let PdfService = PdfService_1 = class PdfService {
         const footerHeight = 57;
         const cols = 2;
         const rows = 4;
-        const gap = 0;
+        const gap = 3;
         const isFirstPage = page.pageNumber === 1;
-        const availableHeight = isFirstPage ? pageHeight - footerHeight : pageHeight;
-        const slotWidth = pageWidth / cols;
-        const slotHeight = availableHeight / rows;
-        this.logger.log(`Rendering 2x4 grid (page ${page.pageNumber}): slotWidth=${slotWidth}, slotHeight=${slotHeight}, hasFooter=${isFirstPage}`);
+        const slotWidth = (pageWidth - gap * (cols - 1)) / cols;
+        let firstRowHeight;
+        let normalRowHeight;
+        if (isFirstPage) {
+            normalRowHeight = (pageHeight - gap * (rows - 1)) / rows;
+            firstRowHeight = pageHeight - footerHeight - (3 * normalRowHeight) - gap * (rows - 1);
+        }
+        else {
+            normalRowHeight = (pageHeight - gap * (rows - 1)) / rows;
+            firstRowHeight = normalRowHeight;
+        }
+        this.logger.log(`Rendering 2x4 grid (page ${page.pageNumber}): slotWidth=${slotWidth}, firstRowHeight=${firstRowHeight}, normalRowHeight=${normalRowHeight}, hasFooter=${isFirstPage}`);
         const slots = page.slots || new Array(8).fill(null);
         this.logger.log(`Page ${page.pageNumber} slots debug:`);
         slots.forEach((slot, i) => {
@@ -109,30 +127,39 @@ let PdfService = PdfService_1 = class PdfService {
             const row = Math.floor(position / cols);
             const col = position % cols;
             const x = startX + col * (slotWidth + gap);
-            const y = startY + row * (slotHeight + gap);
+            let y;
+            let slotHeight;
+            if (row === 0) {
+                y = startY;
+                slotHeight = firstRowHeight;
+            }
+            else {
+                y = startY + firstRowHeight + gap + (row - 1) * (normalRowHeight + gap);
+                slotHeight = normalRowHeight;
+            }
             if (!slot || slot.type === 'empty') {
                 this.renderEmptySlot(doc, x, y, slotWidth, slotHeight);
             }
             else if (slot.type === 'product' && slot.product) {
-                this.renderProductSlot(doc, x, y, slotWidth, slotHeight, slot.product);
+                await this.renderProductSlot(doc, x, y, slotWidth, slotHeight, slot.product);
             }
             else if (slot.type === 'promo' && slot.promoImage) {
                 const spannedSlots = this.getPromoSpannedSlots(position, slot.promoSize);
                 spannedSlots.forEach(pos => renderedSlots.add(pos));
                 const promoWidth = this.getPromoWidth(slot.promoSize, slotWidth);
-                const promoHeight = this.getPromoHeight(slot.promoSize, slotHeight);
-                this.renderPromoSlot(doc, x, y, promoWidth, promoHeight, slot.promoImage);
+                const promoHeight = this.getPromoHeight(slot.promoSize, position, firstRowHeight, normalRowHeight, gap);
+                await this.renderPromoSlot(doc, x, y, promoWidth, promoHeight, slot.promoImage);
             }
         }
         if (isFirstPage && page.footerPromoImage) {
-            const footerY = availableHeight;
-            this.renderPromoSlot(doc, 0, footerY, pageWidth, footerHeight, page.footerPromoImage);
+            const footerY = pageHeight - footerHeight;
+            await this.renderPromoSlot(doc, 0, footerY, pageWidth, footerHeight, page.footerPromoImage);
             this.logger.log(`Rendered footer promo on page 1: ${page.footerPromoImage.name}`);
         }
     }
     renderEmptySlot(_doc, _x, _y, _width, _height) {
     }
-    renderProductSlot(doc, x, y, width, height, product) {
+    async renderProductSlot(doc, x, y, width, height, product) {
         const padding = 6;
         const headerHeight = 24;
         doc.rect(x, y, width, headerHeight)
@@ -150,17 +177,28 @@ let PdfService = PdfService_1 = class PdfService {
         const contentY = y + headerHeight;
         const contentHeight = height - headerHeight;
         const leftWidth = width * 0.45;
-        const leftX = x + 6;
-        const leftY = contentY + 6;
+        const leftX = x + 3;
+        const leftY = contentY + 5;
         const pricesReservedHeight = 56;
-        const imageHeight = contentHeight - pricesReservedHeight - 12;
+        const imageHeight = contentHeight - pricesReservedHeight - 8;
         if (product.imageData) {
             try {
-                const imageBuffer = Buffer.isBuffer(product.imageData)
-                    ? product.imageData
-                    : Buffer.from(product.imageData);
+                let imageBuffer;
+                if (Buffer.isBuffer(product.imageData)) {
+                    imageBuffer = product.imageData;
+                }
+                else if (typeof product.imageData === 'string') {
+                    const base64Data = product.imageData.includes('base64,')
+                        ? product.imageData.split('base64,')[1]
+                        : product.imageData;
+                    imageBuffer = Buffer.from(base64Data, 'base64');
+                }
+                else {
+                    imageBuffer = Buffer.from(product.imageData);
+                }
+                const pngBuffer = await this.convertImageToPNG(imageBuffer);
                 const imageWidth = leftWidth - 12;
-                doc.image(imageBuffer, leftX, leftY, {
+                doc.image(pngBuffer, leftX, leftY, {
                     fit: [imageWidth, imageHeight],
                     align: 'center',
                     valign: 'center',
@@ -170,47 +208,106 @@ let PdfService = PdfService_1 = class PdfService {
                 this.logger.error(`Failed to add product image for ${product.name}: ${error.message}`);
             }
         }
-        const pricesY = leftY + imageHeight + 4;
-        const priceBoxWidth = leftWidth - 12;
+        if (product.icons && product.icons.length > 0) {
+            try {
+                const iconSize = 24;
+                const iconsX = x;
+                const iconsToRender = product.icons.slice(0, 4);
+                const iconCount = iconsToRender.length;
+                const topMargin = 8;
+                const bottomMargin = 8;
+                const usableHeight = imageHeight - topMargin - bottomMargin;
+                const totalIconSpace = iconCount * iconSize;
+                const availableSpace = usableHeight - totalIconSpace;
+                const iconGap = iconCount > 1 ? availableSpace / (iconCount - 1) : 0;
+                let iconsY = leftY + topMargin;
+                for (const productIcon of iconsToRender) {
+                    const icon = productIcon.icon || productIcon;
+                    if (icon.imageData) {
+                        let iconBuffer;
+                        if (Buffer.isBuffer(icon.imageData)) {
+                            iconBuffer = icon.imageData;
+                        }
+                        else if (typeof icon.imageData === 'string') {
+                            const base64Data = icon.imageData.includes('base64,')
+                                ? icon.imageData.split('base64,')[1]
+                                : icon.imageData;
+                            iconBuffer = Buffer.from(base64Data, 'base64');
+                        }
+                        else {
+                            iconBuffer = Buffer.from(icon.imageData);
+                        }
+                        const pngIconBuffer = await this.convertImageToPNG(iconBuffer);
+                        const iconWidth = icon.isEnergyClass ? iconSize * 2 : iconSize;
+                        doc.image(pngIconBuffer, iconsX, iconsY, {
+                            fit: [iconWidth, iconSize],
+                            align: 'left',
+                            valign: 'top',
+                        });
+                        iconsY += iconSize + iconGap;
+                    }
+                }
+            }
+            catch (error) {
+                this.logger.error(`Failed to add product icons for ${product.name}: ${error.message}`);
+            }
+        }
+        const pricesY = leftY + imageHeight + 7;
+        const priceBoxWidth = leftWidth;
         const priceBoxHeight = 20;
+        const priceBoxWidthPercent = priceBoxWidth * 0.5;
+        const labelBoxWidthPercent = priceBoxWidth * 0.4;
+        const pricesX = x;
+        const formatPrice = (price) => {
+            const rounded = Math.round(price);
+            return rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' Kč';
+        };
         let currentPriceY = pricesY;
         if (product.originalPrice && parseFloat(product.originalPrice) > parseFloat(product.price)) {
-            doc.rect(leftX, currentPriceY, priceBoxWidth, priceBoxHeight)
-                .fill('#E5E7EB');
-            doc.fontSize(8)
-                .font('Arial')
-                .fillColor('#6B7280')
-                .text('Doporučená cena', leftX, currentPriceY + 2, {
-                width: priceBoxWidth,
-                align: 'center',
-            });
-            doc.fontSize(9.6)
+            doc.rect(pricesX, currentPriceY, priceBoxWidthPercent, priceBoxHeight)
+                .fill('#000000');
+            doc.fontSize(10)
                 .font('Arial-Bold')
-                .fillColor('#374151')
-                .text(`${parseFloat(product.originalPrice).toFixed(2)} Kč`, leftX, currentPriceY + 10, {
-                width: priceBoxWidth,
+                .fillColor('#FFFFFF')
+                .text(formatPrice(parseFloat(product.originalPrice)), pricesX, currentPriceY + (priceBoxHeight - 10) / 2, {
+                width: priceBoxWidthPercent,
                 align: 'center',
+                valign: 'center',
             });
-            currentPriceY += priceBoxHeight + 2;
+            doc.rect(pricesX + priceBoxWidthPercent + 2, currentPriceY, labelBoxWidthPercent - 2, priceBoxHeight)
+                .fill('#E5E7EB');
+            doc.fontSize(6.5)
+                .font('Arial')
+                .fillColor('#374151')
+                .text('Doporučená\ncena', pricesX + priceBoxWidthPercent + 2 + 2, currentPriceY + 3, {
+                width: labelBoxWidthPercent - 6,
+                align: 'left',
+                lineGap: -1,
+            });
+            currentPriceY += priceBoxHeight + 1;
         }
-        doc.rect(leftX, currentPriceY, priceBoxWidth, priceBoxHeight)
-            .fill('#DC2626');
         const promoText = product.originalPrice && parseFloat(product.originalPrice) > parseFloat(product.price)
-            ? 'Akční cena Oresi'
+            ? 'Akční cena\nOresi'
             : 'Akční cena';
-        doc.fontSize(8)
-            .font('Arial')
-            .fillColor('#FFFFFF')
-            .text(promoText, leftX, currentPriceY + 2, {
-            width: priceBoxWidth,
-            align: 'center',
-        });
-        doc.fontSize(12)
+        doc.rect(pricesX, currentPriceY, priceBoxWidthPercent, priceBoxHeight)
+            .fill('#DC2626');
+        doc.fontSize(10)
             .font('Arial-Bold')
             .fillColor('#FFFFFF')
-            .text(`${parseFloat(product.price).toFixed(2)} Kč`, leftX, currentPriceY + 10, {
-            width: priceBoxWidth,
+            .text(formatPrice(parseFloat(product.price)), pricesX, currentPriceY + (priceBoxHeight - 10) / 2, {
+            width: priceBoxWidthPercent,
             align: 'center',
+            valign: 'center',
+        });
+        doc.rect(pricesX + priceBoxWidthPercent + 2, currentPriceY, labelBoxWidthPercent - 2, priceBoxHeight)
+            .fill('#E5E7EB');
+        doc.fontSize(6.5)
+            .font('Arial')
+            .fillColor('#374151')
+            .text(promoText, pricesX + priceBoxWidthPercent + 2 + 2, currentPriceY + 3, {
+            width: labelBoxWidthPercent - 6,
+            align: 'left',
+            lineGap: -1,
         });
         if (product.description) {
             const rightX = x + leftWidth;
@@ -218,21 +315,32 @@ let PdfService = PdfService_1 = class PdfService {
             doc.fontSize(8.8)
                 .font('Arial')
                 .fillColor('#000000')
-                .text(product.description, rightX + 6, leftY, {
-                width: rightWidth - 12,
-                height: contentHeight - 12,
+                .text(product.description, rightX + 1.5, leftY, {
+                width: rightWidth - 3,
+                height: contentHeight - 3,
                 lineGap: 1,
             });
         }
         doc.fillColor('#000');
     }
-    renderPromoSlot(doc, x, y, width, height, promoImage) {
+    async renderPromoSlot(doc, x, y, width, height, promoImage) {
         if (promoImage.imageData) {
             try {
-                const imageBuffer = Buffer.isBuffer(promoImage.imageData)
-                    ? promoImage.imageData
-                    : Buffer.from(promoImage.imageData);
-                doc.image(imageBuffer, x, y, {
+                let imageBuffer;
+                if (Buffer.isBuffer(promoImage.imageData)) {
+                    imageBuffer = promoImage.imageData;
+                }
+                else if (typeof promoImage.imageData === 'string') {
+                    const base64Data = promoImage.imageData.includes('base64,')
+                        ? promoImage.imageData.split('base64,')[1]
+                        : promoImage.imageData;
+                    imageBuffer = Buffer.from(base64Data, 'base64');
+                }
+                else {
+                    imageBuffer = Buffer.from(promoImage.imageData);
+                }
+                const pngBuffer = await this.convertImageToPNG(imageBuffer);
+                doc.image(pngBuffer, x, y, {
                     width: width,
                     height: height,
                 });
@@ -262,28 +370,35 @@ let PdfService = PdfService_1 = class PdfService {
         }
     }
     getPromoWidth(promoSize, slotWidth) {
+        const gap = 3;
         switch (promoSize) {
             case 'single':
                 return slotWidth;
             case 'horizontal':
             case 'square':
             case 'full_page':
-                return slotWidth * 2;
+                return slotWidth * 2 + gap;
             default:
                 return slotWidth;
         }
     }
-    getPromoHeight(promoSize, slotHeight) {
+    getPromoHeight(promoSize, anchorPosition, firstRowHeight, normalRowHeight, gap) {
+        const startRow = Math.floor(anchorPosition / 2);
         switch (promoSize) {
             case 'single':
             case 'horizontal':
-                return slotHeight;
+                return startRow === 0 ? firstRowHeight : normalRowHeight;
             case 'square':
-                return slotHeight * 2;
+                if (startRow === 0) {
+                    return firstRowHeight + gap + normalRowHeight;
+                }
+                else {
+                    return normalRowHeight * 2 + gap;
+                }
             case 'full_page':
-                return slotHeight * 4;
+                return firstRowHeight + normalRowHeight * 3 + gap * 3;
             default:
-                return slotHeight;
+                return startRow === 0 ? firstRowHeight : normalRowHeight;
         }
     }
     async deletePDF(pdfUrl) {

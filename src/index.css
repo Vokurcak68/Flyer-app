@@ -1,3 +1,17 @@
+/*
+  Kometa Unicase font - když budeš mít soubory, odkomentuj toto:
+
+  @font-face {
+    font-family: 'Kometa Unicase';
+    src: url('/fonts/KometaUnicase-Hv.woff2') format('woff2'),
+         url('/fonts/KometaUnicase-Hv.woff') format('woff'),
+         url('/fonts/KometaUnicase-Hv.ttf') format('truetype');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+  }
+*/
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',

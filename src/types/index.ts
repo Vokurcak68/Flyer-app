@@ -38,6 +38,7 @@ export interface Icon {
   name: string;
   imageUrl: string;
   imageMimeType?: string;
+  isEnergyClass?: boolean; // Energy class icons are displayed 2x wider
   createdAt: string;
   updatedAt: string;
 }
@@ -47,6 +48,7 @@ export interface ProductIcon {
   id: string;
   name: string;
   imageUrl: string;
+  isEnergyClass?: boolean; // Energy class icons are displayed 2x wider
   position: number;
 }
 
@@ -104,6 +106,8 @@ export interface Flyer {
   updatedAt: string;
   submittedAt?: string;
   publishedAt?: string;
+  rejectionReason?: string;
+  approvals?: Approval[];
 }
 
 export interface Approval {

@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, IsBoolean } from 'class-validator';
 
 export class UpdateIconDto {
   @IsOptional()
@@ -12,4 +12,8 @@ export class UpdateIconDto {
   @IsOptional()
   @IsString()
   imageMimeType?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isEnergyClass?: boolean;
 }

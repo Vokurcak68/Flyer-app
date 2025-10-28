@@ -52,6 +52,17 @@ export class FlyersController {
     return this.flyersService.findAll(filterDto, req.user.userId, req.user.role);
   }
 
+  @Get('active')
+  @Roles('end_user')
+  async getActiveFlyers(@Request() req) {
+    // Get active flyers with full data (pages, slots, products)
+    const activeFlyers = await this.flyersService.getActiveFlyers(
+      req.user.userId,
+      req.user.role,
+    );
+    return activeFlyers;
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req) {
     return this.flyersService.findOne(id, req.user.userId, req.user.role);

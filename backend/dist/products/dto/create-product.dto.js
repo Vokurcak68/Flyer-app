@@ -12,28 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateProductDto = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
-class ProductIconDto {
-}
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], ProductIconDto.prototype, "iconType", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], ProductIconDto.prototype, "iconData", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], ProductIconDto.prototype, "iconMimeType", void 0);
-__decorate([
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.Min)(0),
-    __metadata("design:type", Number)
-], ProductIconDto.prototype, "position", void 0);
 class CreateProductDto {
 }
 exports.CreateProductDto = CreateProductDto;
@@ -83,10 +61,9 @@ __decorate([
 ], CreateProductDto.prototype, "brandId", void 0);
 __decorate([
     (0, class_validator_1.IsArray)(),
-    (0, class_validator_1.ValidateNested)({ each: true }),
-    (0, class_transformer_1.Type)(() => ProductIconDto),
+    (0, class_validator_1.IsUUID)('4', { each: true }),
     (0, class_validator_1.ArrayMaxSize)(4, { message: 'Maximum 4 icons allowed per product' }),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Array)
-], CreateProductDto.prototype, "icons", void 0);
+], CreateProductDto.prototype, "iconIds", void 0);
 //# sourceMappingURL=create-product.dto.js.map

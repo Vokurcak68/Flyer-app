@@ -16,11 +16,13 @@ exports.FlyersService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const approvals_service_1 = require("../approvals/approvals.service");
+const pdf_service_1 = require("./pdf.service");
 const client_1 = require("@prisma/client");
 let FlyersService = class FlyersService {
-    constructor(prisma, approvalsService) {
+    constructor(prisma, approvalsService, pdfService) {
         this.prisma = prisma;
         this.approvalsService = approvalsService;
+        this.pdfService = pdfService;
     }
     async create(createFlyerDto, userId) {
         const flyer = await this.prisma.flyer.create({
@@ -42,7 +44,14 @@ let FlyersService = class FlyersService {
                                 product: {
                                     include: {
                                         brand: true,
-                                        icons: true,
+                                        icons: {
+                                            include: {
+                                                icon: true,
+                                            },
+                                            orderBy: {
+                                                position: 'asc',
+                                            },
+                                        },
                                     },
                                 },
                                 promoImage: true,
@@ -135,6 +144,48 @@ let FlyersService = class FlyersService {
             },
         };
     }
+    async getActiveFlyers(userId, userRole) {
+        const flyers = await this.prisma.flyer.findMany({
+            where: {
+                status: client_1.FlyerStatus.active,
+            },
+            include: {
+                pages: {
+                    include: {
+                        slots: {
+                            include: {
+                                product: {
+                                    include: {
+                                        brand: true,
+                                        icons: {
+                                            include: {
+                                                icon: true,
+                                            },
+                                            orderBy: {
+                                                position: 'asc',
+                                            },
+                                        },
+                                    },
+                                },
+                                promoImage: true,
+                            },
+                            orderBy: {
+                                slotPosition: 'asc',
+                            },
+                        },
+                        footerPromoImage: true,
+                    },
+                    orderBy: {
+                        pageNumber: 'asc',
+                    },
+                },
+            },
+            orderBy: {
+                publishedAt: 'desc',
+            },
+        });
+        return flyers.map(flyer => this.transformFlyerForFrontend(flyer));
+    }
     async findOne(id, userId, userRole) {
         const flyer = await this.prisma.flyer.findUnique({
             where: { id },
@@ -166,7 +217,14 @@ let FlyersService = class FlyersService {
                                         createdAt: true,
                                         updatedAt: true,
                                         brand: true,
-                                        icons: true,
+                                        icons: {
+                                            include: {
+                                                icon: true,
+                                            },
+                                            orderBy: {
+                                                position: 'asc',
+                                            },
+                                        },
                                     },
                                 },
                                 promoImage: {
@@ -265,7 +323,14 @@ let FlyersService = class FlyersService {
                                 product: {
                                     include: {
                                         brand: true,
-                                        icons: true,
+                                        icons: {
+                                            include: {
+                                                icon: true,
+                                            },
+                                            orderBy: {
+                                                position: 'asc',
+                                            },
+                                        },
                                     },
                                 },
                                 promoImage: true,
@@ -600,11 +665,15 @@ let FlyersService = class FlyersService {
             throw new common_1.BadRequestException('Flyer must have at least one page');
         }
         await this.createVersionSnapshot(flyerId, userId, 'Submitted for verification');
+        const flyerForPdf = await this.findOne(flyerId, userId, client_1.UserRole.supplier);
+        const pdfData = await this.pdfService.generateFlyerPDF(flyerForPdf);
         const updated = await this.prisma.flyer.update({
             where: { id: flyerId },
             data: {
-                status: client_1.FlyerStatus.pending_verification,
+                status: client_1.FlyerStatus.pending_approval,
                 isDraft: false,
+                pdfData: pdfData,
+                pdfMimeType: 'application/pdf',
             },
             include: {
                 pages: {
@@ -614,7 +683,14 @@ let FlyersService = class FlyersService {
                                 product: {
                                     include: {
                                         brand: true,
-                                        icons: true,
+                                        icons: {
+                                            include: {
+                                                icon: true,
+                                            },
+                                            orderBy: {
+                                                position: 'asc',
+                                            },
+                                        },
                                     },
                                 },
                                 promoImage: true,
@@ -627,12 +703,34 @@ let FlyersService = class FlyersService {
                 },
             },
         });
+        console.log(`🔄 Cleaning up existing approvals for flyer ${flyerId}`);
+        try {
+            await this.prisma.approvalWorkflow.delete({
+                where: { flyerId },
+            });
+            console.log(`✅ Deleted approval workflow for flyer ${flyerId}`);
+        }
+        catch (error) {
+            console.log(`ℹ️ No existing workflow to delete for flyer ${flyerId}`);
+        }
+        const deletedCount = await this.prisma.approval.deleteMany({
+            where: { flyerId },
+        });
+        console.log(`✅ Deleted ${deletedCount.count} approval records for flyer ${flyerId}`);
         const approvers = await this.prisma.user.findMany({
             where: { role: client_1.UserRole.approver },
         });
-        await this.approvalsService.createApprovalWorkflow(flyerId, 1);
+        console.log(`👥 Found ${approvers.length} approvers`);
+        const workflow = await this.approvalsService.createApprovalWorkflow(flyerId, 1);
+        console.log(`✅ Created approval workflow: ${workflow.id}`);
         for (const approver of approvers) {
-            await this.approvalsService.requestApproval(flyerId, approver.id);
+            try {
+                const approval = await this.approvalsService.requestApproval(flyerId, approver.id);
+                console.log(`✅ Created approval request for ${approver.email}: ${approval.id}`);
+            }
+            catch (error) {
+                console.error(`❌ Failed to create approval for ${approver.email}:`, error.message);
+            }
         }
         return updated;
     }
@@ -787,14 +885,28 @@ let FlyersService = class FlyersService {
         if (!flyer.pages) {
             return flyer;
         }
+        const baseUrl = process.env.API_URL || 'http://localhost:4000';
         const transformedPages = flyer.pages.map((page) => {
             const slotsArray = new Array(8).fill(null).map(() => ({ type: 'empty' }));
             if (page.slots && Array.isArray(page.slots)) {
                 page.slots.forEach((slot) => {
                     if (slot.slotPosition >= 0 && slot.slotPosition < 8) {
+                        const formattedProduct = slot.product ? {
+                            ...slot.product,
+                            price: slot.product.price ? parseFloat(slot.product.price.toString()) : 0,
+                            originalPrice: slot.product.originalPrice ? parseFloat(slot.product.originalPrice.toString()) : null,
+                            icons: slot.product.icons ? slot.product.icons.map((productIcon) => ({
+                                id: productIcon.icon.id,
+                                name: productIcon.icon.name,
+                                imageUrl: `${baseUrl}/api/icons/${productIcon.icon.id}/image`,
+                                isEnergyClass: productIcon.icon.isEnergyClass,
+                                position: productIcon.position,
+                                icon: productIcon.icon,
+                            })) : [],
+                        } : null;
                         slotsArray[slot.slotPosition] = {
                             type: slot.slotType,
-                            product: slot.product || null,
+                            product: formattedProduct,
                             promoImage: slot.promoImage || null,
                             promoSize: slot.promoSize || null,
                         };
@@ -872,6 +984,7 @@ exports.FlyersService = FlyersService = __decorate([
     (0, common_1.Injectable)(),
     __param(1, (0, common_1.Inject)((0, common_1.forwardRef)(() => approvals_service_1.ApprovalsService))),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        approvals_service_1.ApprovalsService])
+        approvals_service_1.ApprovalsService,
+        pdf_service_1.PdfService])
 ], FlyersService);
 //# sourceMappingURL=flyers.service.js.map

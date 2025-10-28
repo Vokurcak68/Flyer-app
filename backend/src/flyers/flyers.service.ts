@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApprovalsService } from '../approvals/approvals.service';
+import { PdfService } from './pdf.service';
 import {
   CreateFlyerDto,
   UpdateFlyerDto,
@@ -27,6 +28,7 @@ export class FlyersService {
     private prisma: PrismaService,
     @Inject(forwardRef(() => ApprovalsService))
     private approvalsService: ApprovalsService,
+    private pdfService: PdfService,
   ) {}
 
   // ========================================
@@ -172,6 +174,52 @@ export class FlyersService {
         totalPages: 1,
       },
     };
+  }
+
+  async getActiveFlyers(userId: string, userRole: UserRole) {
+    // Get all active flyers with full data for end users
+    const flyers = await this.prisma.flyer.findMany({
+      where: {
+        status: FlyerStatus.active,
+      },
+      include: {
+        pages: {
+          include: {
+            slots: {
+              include: {
+                product: {
+                  include: {
+                    brand: true,
+                    icons: {
+                      include: {
+                        icon: true,
+                      },
+                      orderBy: {
+                        position: 'asc',
+                      },
+                    },
+                  },
+                },
+                promoImage: true,
+              },
+              orderBy: {
+                slotPosition: 'asc',
+              },
+            },
+            footerPromoImage: true,
+          },
+          orderBy: {
+            pageNumber: 'asc',
+          },
+        },
+      },
+      orderBy: {
+        publishedAt: 'desc',
+      },
+    });
+
+    // Transform flyers for frontend
+    return flyers.map(flyer => this.transformFlyerForFrontend(flyer));
   }
 
   async findOne(id: string, userId: string, userRole: UserRole) {
@@ -829,12 +877,20 @@ export class FlyersService {
     // Create a version snapshot before submission
     await this.createVersionSnapshot(flyerId, userId, 'Submitted for verification');
 
-    // Update flyer status
+    // Get full flyer data for PDF generation
+    const flyerForPdf = await this.findOne(flyerId, userId, UserRole.supplier);
+
+    // Generate and save PDF permanently
+    const pdfData = await this.pdfService.generateFlyerPDF(flyerForPdf);
+
+    // Update flyer status and save PDF
     const updated = await this.prisma.flyer.update({
       where: { id: flyerId },
       data: {
-        status: FlyerStatus.pending_verification,
+        status: FlyerStatus.pending_approval,
         isDraft: false,
+        pdfData: pdfData,
+        pdfMimeType: 'application/pdf',
       },
       include: {
         pages: {
@@ -865,17 +921,42 @@ export class FlyersService {
       },
     });
 
+    // Clean up any existing approval workflow and requests (in case of resubmission after rejection)
+    console.log(`🔄 Cleaning up existing approvals for flyer ${flyerId}`);
+
+    try {
+      await this.prisma.approvalWorkflow.delete({
+        where: { flyerId },
+      });
+      console.log(`✅ Deleted approval workflow for flyer ${flyerId}`);
+    } catch (error) {
+      console.log(`ℹ️ No existing workflow to delete for flyer ${flyerId}`);
+    }
+
+    // Delete all approvals to allow fresh resubmission
+    const deletedCount = await this.prisma.approval.deleteMany({
+      where: { flyerId },
+    });
+    console.log(`✅ Deleted ${deletedCount.count} approval records for flyer ${flyerId}`);
+
     // Get all approvers and create approval requests
     const approvers = await this.prisma.user.findMany({
       where: { role: UserRole.approver },
     });
+    console.log(`👥 Found ${approvers.length} approvers`);
 
     // Create approval workflow
-    await this.approvalsService.createApprovalWorkflow(flyerId, 1); // Require 1 approval
+    const workflow = await this.approvalsService.createApprovalWorkflow(flyerId, 1);
+    console.log(`✅ Created approval workflow: ${workflow.id}`);
 
     // Create approval requests for all approvers
     for (const approver of approvers) {
-      await this.approvalsService.requestApproval(flyerId, approver.id);
+      try {
+        const approval = await this.approvalsService.requestApproval(flyerId, approver.id);
+        console.log(`✅ Created approval request for ${approver.email}: ${approval.id}`);
+      } catch (error) {
+        console.error(`❌ Failed to create approval for ${approver.email}:`, error.message);
+      }
     }
 
     return updated;
@@ -1082,20 +1163,20 @@ export class FlyersService {
       if (page.slots && Array.isArray(page.slots)) {
         page.slots.forEach((slot: any) => {
           if (slot.slotPosition >= 0 && slot.slotPosition < 8) {
-            // Format product with icon URLs if present
-            let formattedProduct = slot.product;
-            if (slot.product && slot.product.icons) {
-              formattedProduct = {
-                ...slot.product,
-                icons: slot.product.icons.map((productIcon: any) => ({
-                  id: productIcon.icon.id,
-                  name: productIcon.icon.name,
-                  imageUrl: `${baseUrl}/api/icons/${productIcon.icon.id}/image`,
-                  position: productIcon.position,
-                  icon: productIcon.icon, // Keep full icon object for PDF generation
-                })),
-              };
-            }
+            // Format product with icon URLs and convert Decimal types
+            const formattedProduct = slot.product ? {
+              ...slot.product,
+              price: slot.product.price ? parseFloat(slot.product.price.toString()) : 0,
+              originalPrice: slot.product.originalPrice ? parseFloat(slot.product.originalPrice.toString()) : null,
+              icons: slot.product.icons ? slot.product.icons.map((productIcon: any) => ({
+                id: productIcon.icon.id,
+                name: productIcon.icon.name,
+                imageUrl: `${baseUrl}/api/icons/${productIcon.icon.id}/image`,
+                isEnergyClass: productIcon.icon.isEnergyClass,
+                position: productIcon.position,
+                icon: productIcon.icon, // Keep full icon object for PDF generation
+              })) : [],
+            } : null;
 
             slotsArray[slot.slotPosition] = {
               type: slot.slotType,

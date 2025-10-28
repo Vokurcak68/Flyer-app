@@ -38,15 +38,6 @@ let ProductsController = class ProductsController {
         res.set('Cache-Control', 'public, max-age=31536000');
         res.send(imageData.imageData);
     }
-    async getIconImage(iconId, res) {
-        const icon = await this.productsService.findIcon(iconId);
-        if (!icon.iconData || !icon.iconMimeType) {
-            throw new common_1.NotFoundException('Icon image not found');
-        }
-        res.set('Content-Type', icon.iconMimeType);
-        res.set('Cache-Control', 'public, max-age=31536000');
-        res.send(icon.iconData);
-    }
     async findOne(id) {
         return this.productsService.findOne(id);
     }
@@ -55,12 +46,6 @@ let ProductsController = class ProductsController {
     }
     async remove(id, req) {
         return this.productsService.remove(id, req.user.userId);
-    }
-    async addIcon(id, addIconDto, req) {
-        return this.productsService.addIcon(id, addIconDto, req.user.userId);
-    }
-    async removeIcon(iconId, req) {
-        return this.productsService.removeIcon(iconId, req.user.userId);
     }
 };
 exports.ProductsController = ProductsController;
@@ -93,14 +78,6 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ProductsController.prototype, "getImage", null);
 __decorate([
-    (0, common_1.Get)('icons/:iconId/image'),
-    __param(0, (0, common_1.Param)('iconId')),
-    __param(1, (0, common_1.Res)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
-    __metadata("design:returntype", Promise)
-], ProductsController.prototype, "getIconImage", null);
-__decorate([
     (0, common_1.Get)(':id'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __param(0, (0, common_1.Param)('id')),
@@ -130,29 +107,6 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], ProductsController.prototype, "remove", null);
-__decorate([
-    (0, common_1.Post)(':id/icons'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)('supplier'),
-    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
-    __param(2, (0, common_1.Request)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, dto_1.AddIconDto, Object]),
-    __metadata("design:returntype", Promise)
-], ProductsController.prototype, "addIcon", null);
-__decorate([
-    (0, common_1.Delete)('icons/:iconId'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)('supplier'),
-    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    __param(0, (0, common_1.Param)('iconId')),
-    __param(1, (0, common_1.Request)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
-    __metadata("design:returntype", Promise)
-], ProductsController.prototype, "removeIcon", null);
 exports.ProductsController = ProductsController = __decorate([
     (0, common_1.Controller)('products'),
     __metadata("design:paramtypes", [products_service_1.ProductsService])

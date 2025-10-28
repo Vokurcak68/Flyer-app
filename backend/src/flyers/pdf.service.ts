@@ -337,9 +337,13 @@ export class PdfService {
             // Convert to PNG (handles WebP and other formats)
             const pngIconBuffer = await this.convertImageToPNG(iconBuffer);
 
+            // Energy class icons are 2x wider (48px width, 24px height)
+            // Regular icons are square (24px × 24px)
+            const iconWidth = icon.isEnergyClass ? iconSize * 2 : iconSize;
+
             // Draw icon with fit to maintain aspect ratio
             doc.image(pngIconBuffer, iconsX, iconsY, {
-              fit: [iconSize, iconSize],
+              fit: [iconWidth, iconSize],
               align: 'left',
               valign: 'top',
             });

@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { ProductsService } from './products.service';
-import { CreateProductDto, UpdateProductDto, ProductFilterDto, AddIconDto } from './dto';
+import { CreateProductDto, UpdateProductDto, ProductFilterDto } from './dto';
 export declare class ProductsController {
     private readonly productsService;
     constructor(productsService: ProductsService);
@@ -59,7 +59,6 @@ export declare class ProductsController {
         };
     }>;
     getImage(id: string, res: Response): Promise<void>;
-    getIconImage(iconId: string, res: Response): Promise<void>;
     findOne(id: string): Promise<{
         id: any;
         eanCode: any;
@@ -128,16 +127,5 @@ export declare class ProductsController {
         icons: any;
         createdAt: any;
         updatedAt: any;
-    }>;
-    addIcon(id: string, addIconDto: AddIconDto, req: any): Promise<{
-        id: string;
-        productId: string;
-        position: number;
-        iconType: import(".prisma/client").$Enums.IconType;
-        iconData: Buffer;
-        iconMimeType: string;
-    }>;
-    removeIcon(iconId: string, req: any): Promise<{
-        message: string;
     }>;
 }

@@ -73,7 +73,55 @@ export class ApprovalsService {
       throw new BadRequestException('This approval has already been processed');
     }
 
-    // Update approval
+    // Update workflow
+    if (status === ApprovalStatus.approved) {
+      // Update approval record
+      const updated = await this.prisma.approval.update({
+        where: {
+          flyerId_approverId: {
+            flyerId,
+            approverId,
+          },
+        },
+        data: {
+          status,
+          comment,
+          decidedAt: new Date(),
+        },
+      });
+
+      await this.updateApprovalWorkflow(flyerId);
+      return updated;
+    } else if (status === ApprovalStatus.rejected) {
+      // Update approval record first
+      const updated = await this.prisma.approval.update({
+        where: {
+          flyerId_approverId: {
+            flyerId,
+            approverId,
+          },
+        },
+        data: {
+          status,
+          comment,
+          decidedAt: new Date(),
+        },
+      });
+
+      // If rejected, update flyer status and isDraft back to true so supplier can edit it
+      await this.prisma.flyer.update({
+        where: { id: flyerId },
+        data: {
+          status: FlyerStatus.draft,
+          isDraft: true,
+          rejectionReason: comment || 'Rejected without comment',
+        },
+      });
+
+      return updated;
+    }
+
+    // Fallback (shouldn't reach here)
     const updated = await this.prisma.approval.update({
       where: {
         flyerId_approverId: {
@@ -87,20 +135,6 @@ export class ApprovalsService {
         decidedAt: new Date(),
       },
     });
-
-    // Update workflow
-    if (status === ApprovalStatus.approved) {
-      await this.updateApprovalWorkflow(flyerId);
-    } else if (status === ApprovalStatus.rejected) {
-      // If rejected, update flyer status
-      await this.prisma.flyer.update({
-        where: { id: flyerId },
-        data: {
-          status: FlyerStatus.rejected,
-          rejectionReason: comment,
-        },
-      });
-    }
 
     return updated;
   }
@@ -132,14 +166,16 @@ export class ApprovalsService {
       },
     });
 
-    // If workflow is complete, update flyer status
+    // If workflow is complete, update flyer status to active so end users can see it
     if (isComplete) {
       await this.prisma.flyer.update({
         where: { id: flyerId },
         data: {
-          status: FlyerStatus.approved,
+          status: FlyerStatus.active,
+          publishedAt: new Date(),
         },
       });
+      console.log(`✅ Flyer ${flyerId} approved and activated for end users`);
     }
   }
 
@@ -190,13 +226,30 @@ export class ApprovalsService {
                     product: {
                       include: {
                         brand: true,
-                        icons: true,
+                        icons: {
+                          include: {
+                            icon: true,
+                          },
+                          orderBy: {
+                            position: 'asc',
+                          },
+                        },
                       },
                     },
                     promoImage: true,
                   },
                   orderBy: {
                     slotPosition: 'asc',
+                  },
+                },
+                footerPromoImage: {
+                  select: {
+                    id: true,
+                    name: true,
+                    imageData: true,
+                    imageMimeType: true,
+                    supplierId: true,
+                    createdAt: true,
                   },
                 },
               },
@@ -256,26 +309,50 @@ export class ApprovalsService {
    * Transform flyer data to match frontend expected format
    */
   private transformFlyerForFrontend(flyer: any) {
+    // Handle case where flyer.pages might not exist or be empty
     if (!flyer.pages) {
       return flyer;
     }
 
-    const transformedPages = flyer.pages.map((page: any) => {
-      const maxProducts = this.getMaxProductsForLayout(page.layoutType);
-      const productsArray = new Array(maxProducts).fill(null);
+    const baseUrl = process.env.API_URL || 'http://localhost:4000';
 
-      if (page.products && Array.isArray(page.products)) {
-        page.products.forEach((flyerPageProduct: any) => {
-          if (flyerPageProduct.position < maxProducts) {
-            productsArray[flyerPageProduct.position] = flyerPageProduct.product;
+    // Transform pages to match frontend expected format
+    const transformedPages = flyer.pages.map((page: any) => {
+      // Create an array of 8 empty slots
+      const slotsArray = new Array(8).fill(null).map(() => ({ type: 'empty' }));
+
+      // Fill in slots at their positions (if slots exist)
+      if (page.slots && Array.isArray(page.slots)) {
+        page.slots.forEach((slot: any) => {
+          if (slot.slotPosition >= 0 && slot.slotPosition < 8) {
+            // Format product with icon URLs if present
+            let formattedProduct = slot.product;
+            if (slot.product && slot.product.icons) {
+              formattedProduct = {
+                ...slot.product,
+                icons: slot.product.icons.map((productIcon: any) => ({
+                  id: productIcon.icon.id,
+                  name: productIcon.icon.name,
+                  imageUrl: `${baseUrl}/api/icons/${productIcon.icon.id}/image`,
+                  position: productIcon.position,
+                  icon: productIcon.icon, // Keep full icon object for PDF generation
+                })),
+              };
+            }
+
+            slotsArray[slot.slotPosition] = {
+              type: slot.slotType,
+              product: formattedProduct,
+              promoImage: slot.promoImage || null,
+              promoSize: slot.promoSize || null,
+            } as any;
           }
         });
       }
 
       return {
         ...page,
-        products: productsArray,
-        maxProducts,
+        slots: slotsArray,
       };
     });
 
@@ -283,19 +360,5 @@ export class ApprovalsService {
       ...flyer,
       pages: transformedPages,
     };
-  }
-
-  /**
-   * Get max products for a layout type
-   */
-  private getMaxProductsForLayout(layoutType: string): number {
-    const layoutMap: Record<string, number> = {
-      products_8: 8,
-      products_6: 6,
-      products_4: 4,
-      promo_plus_4: 4,
-      promo_plus_2: 2,
-    };
-    return layoutMap[layoutType] || 8;
   }
 }

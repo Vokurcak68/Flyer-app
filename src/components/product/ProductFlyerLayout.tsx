@@ -36,7 +36,7 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
         {/* Left side: Image and prices (45%) */}
         <div className="flex flex-col" style={{ width: '45%' }}>
           {/* Product image with icons overlay */}
-          <div className="flex-1 mb-1 min-h-0 relative p-2">
+          <div className="flex-1 mb-1 min-h-0 relative" style={{ padding: '3px' }}>
             {/* Product image */}
             <img
               src={getProductImageUrl(product.id)}
@@ -47,15 +47,21 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
               }}
             />
 
-            {/* Icons overlaid on left side - vertically aligned */}
+            {/* Icons overlaid on left side - vertically aligned and evenly distributed from top to bottom of image area */}
             {product.icons && product.icons.length > 0 && (
-              <div className="absolute left-2 top-2 flex flex-col gap-0">
+              <div
+                className="absolute left-0 flex flex-col justify-between"
+                style={{
+                  top: '8px',
+                  height: 'calc(100% - 16px)'
+                }}
+              >
                 {product.icons.slice(0, 4).map((icon) => (
                   <img
                     key={icon.id}
                     src={icon.imageUrl}
                     alt={icon.name}
-                    className="w-6 h-6 object-contain"
+                    className={`h-6 object-contain ${icon.isEnergyClass ? 'w-12' : 'w-6'}`}
                     title={icon.name}
                   />
                 ))}
@@ -67,14 +73,14 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
           <div className="space-y-px flex-none pb-2">
             {product.originalPrice && product.originalPrice > product.price && (
               <div className="flex gap-0.5">
-                {/* Black box with white price - 60% width */}
-                <div className="bg-black text-white px-0.5 py-1.5 flex items-center justify-center" style={{ width: '60%' }}>
-                  <div className="text-[0.75rem] font-bold leading-none">
+                {/* Black box with white price - 50% width (ends at middle of image) */}
+                <div className="bg-black text-white px-0.5 py-1.5 flex items-center justify-center" style={{ width: '50%' }}>
+                  <div className="text-[0.625rem] font-bold leading-none" style={{ fontFamily: '"Kometa Unicase", "Arial Black", "Arial Narrow Bold", "Impact", sans-serif', fontWeight: 900 }}>
                     {Math.round(product.originalPrice).toLocaleString('cs-CZ')} Kč
                   </div>
                 </div>
-                {/* Gray box with label - 40% width */}
-                <div className="bg-gray-200 text-gray-700 px-0.5 py-1 flex items-center justify-start" style={{ width: '40%' }}>
+                {/* Gray box with label - fills remaining space */}
+                <div className="bg-gray-200 text-gray-700 px-0.5 py-1 flex items-center justify-start flex-1">
                   <div className="text-[0.5rem] leading-none">
                     Doporučená<br/>cena
                   </div>
@@ -83,14 +89,14 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
             )}
             {/* Red box with white price + gray label */}
             <div className="flex gap-0.5">
-              {/* Red box with white price - 60% width */}
-              <div className="bg-red-600 text-white px-0.5 py-1.5 flex items-center justify-center" style={{ width: '60%' }}>
-                <div className="text-[0.75rem] font-bold leading-none">
+              {/* Red box with white price - 50% width (ends at middle of image) */}
+              <div className="bg-red-600 text-white px-0.5 py-1.5 flex items-center justify-center" style={{ width: '50%' }}>
+                <div className="text-[0.625rem] font-bold leading-none" style={{ fontFamily: '"Kometa Unicase", "Arial Black", "Arial Narrow Bold", "Impact", sans-serif', fontWeight: 900 }}>
                   {Math.round(product.price).toLocaleString('cs-CZ')} Kč
                 </div>
               </div>
-              {/* Gray box with label - 40% width */}
-              <div className="bg-gray-200 text-gray-700 px-0.5 py-1 flex items-center justify-start" style={{ width: '40%' }}>
+              {/* Gray box with label - fills remaining space */}
+              <div className="bg-gray-200 text-gray-700 px-0.5 py-1 flex items-center justify-start flex-1">
                 <div className="text-[0.5rem] leading-none">
                   Akční cena<br/>{product.originalPrice && product.originalPrice > product.price ? 'Oresi' : ''}
                 </div>
@@ -101,7 +107,7 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
 
         {/* Right side: Description - full height (55%) */}
         {product.description && (
-          <div className="bg-white overflow-hidden p-1.5" style={{ width: '55%' }}>
+          <div className="bg-white overflow-hidden" style={{ width: '55%', padding: '1.5px' }}>
             <div className="text-[0.55rem] leading-tight whitespace-pre-wrap overflow-y-auto h-full">
               {product.description}
             </div>

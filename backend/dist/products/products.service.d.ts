@@ -1,5 +1,5 @@
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateProductDto, UpdateProductDto, ProductFilterDto, AddIconDto } from './dto';
+import { CreateProductDto, UpdateProductDto, ProductFilterDto } from './dto';
 export declare class ProductsService {
     private prisma;
     constructor(prisma: PrismaService);
@@ -126,31 +126,12 @@ export declare class ProductsService {
         createdAt: any;
         updatedAt: any;
     }>;
-    addIcon(productId: string, addIconDto: AddIconDto, userId: string): Promise<{
-        id: string;
-        productId: string;
-        position: number;
-        iconType: import(".prisma/client").$Enums.IconType;
-        iconData: Buffer;
-        iconMimeType: string;
-    }>;
-    findIcon(iconId: string): Promise<{
-        id: string;
-        productId: string;
-        position: number;
-        iconType: import(".prisma/client").$Enums.IconType;
-        iconData: Buffer;
-        iconMimeType: string;
-    }>;
-    removeIcon(iconId: string, userId: string): Promise<{
-        message: string;
-    }>;
     getProductImageData(id: string): Promise<{
         imageData: Buffer<ArrayBufferLike>;
         imageMimeType: string;
     }>;
     private validateEanCodeUniqueness;
     private validateUserBrandAccess;
-    private validateIcons;
+    private validateIconIds;
     private formatProductResponse;
 }

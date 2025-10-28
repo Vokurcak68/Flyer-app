@@ -38,10 +38,10 @@ export declare class BrandsController {
             name: string;
             supplierId: string;
             brandId: string;
-            eanCode: string;
-            description: string | null;
             imageData: Buffer;
             imageMimeType: string;
+            eanCode: string;
+            description: string | null;
             price: import("@prisma/client/runtime/library").Decimal;
             originalPrice: import("@prisma/client/runtime/library").Decimal | null;
         }[];

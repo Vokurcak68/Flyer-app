@@ -14,6 +14,7 @@ export const IconsManagementPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     imageFile: null as File | null,
+    isEnergyClass: false,
   });
 
   const { data: icons = [], isLoading } = useQuery({
@@ -22,7 +23,7 @@ export const IconsManagementPage: React.FC = () => {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: { name: string; imageData: string; imageMimeType: string }) =>
+    mutationFn: (data: { name: string; imageData: string; imageMimeType: string; isEnergyClass: boolean }) =>
       iconsService.createIcon(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['icons'] });
@@ -61,7 +62,7 @@ export const IconsManagementPage: React.FC = () => {
   });
 
   const resetForm = () => {
-    setFormData({ name: '', imageFile: null });
+    setFormData({ name: '', imageFile: null, isEnergyClass: false });
     setEditingIcon(null);
   };
 
@@ -82,7 +83,10 @@ export const IconsManagementPage: React.FC = () => {
 
     if (editingIcon) {
       // Update
-      const data: any = { name: formData.name };
+      const data: any = {
+        name: formData.name,
+        isEnergyClass: formData.isEnergyClass,
+      };
 
       if (formData.imageFile) {
         const reader = new FileReader();
@@ -110,6 +114,7 @@ export const IconsManagementPage: React.FC = () => {
           name: formData.name,
           imageData: base64.split(',')[1],
           imageMimeType: formData.imageFile!.type,
+          isEnergyClass: formData.isEnergyClass,
         });
       };
       reader.readAsDataURL(formData.imageFile);
@@ -118,7 +123,11 @@ export const IconsManagementPage: React.FC = () => {
 
   const handleEdit = (icon: Icon) => {
     setEditingIcon(icon);
-    setFormData({ name: icon.name, imageFile: null });
+    setFormData({
+      name: icon.name,
+      imageFile: null,
+      isEnergyClass: icon.isEnergyClass || false,
+    });
     setIsDialogOpen(true);
   };
 
@@ -213,6 +222,18 @@ export const IconsManagementPage: React.FC = () => {
               />
             </div>
           )}
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="isEnergyClass"
+              checked={formData.isEnergyClass}
+              onChange={(e) => setFormData({ ...formData, isEnergyClass: e.target.checked })}
+              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <label htmlFor="isEnergyClass" className="text-sm font-medium">
+              Energetická třída (zobrazí se 2× šířeji)
+            </label>
+          </div>
           <div className="flex gap-2">
             <Button type="submit" className="flex-1">
               {editingIcon ? 'Aktualizovat' : 'Vytvořit'}

@@ -62,6 +62,47 @@ let ApprovalsService = class ApprovalsService {
         if (approval.status !== client_1.ApprovalStatus.pending) {
             throw new common_1.BadRequestException('This approval has already been processed');
         }
+        if (status === client_1.ApprovalStatus.approved) {
+            const updated = await this.prisma.approval.update({
+                where: {
+                    flyerId_approverId: {
+                        flyerId,
+                        approverId,
+                    },
+                },
+                data: {
+                    status,
+                    comment,
+                    decidedAt: new Date(),
+                },
+            });
+            await this.updateApprovalWorkflow(flyerId);
+            return updated;
+        }
+        else if (status === client_1.ApprovalStatus.rejected) {
+            const updated = await this.prisma.approval.update({
+                where: {
+                    flyerId_approverId: {
+                        flyerId,
+                        approverId,
+                    },
+                },
+                data: {
+                    status,
+                    comment,
+                    decidedAt: new Date(),
+                },
+            });
+            await this.prisma.flyer.update({
+                where: { id: flyerId },
+                data: {
+                    status: client_1.FlyerStatus.draft,
+                    isDraft: true,
+                    rejectionReason: comment || 'Rejected without comment',
+                },
+            });
+            return updated;
+        }
         const updated = await this.prisma.approval.update({
             where: {
                 flyerId_approverId: {
@@ -75,18 +116,6 @@ let ApprovalsService = class ApprovalsService {
                 decidedAt: new Date(),
             },
         });
-        if (status === client_1.ApprovalStatus.approved) {
-            await this.updateApprovalWorkflow(flyerId);
-        }
-        else if (status === client_1.ApprovalStatus.rejected) {
-            await this.prisma.flyer.update({
-                where: { id: flyerId },
-                data: {
-                    status: client_1.FlyerStatus.rejected,
-                    rejectionReason: comment,
-                },
-            });
-        }
         return updated;
     }
     async updateApprovalWorkflow(flyerId) {
@@ -113,9 +142,11 @@ let ApprovalsService = class ApprovalsService {
             await this.prisma.flyer.update({
                 where: { id: flyerId },
                 data: {
-                    status: client_1.FlyerStatus.approved,
+                    status: client_1.FlyerStatus.active,
+                    publishedAt: new Date(),
                 },
             });
+            console.log(`✅ Flyer ${flyerId} approved and activated for end users`);
         }
     }
     async getApprovals(flyerId) {
@@ -154,13 +185,30 @@ let ApprovalsService = class ApprovalsService {
                                         product: {
                                             include: {
                                                 brand: true,
-                                                icons: true,
+                                                icons: {
+                                                    include: {
+                                                        icon: true,
+                                                    },
+                                                    orderBy: {
+                                                        position: 'asc',
+                                                    },
+                                                },
                                             },
                                         },
                                         promoImage: true,
                                     },
                                     orderBy: {
                                         slotPosition: 'asc',
+                                    },
+                                },
+                                footerPromoImage: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        imageData: true,
+                                        imageMimeType: true,
+                                        supplierId: true,
+                                        createdAt: true,
                                     },
                                 },
                             },
@@ -213,36 +261,43 @@ let ApprovalsService = class ApprovalsService {
         if (!flyer.pages) {
             return flyer;
         }
+        const baseUrl = process.env.API_URL || 'http://localhost:4000';
         const transformedPages = flyer.pages.map((page) => {
-            const maxProducts = this.getMaxProductsForLayout(page.layoutType);
-            const productsArray = new Array(maxProducts).fill(null);
-            if (page.products && Array.isArray(page.products)) {
-                page.products.forEach((flyerPageProduct) => {
-                    if (flyerPageProduct.position < maxProducts) {
-                        productsArray[flyerPageProduct.position] = flyerPageProduct.product;
+            const slotsArray = new Array(8).fill(null).map(() => ({ type: 'empty' }));
+            if (page.slots && Array.isArray(page.slots)) {
+                page.slots.forEach((slot) => {
+                    if (slot.slotPosition >= 0 && slot.slotPosition < 8) {
+                        let formattedProduct = slot.product;
+                        if (slot.product && slot.product.icons) {
+                            formattedProduct = {
+                                ...slot.product,
+                                icons: slot.product.icons.map((productIcon) => ({
+                                    id: productIcon.icon.id,
+                                    name: productIcon.icon.name,
+                                    imageUrl: `${baseUrl}/api/icons/${productIcon.icon.id}/image`,
+                                    position: productIcon.position,
+                                    icon: productIcon.icon,
+                                })),
+                            };
+                        }
+                        slotsArray[slot.slotPosition] = {
+                            type: slot.slotType,
+                            product: formattedProduct,
+                            promoImage: slot.promoImage || null,
+                            promoSize: slot.promoSize || null,
+                        };
                     }
                 });
             }
             return {
                 ...page,
-                products: productsArray,
-                maxProducts,
+                slots: slotsArray,
             };
         });
         return {
             ...flyer,
             pages: transformedPages,
         };
-    }
-    getMaxProductsForLayout(layoutType) {
-        const layoutMap = {
-            products_8: 8,
-            products_6: 6,
-            products_4: 4,
-            promo_plus_4: 4,
-            promo_plus_2: 2,
-        };
-        return layoutMap[layoutType] || 8;
     }
 };
 exports.ApprovalsService = ApprovalsService;

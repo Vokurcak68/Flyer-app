@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, IsBoolean, IsOptional } from 'class-validator';
 
 export class CreateIconDto {
   @IsNotEmpty()
@@ -12,4 +12,8 @@ export class CreateIconDto {
   @IsNotEmpty()
   @IsString()
   imageMimeType: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isEnergyClass?: boolean;
 }

@@ -370,6 +370,7 @@ export class ProductsService {
         id: pi.icon.id,
         name: pi.icon.name,
         imageUrl: `${baseUrl}/api/icons/${pi.icon.id}/image`,
+        isEnergyClass: pi.icon.isEnergyClass,
         position: pi.position,
       })) : [],
       createdAt: product.createdAt,

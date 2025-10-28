@@ -17,6 +17,7 @@ const approvals_module_1 = require("./approvals/approvals.module");
 const products_module_1 = require("./products/products.module");
 const brands_module_1 = require("./brands/brands.module");
 const promo_images_module_1 = require("./promo-images/promo-images.module");
+const icons_module_1 = require("./icons/icons.module");
 const users_module_1 = require("./users/users.module");
 const upload_service_1 = require("./common/upload.service");
 const upload_controller_1 = require("./common/upload.controller");
@@ -33,6 +34,7 @@ exports.AppModule = AppModule = __decorate([
             products_module_1.ProductsModule,
             brands_module_1.BrandsModule,
             promo_images_module_1.PromoImagesModule,
+            icons_module_1.IconsModule,
             flyers_module_1.FlyersModule,
             verification_module_1.VerificationModule,
             approvals_module_1.ApprovalsModule,

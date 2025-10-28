@@ -33,6 +33,10 @@ let FlyersController = class FlyersController {
     findAll(filterDto, req) {
         return this.flyersService.findAll(filterDto, req.user.userId, req.user.role);
     }
+    async getActiveFlyers(req) {
+        const activeFlyers = await this.flyersService.getActiveFlyers(req.user.userId, req.user.role);
+        return activeFlyers;
+    }
     findOne(id, req) {
         return this.flyersService.findOne(id, req.user.userId, req.user.role);
     }
@@ -104,6 +108,14 @@ __decorate([
     __metadata("design:paramtypes", [dto_1.FlyerFilterDto, Object]),
     __metadata("design:returntype", void 0)
 ], FlyersController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('active'),
+    (0, roles_decorator_1.Roles)('end_user'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], FlyersController.prototype, "getActiveFlyers", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),

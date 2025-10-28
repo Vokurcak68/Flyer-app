@@ -1,9 +1,3 @@
-declare class ProductIconDto {
-    iconType: 'energy_class' | 'feature';
-    iconData: string;
-    iconMimeType: string;
-    position: number;
-}
 export declare class CreateProductDto {
     eanCode: string;
     name: string;
@@ -13,6 +7,5 @@ export declare class CreateProductDto {
     price: number;
     originalPrice?: number;
     brandId: string;
-    icons?: ProductIconDto[];
+    iconIds?: string[];
 }
-export {};

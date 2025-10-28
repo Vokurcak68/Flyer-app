@@ -168,7 +168,7 @@ export const ProductFormPage: React.FC = () => {
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-2 gap-8">
+        <div className="grid gap-8" style={{ gridTemplateColumns: '1fr 2fr' }}>
           <div className="space-y-6 bg-white rounded-lg shadow p-6">
             <Input
               label="EAN kód *"
@@ -334,33 +334,34 @@ export const ProductFormPage: React.FC = () => {
             <p className="text-sm text-gray-600 mb-4">
               Takto bude produkt vypadat v jednom slotu letáku - zobrazeno ve skutečné velikosti.
             </p>
-            <div className="border-2 border-gray-300 rounded-lg bg-gray-50 p-4 flex justify-center">
-              {/* Show actual slot size: ~333px width, 210px height */}
-              <div className="bg-white rounded shadow overflow-hidden" style={{ width: '333px', height: '210px' }}>
-                <ProductFlyerLayout
-                  product={{
-                    id: id || 'preview',
-                    name: formData.name || 'Název produktu',
-                    description: formData.description || 'Zde se zobrazí popis produktu.\n\nPopis může obsahovat několik řádků s detaily o produktu, specifikacemi, výhodami a dalšími informacemi.',
-                    price: formData.price,
-                    originalPrice: formData.originalPrice,
-                    eanCode: formData.ean,
-                    brandId: formData.brandId,
-                    supplierId: '',
-                    icons: formData.iconIds.map((iconId, index) => {
-                      const icon = icons.find(i => i.id === iconId);
-                      return icon ? {
-                        id: icon.id,
-                        name: icon.name,
-                        imageUrl: icon.imageUrl,
-                        position: index,
-                      } : null;
-                    }).filter(Boolean) as any,
-                    createdAt: '',
-                    updatedAt: '',
-                  } as Product}
-                  customImageUrl={imagePreview}
-                />
+            <div className="border-2 border-gray-300 rounded-lg bg-gray-50 p-4 flex justify-center items-center" style={{ minHeight: '500px' }}>
+              {/* Show actual slot size: 346px width, 241px height (matches FlyerPageView calculations), zoomed to 150% */}
+              <div className="bg-white rounded shadow overflow-hidden" style={{ width: '346px', height: '241px', zoom: '150%' }}>
+                  <ProductFlyerLayout
+                    product={{
+                      id: id || 'preview',
+                      name: formData.name || 'Název produktu',
+                      description: formData.description || 'Zde se zobrazí popis produktu.\n\nPopis může obsahovat několik řádků s detaily o produktu, specifikacemi, výhodami a dalšími informacemi.',
+                      price: formData.price,
+                      originalPrice: formData.originalPrice,
+                      eanCode: formData.ean,
+                      brandId: formData.brandId,
+                      supplierId: '',
+                      icons: formData.iconIds.map((iconId, index) => {
+                        const icon = icons.find(i => i.id === iconId);
+                        return icon ? {
+                          id: icon.id,
+                          name: icon.name,
+                          imageUrl: icon.imageUrl,
+                          isEnergyClass: icon.isEnergyClass,
+                          position: index,
+                        } : null;
+                      }).filter(Boolean) as any,
+                      createdAt: '',
+                      updatedAt: '',
+                    } as Product}
+                    customImageUrl={imagePreview}
+                  />
               </div>
             </div>
           </div>

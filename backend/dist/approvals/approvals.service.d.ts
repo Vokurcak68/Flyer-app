@@ -84,5 +84,4 @@ export declare class ApprovalsService {
         decidedAt: Date | null;
     })[]>;
     private transformFlyerForFrontend;
-    private getMaxProductsForLayout;
 }
