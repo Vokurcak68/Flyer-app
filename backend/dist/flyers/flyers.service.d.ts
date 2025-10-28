@@ -29,9 +29,9 @@ export declare class FlyersService {
             product: {
                 brand: {
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    name: string;
                     logoData: Buffer | null;
                     logoMimeType: string | null;
                 };
@@ -43,23 +43,23 @@ export declare class FlyersService {
                 }[];
             } & {
                 id: string;
-                isActive: boolean;
+                name: string;
                 createdAt: Date;
                 updatedAt: Date;
-                name: string;
                 supplierId: string;
+                isActive: boolean;
                 brandId: string;
-                imageData: Buffer;
-                imageMimeType: string;
                 eanCode: string;
                 description: string | null;
+                imageData: Buffer;
+                imageMimeType: string;
                 price: import("@prisma/client/runtime/library").Decimal;
                 originalPrice: import("@prisma/client/runtime/library").Decimal | null;
             };
             promoImage: {
                 id: string;
-                createdAt: Date;
                 name: string;
+                createdAt: Date;
                 supplierId: string;
                 brandId: string | null;
                 imageData: Buffer;
@@ -79,8 +79,8 @@ export declare class FlyersService {
         })[];
     } & {
         id: string;
-        flyerId: string;
         pageNumber: number;
+        flyerId: string;
         footerPromoImageId: string | null;
     }>;
     removePage(pageId: string, userId: string): Promise<{
@@ -90,9 +90,9 @@ export declare class FlyersService {
         product: {
             brand: {
                 id: string;
+                name: string;
                 createdAt: Date;
                 updatedAt: Date;
-                name: string;
                 logoData: Buffer | null;
                 logoMimeType: string | null;
             };
@@ -104,16 +104,16 @@ export declare class FlyersService {
             }[];
         } & {
             id: string;
-            isActive: boolean;
+            name: string;
             createdAt: Date;
             updatedAt: Date;
-            name: string;
             supplierId: string;
+            isActive: boolean;
             brandId: string;
-            imageData: Buffer;
-            imageMimeType: string;
             eanCode: string;
             description: string | null;
+            imageData: Buffer;
+            imageMimeType: string;
             price: import("@prisma/client/runtime/library").Decimal;
             originalPrice: import("@prisma/client/runtime/library").Decimal | null;
         };
@@ -135,9 +135,9 @@ export declare class FlyersService {
         product: {
             brand: {
                 id: string;
+                name: string;
                 createdAt: Date;
                 updatedAt: Date;
-                name: string;
                 logoData: Buffer | null;
                 logoMimeType: string | null;
             };
@@ -149,23 +149,23 @@ export declare class FlyersService {
             }[];
         } & {
             id: string;
-            isActive: boolean;
+            name: string;
             createdAt: Date;
             updatedAt: Date;
-            name: string;
             supplierId: string;
+            isActive: boolean;
             brandId: string;
-            imageData: Buffer;
-            imageMimeType: string;
             eanCode: string;
             description: string | null;
+            imageData: Buffer;
+            imageMimeType: string;
             price: import("@prisma/client/runtime/library").Decimal;
             originalPrice: import("@prisma/client/runtime/library").Decimal | null;
         };
         promoImage: {
             id: string;
-            createdAt: Date;
             name: string;
+            createdAt: Date;
             supplierId: string;
             brandId: string | null;
             imageData: Buffer;
@@ -189,18 +189,18 @@ export declare class FlyersService {
                 product: {
                     brand: {
                         id: string;
+                        name: string;
                         createdAt: Date;
                         updatedAt: Date;
-                        name: string;
                         logoData: Buffer | null;
                         logoMimeType: string | null;
                     };
                     icons: ({
                         icon: {
                             id: string;
+                            name: string;
                             createdAt: Date;
                             updatedAt: Date;
-                            name: string;
                             imageData: Buffer;
                             imageMimeType: string;
                             isEnergyClass: boolean;
@@ -213,23 +213,23 @@ export declare class FlyersService {
                     })[];
                 } & {
                     id: string;
-                    isActive: boolean;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    name: string;
                     supplierId: string;
+                    isActive: boolean;
                     brandId: string;
-                    imageData: Buffer;
-                    imageMimeType: string;
                     eanCode: string;
                     description: string | null;
+                    imageData: Buffer;
+                    imageMimeType: string;
                     price: import("@prisma/client/runtime/library").Decimal;
                     originalPrice: import("@prisma/client/runtime/library").Decimal | null;
                 };
                 promoImage: {
                     id: string;
-                    createdAt: Date;
                     name: string;
+                    createdAt: Date;
                     supplierId: string;
                     brandId: string | null;
                     imageData: Buffer;
@@ -249,19 +249,16 @@ export declare class FlyersService {
             })[];
         } & {
             id: string;
-            flyerId: string;
             pageNumber: number;
+            flyerId: string;
             footerPromoImageId: string | null;
         })[];
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         name: string;
-        status: import(".prisma/client").$Enums.FlyerStatus;
-        supplierId: string;
         validFrom: Date | null;
         validTo: Date | null;
+        status: import(".prisma/client").$Enums.FlyerStatus;
         isDraft: boolean;
         rejectionReason: string | null;
         pdfData: Buffer | null;
@@ -269,7 +266,10 @@ export declare class FlyersService {
         lastEditedAt: Date;
         autoSaveVersion: number;
         completionPercentage: number;
+        createdAt: Date;
+        updatedAt: Date;
         publishedAt: Date | null;
+        supplierId: string;
     }>;
     getPreview(flyerId: string, userId: string, userRole: UserRole): Promise<{
         id: any;

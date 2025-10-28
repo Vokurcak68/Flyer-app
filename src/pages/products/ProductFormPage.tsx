@@ -203,17 +203,68 @@ export const ProductFormPage: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Popis produktu (vpravo v letáku)
+                Popis produktu (max. 15 vizuálních řádků)
               </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows={8}
-                placeholder="• Bullet point 1&#10;• Bullet point 2&#10;• Specifikace&#10;• Výhody produktu"
-              />
+              <div className="relative border-2 border-gray-300 rounded-lg overflow-hidden bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200" style={{ width: '375px', maxWidth: '100%' }}>
+                <div
+                  className="relative"
+                  style={{
+                    height: 'calc(1rem * 1.5 * 15 + 16px)', // 15 lines with normal readable font + padding
+                  }}
+                >
+                  {/* Bullets layer with invisible text for proper line wrapping */}
+                  <div
+                    className="absolute inset-0 pointer-events-none overflow-hidden text-base"
+                    style={{
+                      zIndex: 1,
+                      padding: '8px',
+                      lineHeight: '1.5rem'
+                    }}
+                  >
+                    {(formData.description ? formData.description.split('\n') : ['']).map((line, index) => (
+                      <div key={index} className="flex items-start" style={{ gap: '8px' }}>
+                        <span className="text-black font-bold" style={{ width: '16px', flexShrink: 0 }}>•</span>
+                        <span className="flex-1 invisible" style={{ wordBreak: 'break-word' }}>{line || ' '}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Actual textarea - with padding to align with bullets */}
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => {
+                      // Temporarily set value to check if it would overflow
+                      const textarea = e.target;
+                      const newValue = e.target.value;
+                      const oldValue = formData.description;
+
+                      textarea.value = newValue;
+
+                      // Check if scrollHeight exceeds clientHeight (means overflow)
+                      if (textarea.scrollHeight > textarea.clientHeight) {
+                        // Revert - text doesn't fit
+                        textarea.value = oldValue;
+                        e.preventDefault();
+                        return;
+                      }
+
+                      // Accept new value
+                      setFormData({ ...formData, description: newValue });
+                    }}
+                    className="absolute inset-0 w-full h-full resize-none bg-transparent focus:outline-none text-base overflow-hidden"
+                    style={{
+                      padding: '8px 8px 8px calc(8px + 16px + 8px)',
+                      zIndex: 2,
+                      caretColor: 'black',
+                      lineHeight: '1.5rem',
+                      wordBreak: 'break-word'
+                    }}
+                    placeholder="Píšete zde... každý řádek začne bulletem"
+                  />
+                </div>
+              </div>
               <p className="mt-1 text-xs text-gray-500">
-                Tento text se zobrazí vpravo vedle obrázku v letáku. Použijte bullet points (•) pro přehlednější formátování.
+                Každý řádek automaticky začíná bullet pointem (•). Stiskněte Enter pro nový řádek. Zobrazí se max. 15 vizuálních řádků.
               </p>
             </div>
 

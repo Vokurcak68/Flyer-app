@@ -312,14 +312,39 @@ let PdfService = PdfService_1 = class PdfService {
         if (product.description) {
             const rightX = x + leftWidth;
             const rightWidth = width * 0.55;
+            const maxVisualLines = 15;
+            const lineHeight = 11;
+            const maxHeight = maxVisualLines * lineHeight;
+            const lines = product.description.split('\n');
+            let descY = leftY;
+            let visualLinesUsed = 0;
             doc.fontSize(8.8)
                 .font('Arial')
-                .fillColor('#000000')
-                .text(product.description, rightX + 1.5, leftY, {
-                width: rightWidth - 3,
-                height: contentHeight - 3,
-                lineGap: 1,
-            });
+                .fillColor('#000000');
+            for (const line of lines) {
+                if (visualLinesUsed >= maxVisualLines)
+                    break;
+                const textWidth = rightWidth - 14;
+                const textHeight = doc.heightOfString(line || ' ', {
+                    width: textWidth,
+                    lineGap: 0,
+                });
+                const linesForThisText = Math.ceil(textHeight / lineHeight);
+                if (visualLinesUsed + linesForThisText > maxVisualLines) {
+                    break;
+                }
+                doc.text('•', rightX + 1.5, descY, {
+                    width: 10,
+                    continued: false,
+                });
+                doc.text(line, rightX + 1.5 + 10, descY, {
+                    width: textWidth,
+                    lineGap: 0,
+                    continued: false,
+                });
+                descY += textHeight;
+                visualLinesUsed += linesForThisText;
+            }
         }
         doc.fillColor('#000');
     }

@@ -105,11 +105,21 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
           </div>
         </div>
 
-        {/* Right side: Description - full height (55%) */}
+        {/* Right side: Description - full height (55%), max 15 visual lines */}
         {product.description && (
           <div className="bg-white overflow-hidden" style={{ width: '55%', padding: '1.5px' }}>
-            <div className="text-[0.55rem] leading-tight whitespace-pre-wrap overflow-y-auto h-full">
-              {product.description}
+            <div
+              className="text-[0.55rem] leading-tight overflow-hidden"
+              style={{
+                maxHeight: 'calc(0.55rem * 1.25 * 15)', // 15 visual lines: font-size * line-height * lines
+              }}
+            >
+              {product.description.split('\n').map((line, index) => (
+                <div key={index} className="flex items-start gap-1">
+                  <span className="flex-shrink-0">•</span>
+                  <span className="flex-1 break-words">{line}</span>
+                </div>
+              ))}
             </div>
           </div>
         )}

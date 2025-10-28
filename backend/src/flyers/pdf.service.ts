@@ -434,19 +434,56 @@ export class PdfService {
          lineGap: -1,
        });
 
-    // Right side (55% width): Description
+    // Right side (55% width): Description with bullet points
+    // Max 15 VISUAL lines (text can wrap, each wrap counts as a line)
     if (product.description) {
       const rightX = x + leftWidth;
       const rightWidth = width * 0.55;
+      const maxVisualLines = 15;
+      const lineHeight = 11; // ~8.8px font + 1.25 line height
+      const maxHeight = maxVisualLines * lineHeight;
+
+      const lines = product.description.split('\n');
+
+      let descY = leftY;
+      let visualLinesUsed = 0;
 
       doc.fontSize(8.8) // text-[0.55rem] = ~8.8px
          .font('Arial')
-         .fillColor('#000000')
-         .text(product.description, rightX + 1.5, leftY, {
-           width: rightWidth - 3,
-           height: contentHeight - 3,
-           lineGap: 1, // leading-tight
-         });
+         .fillColor('#000000');
+
+      for (const line of lines) {
+        if (visualLinesUsed >= maxVisualLines) break;
+
+        // Calculate how many visual lines this text will take
+        const textWidth = rightWidth - 14;
+        const textHeight = doc.heightOfString(line || ' ', {
+          width: textWidth,
+          lineGap: 0,
+        });
+        const linesForThisText = Math.ceil(textHeight / lineHeight);
+
+        // Check if we have space for this line
+        if (visualLinesUsed + linesForThisText > maxVisualLines) {
+          break; // Stop, won't fit
+        }
+
+        // Draw bullet point
+        doc.text('•', rightX + 1.5, descY, {
+          width: 10,
+          continued: false,
+        });
+
+        // Draw line text
+        doc.text(line, rightX + 1.5 + 10, descY, {
+          width: textWidth,
+          lineGap: 0,
+          continued: false,
+        });
+
+        descY += textHeight;
+        visualLinesUsed += linesForThisText;
+      }
     }
 
     // Reset color
