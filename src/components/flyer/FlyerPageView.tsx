@@ -78,26 +78,38 @@ export const FlyerPageView: React.FC<FlyerPageViewProps> = ({
     return `${API_URL}/promo-images/${id}/image`;
   };
 
-  // KLÍČOVÉ: A4 rozměry a pevná výška řádku
+  // KLÍČOVÉ: A4 rozměry a layout
   const containerWidth = 700; // A4 šířka
-  const containerHeight = 990; // A4 výška (poměr 1:1.414)
+  const containerHeight = 1020;
   const footerHeight = 60;
   const padding = 32; // 2× p-4
-  const gap = 16; // gap-4
+  const gapSize = 8; // gap-2 = 8px
 
-  // Výška pro grid
-  const availableHeight = containerHeight - padding - (isFirstPage ? footerHeight + 8 : 0);
-  const rowHeight = Math.floor((availableHeight - (3 * gap)) / 4); // 4 řádky, 3 mezery
+  // Na stránce 1: první řada menší (footer zabírá místo), ostatní 3 řady normální
+  // Na ostatních stránkách: všechny 4 řady stejně vysoké
+  let firstRowHeight: number;
+  let normalRowHeight: number;
+
+  if (isFirstPage) {
+    // Normální výška řádku (stejná jako na stránce 2)
+    normalRowHeight = Math.floor((containerHeight - padding - 3 * gapSize) / 4);
+    // První řada = zbývající místo po odečtení footeru a 3 normálních řad
+    firstRowHeight = containerHeight - padding - footerHeight - gapSize - (3 * normalRowHeight) - (3 * gapSize);
+  } else {
+    // Všechny řady stejně vysoké
+    normalRowHeight = Math.floor((containerHeight - padding - 3 * gapSize) / 4);
+    firstRowHeight = normalRowHeight;
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
       <div className="border-2 border-gray-300 rounded-lg p-4 bg-white" style={{ width: `${containerWidth}px`, height: `${containerHeight}px` }}>
         <div className="flex flex-col gap-2 h-full">
-          {/* Grid s FIXNÍ výškou řádků */}
+          {/* Grid s FIXNÍ výškou řádků - první řada může být menší na stránce 1 */}
           <div
-            className="grid grid-cols-2 gap-4"
+            className="grid grid-cols-2 gap-2"
             style={{
-              gridTemplateRows: `repeat(4, ${rowHeight}px)`,
+              gridTemplateRows: `${firstRowHeight}px ${normalRowHeight}px ${normalRowHeight}px ${normalRowHeight}px`,
             }}
           >
           {page.slots.map((slot, index) => {

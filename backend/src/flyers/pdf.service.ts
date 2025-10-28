@@ -107,8 +107,8 @@ export class PdfService {
   /**
    * Render 2x4 slot grid (8 slots total)
    * Layout: 2 columns x 4 rows
-   * Full bleed layout - no margins, no gaps
-   * Page 1: Has 2cm footer for promo image
+   * Layout with small gaps between slots (3 points ≈ 1mm)
+   * Page 1: Has 2cm footer for promo image - only first row (2 slots) is smaller
    */
   private async renderSlotGrid(doc: any, page: any) {
     const startX = 0;
@@ -119,16 +119,32 @@ export class PdfService {
 
     const cols = 2;
     const rows = 4;
-    const gap = 0; // No gaps between slots
+    const gap = 3; // Small gap between slots (3 points ≈ 1mm)
 
     // Page 1 has footer, other pages don't
     const isFirstPage = page.pageNumber === 1;
-    const availableHeight = isFirstPage ? pageHeight - footerHeight : pageHeight;
 
-    const slotWidth = pageWidth / cols;
-    const slotHeight = availableHeight / rows;
+    // Calculate slot dimensions accounting for gaps
+    // Total width = slotWidth * cols + gap * (cols - 1)
+    const slotWidth = (pageWidth - gap * (cols - 1)) / cols;
 
-    this.logger.log(`Rendering 2x4 grid (page ${page.pageNumber}): slotWidth=${slotWidth}, slotHeight=${slotHeight}, hasFooter=${isFirstPage}`);
+    // On page 1: first row is smaller (footer takes space), other 3 rows are normal
+    // On other pages: all 4 rows are equal
+    let firstRowHeight: number;
+    let normalRowHeight: number;
+
+    if (isFirstPage) {
+      // Normal row height (same as page 2)
+      normalRowHeight = (pageHeight - gap * (rows - 1)) / rows;
+      // Available space for first row = total - footer - 3 normal rows - gaps
+      firstRowHeight = pageHeight - footerHeight - (3 * normalRowHeight) - gap * (rows - 1);
+    } else {
+      // All rows equal height
+      normalRowHeight = (pageHeight - gap * (rows - 1)) / rows;
+      firstRowHeight = normalRowHeight;
+    }
+
+    this.logger.log(`Rendering 2x4 grid (page ${page.pageNumber}): slotWidth=${slotWidth}, firstRowHeight=${firstRowHeight}, normalRowHeight=${normalRowHeight}, hasFooter=${isFirstPage}`);
 
     // Get slots for this page (8 slots indexed 0-7)
     const slots = page.slots || new Array(8).fill(null);
@@ -153,8 +169,21 @@ export class PdfService {
       const slot = slots[position];
       const row = Math.floor(position / cols);
       const col = position % cols;
+
+      // Calculate position and height based on row
       const x = startX + col * (slotWidth + gap);
-      const y = startY + row * (slotHeight + gap);
+      let y: number;
+      let slotHeight: number;
+
+      if (row === 0) {
+        // First row
+        y = startY;
+        slotHeight = firstRowHeight;
+      } else {
+        // Other rows (1, 2, 3)
+        y = startY + firstRowHeight + gap + (row - 1) * (normalRowHeight + gap);
+        slotHeight = normalRowHeight;
+      }
 
       if (!slot || slot.type === 'empty') {
         // Render empty slot
@@ -168,7 +197,13 @@ export class PdfService {
         spannedSlots.forEach(pos => renderedSlots.add(pos));
 
         const promoWidth = this.getPromoWidth(slot.promoSize, slotWidth);
-        const promoHeight = this.getPromoHeight(slot.promoSize, slotHeight);
+        const promoHeight = this.getPromoHeight(
+          slot.promoSize,
+          position,
+          firstRowHeight,
+          normalRowHeight,
+          gap
+        );
 
         await this.renderPromoSlot(doc, x, y, promoWidth, promoHeight, slot.promoImage);
       }
@@ -176,7 +211,7 @@ export class PdfService {
 
     // Render footer promo on page 1 if present
     if (isFirstPage && page.footerPromoImage) {
-      const footerY = availableHeight;
+      const footerY = pageHeight - footerHeight;
       await this.renderPromoSlot(doc, 0, footerY, pageWidth, footerHeight, page.footerPromoImage);
       this.logger.log(`Rendered footer promo on page 1: ${page.footerPromoImage.name}`);
     }
@@ -221,13 +256,13 @@ export class PdfService {
 
     // Left side (45% width): Image + prices - matches React layout
     const leftWidth = width * 0.45;
-    const leftX = x + 6; // p-2 = 8px, but using 6px for tighter fit
-    const leftY = contentY + 6;
+    const leftX = x + 3; // p-1 = 4px, using 3px for PDF
+    const leftY = contentY + 5; // Increased top padding by 2px (was 3px, now 5px)
 
     // Image area - flex-1 takes remaining space after prices
     // Prices take roughly: icon (12px if present) + 2 price boxes (20px each) + gaps = ~56px
     const pricesReservedHeight = 56;
-    const imageHeight = contentHeight - pricesReservedHeight - 12; // 12px total padding
+    const imageHeight = contentHeight - pricesReservedHeight - 8; // 8px total padding (5px top + 3px bottom)
 
     if (product.imageData) {
       try {
@@ -319,10 +354,10 @@ export class PdfService {
     }
 
     // Prices area (below image)
-    const pricesY = leftY + imageHeight + 4; // mb-1 = 4px gap
+    const pricesY = leftY + imageHeight + 7; // Increased gap by 3px (was 4px, now 7px)
     const priceBoxWidth = leftWidth; // Full width - no horizontal padding
     const priceBoxHeight = 20; // Increased height (was 16)
-    const priceBoxWidthPercent = priceBoxWidth * 0.6; // 60% for price
+    const priceBoxWidthPercent = priceBoxWidth * 0.5; // 50% for price (ends at middle)
     const labelBoxWidthPercent = priceBoxWidth * 0.4; // 40% for label
     const pricesX = x; // Start from left edge of product
 
@@ -335,14 +370,14 @@ export class PdfService {
     // Original price (if exists) - Black box + Gray label
     let currentPriceY = pricesY;
     if (product.originalPrice && parseFloat(product.originalPrice) > parseFloat(product.price)) {
-      // Black box with white price (60% width) - NO rounded corners
+      // Black box with white price (50% width - ends at middle) - NO rounded corners
       doc.rect(pricesX, currentPriceY, priceBoxWidthPercent, priceBoxHeight)
          .fill('#000000');
 
-      doc.fontSize(12) // text-[0.75rem] = 12px
+      doc.fontSize(10) // text-[0.625rem] = 10px
          .font('Arial-Bold')
          .fillColor('#FFFFFF')
-         .text(formatPrice(parseFloat(product.originalPrice)), pricesX, currentPriceY + (priceBoxHeight - 12) / 2, {
+         .text(formatPrice(parseFloat(product.originalPrice)), pricesX, currentPriceY + (priceBoxHeight - 10) / 2, {
            width: priceBoxWidthPercent,
            align: 'center',
            valign: 'center',
@@ -369,14 +404,14 @@ export class PdfService {
       ? 'Akční cena\nOresi'
       : 'Akční cena';
 
-    // Red box with white price (60% width) - NO rounded corners
+    // Red box with white price (50% width - ends at middle) - NO rounded corners
     doc.rect(pricesX, currentPriceY, priceBoxWidthPercent, priceBoxHeight)
        .fill('#DC2626');
 
-    doc.fontSize(12) // text-[0.75rem] = 12px
+    doc.fontSize(10) // text-[0.625rem] = 10px
        .font('Arial-Bold')
        .fillColor('#FFFFFF')
-       .text(formatPrice(parseFloat(product.price)), pricesX, currentPriceY + (priceBoxHeight - 12) / 2, {
+       .text(formatPrice(parseFloat(product.price)), pricesX, currentPriceY + (priceBoxHeight - 10) / 2, {
          width: priceBoxWidthPercent,
          align: 'center',
          valign: 'center',
@@ -403,9 +438,9 @@ export class PdfService {
       doc.fontSize(8.8) // text-[0.55rem] = ~8.8px
          .font('Arial')
          .fillColor('#000000')
-         .text(product.description, rightX + 6, leftY, {
-           width: rightWidth - 12,
-           height: contentHeight - 12,
+         .text(product.description, rightX + 1.5, leftY, {
+           width: rightWidth - 3,
+           height: contentHeight - 3,
            lineGap: 1, // leading-tight
          });
     }
@@ -485,35 +520,56 @@ export class PdfService {
   }
 
   /**
-   * Get promo width based on size (no gaps in full bleed layout)
+   * Get promo width based on size (accounting for gaps between slots)
    */
   private getPromoWidth(promoSize: string, slotWidth: number): number {
+    const gap = 3; // Must match gap in renderSlotGrid
     switch (promoSize) {
       case 'single':
         return slotWidth;
       case 'horizontal':
       case 'square':
       case 'full_page':
-        return slotWidth * 2; // 2 columns, no gap
+        return slotWidth * 2 + gap; // 2 columns + 1 gap between them
       default:
         return slotWidth;
     }
   }
 
   /**
-   * Get promo height based on size (no gaps in full bleed layout)
+   * Get promo height based on size (accounting for gaps between slots and variable row heights)
    */
-  private getPromoHeight(promoSize: string, slotHeight: number): number {
+  private getPromoHeight(
+    promoSize: string,
+    anchorPosition: number,
+    firstRowHeight: number,
+    normalRowHeight: number,
+    gap: number
+  ): number {
+    const startRow = Math.floor(anchorPosition / 2);
+
     switch (promoSize) {
       case 'single':
       case 'horizontal':
-        return slotHeight;
+        // Only spans 1 row - use appropriate height
+        return startRow === 0 ? firstRowHeight : normalRowHeight;
+
       case 'square':
-        return slotHeight * 2; // 2 rows, no gap
+        // Spans 2 rows
+        if (startRow === 0) {
+          // Starts at row 0: firstRowHeight + gap + normalRowHeight
+          return firstRowHeight + gap + normalRowHeight;
+        } else {
+          // Starts at row 1 or later: 2 normal rows
+          return normalRowHeight * 2 + gap;
+        }
+
       case 'full_page':
-        return slotHeight * 4; // 4 rows, no gap
+        // Spans all 4 rows: first row + 3 normal rows + gaps
+        return firstRowHeight + normalRowHeight * 3 + gap * 3;
+
       default:
-        return slotHeight;
+        return startRow === 0 ? firstRowHeight : normalRowHeight;
     }
   }
 
