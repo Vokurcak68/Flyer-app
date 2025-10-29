@@ -113,29 +113,29 @@ export const ProductsListPage: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredProducts.map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4">
                     <div className="flex items-center">
                       {product.id && (
                         <>
                           <img
                             src={getProductImageUrl(product.id)}
                             alt={product.name}
-                            className="w-12 h-12 object-contain mr-4"
+                            className="w-12 h-12 object-contain mr-4 flex-shrink-0"
                             onError={(e) => {
                               // If image doesn't exist, show placeholder
                               (e.target as HTMLImageElement).style.display = 'none';
                               (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
                             }}
                           />
-                          <div className="hidden w-12 h-12 bg-gray-200 rounded mr-4 flex items-center justify-center text-xs text-gray-400">
+                          <div className="hidden w-12 h-12 bg-gray-200 rounded mr-4 flex-shrink-0 flex items-center justify-center text-xs text-gray-400">
                             Bez foto
                           </div>
                         </>
                       )}
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium text-gray-900 truncate">{product.name}</div>
                         {product.description && (
-                          <div className="text-sm text-gray-500 line-clamp-1">{product.description}</div>
+                          <div className="text-sm text-gray-500 line-clamp-2 max-w-md">{product.description}</div>
                         )}
                       </div>
                     </div>

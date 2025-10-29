@@ -356,6 +356,7 @@ export class ProductsService {
       originalPrice: product.originalPrice ? parseFloat(product.originalPrice.toString()) : null,
       isActive: product.isActive,
       brandId: product.brandId,
+      brandName: product.brand?.name,
       brand: product.brand ? {
         id: product.brand.id,
         name: product.brand.name,

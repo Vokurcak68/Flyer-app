@@ -24,17 +24,22 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
 
   return (
     <div className={`bg-white h-full flex flex-col overflow-hidden ${className}`}>
-      {/* Black header with product name */}
-      <div className="bg-black text-white px-2 py-1.5 flex-none flex items-center justify-center">
-        <h4 className="font-bold text-xs leading-tight line-clamp-2 text-center">
+      {/* Black header with brand and product name */}
+      <div className="bg-black text-white px-2 py-1.5 flex-none flex items-center justify-center gap-2">
+        {product.brandName && (
+          <span className="font-bold text-[0.7rem] leading-tight" style={{ fontFamily: '"Vodafone Rg", "Arial Black", sans-serif' }}>
+            {product.brandName}
+          </span>
+        )}
+        <h4 className="text-[0.7rem] leading-tight line-clamp-2 text-center" style={{ fontFamily: '"Vodafone Rg", "Arial", sans-serif', fontWeight: 'normal' }}>
           {product.name}
         </h4>
       </div>
 
       {/* Main content area */}
       <div className="flex flex-1 min-h-0">
-        {/* Left side: Image and prices (45%) */}
-        <div className="flex flex-col" style={{ width: '45%' }}>
+        {/* Left side: Image and prices (49%) */}
+        <div className="flex flex-col" style={{ width: '49%' }}>
           {/* Product image with icons overlay */}
           <div className="flex-1 mb-1 min-h-0 relative" style={{ padding: '3px' }}>
             {/* Product image */}
@@ -75,13 +80,13 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
               <div className="flex gap-0.5">
                 {/* Black box with white price - 50% width (ends at middle of image) */}
                 <div className="bg-black text-white px-0.5 py-1.5 flex items-center justify-center" style={{ width: '50%' }}>
-                  <div className="text-[0.625rem] font-bold leading-none" style={{ fontFamily: '"Kometa Unicase", "Arial Black", "Arial Narrow Bold", "Impact", sans-serif', fontWeight: 900 }}>
+                  <div className="text-[0.75rem] leading-none" style={{ fontFamily: '"Vodafone Rg", "Arial Narrow", "Arial", sans-serif', fontWeight: 600, transform: 'scaleX(1.2)' }}>
                     {Math.round(product.originalPrice).toLocaleString('cs-CZ')} Kč
                   </div>
                 </div>
                 {/* Gray box with label - fills remaining space */}
-                <div className="bg-gray-200 text-gray-700 px-0.5 py-1 flex items-center justify-start flex-1">
-                  <div className="text-[0.5rem] leading-none">
+                <div className="bg-gray-200 text-gray-700 py-1 flex items-center justify-start flex-1" style={{ paddingLeft: '6px' }}>
+                  <div className="text-[0.5rem] leading-none" style={{ fontFamily: '"Vodafone Rg", "Arial", sans-serif', transform: 'scaleX(1.1)', transformOrigin: 'left' }}>
                     Doporučená<br/>cena
                   </div>
                 </div>
@@ -91,13 +96,13 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
             <div className="flex gap-0.5">
               {/* Red box with white price - 50% width (ends at middle of image) */}
               <div className="bg-red-600 text-white px-0.5 py-1.5 flex items-center justify-center" style={{ width: '50%' }}>
-                <div className="text-[0.625rem] font-bold leading-none" style={{ fontFamily: '"Kometa Unicase", "Arial Black", "Arial Narrow Bold", "Impact", sans-serif', fontWeight: 900 }}>
+                <div className="text-[0.75rem] leading-none" style={{ fontFamily: '"Vodafone Rg", "Arial Narrow", "Arial", sans-serif', fontWeight: 600, transform: 'scaleX(1.2)' }}>
                   {Math.round(product.price).toLocaleString('cs-CZ')} Kč
                 </div>
               </div>
               {/* Gray box with label - fills remaining space */}
-              <div className="bg-gray-200 text-gray-700 px-0.5 py-1 flex items-center justify-start flex-1">
-                <div className="text-[0.5rem] leading-none">
+              <div className="bg-gray-200 text-gray-700 py-1 flex items-center justify-start flex-1" style={{ paddingLeft: '6px' }}>
+                <div className="text-[0.5rem] leading-none" style={{ fontFamily: '"Vodafone Rg", "Arial", sans-serif', transform: 'scaleX(1.1)', transformOrigin: 'left' }}>
                   Akční cena<br/>{product.originalPrice && product.originalPrice > product.price ? 'Oresi' : ''}
                 </div>
               </div>
@@ -105,13 +110,15 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
           </div>
         </div>
 
-        {/* Right side: Description - full height (55%), max 15 visual lines */}
+        {/* Right side: Description - full height (51%), max 15 visual lines */}
         {product.description && (
-          <div className="bg-white overflow-hidden" style={{ width: '55%', padding: '1.5px' }}>
+          <div className="bg-white overflow-hidden" style={{ width: '51%', padding: '1.5px', paddingLeft: '8px', paddingTop: '6px' }}>
             <div
-              className="text-[0.55rem] leading-tight overflow-hidden"
+              className="text-[0.55rem] overflow-hidden"
               style={{
-                maxHeight: 'calc(0.55rem * 1.25 * 15)', // 15 visual lines: font-size * line-height * lines
+                maxHeight: 'calc(0.55rem * 1.35 * 16)', // 16 visual lines: font-size * line-height * lines
+                lineHeight: '1.35',
+                fontFamily: '"Vodafone Rg", "Arial", sans-serif'
               }}
             >
               {product.description.split('\n').map((line, index) => (

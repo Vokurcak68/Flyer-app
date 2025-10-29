@@ -29,7 +29,7 @@ export const DroppableSlot: React.FC<DroppableSlotProps> = ({ id, slot, onRemove
   return (
     <div
       ref={setNodeRef}
-      className={`border-2 border-dashed rounded-lg p-4 h-full transition-colors ${
+      className={`border-2 border-dashed rounded-lg p-1 h-full transition-colors ${
         !isEmpty
           ? 'border-green-300 bg-white'
           : isOver

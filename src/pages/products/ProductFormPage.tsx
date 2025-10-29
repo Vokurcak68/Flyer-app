@@ -203,13 +203,13 @@ export const ProductFormPage: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Popis produktu (max. 15 vizuálních řádků)
+                Popis produktu (max. 16 vizuálních řádků)
               </label>
-              <div className="relative border-2 border-gray-300 rounded-lg overflow-hidden bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200" style={{ width: '375px', maxWidth: '100%' }}>
+              <div className="relative border-2 border-gray-300 rounded-lg overflow-hidden bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200" style={{ width: '350px', maxWidth: '100%' }}>
                 <div
                   className="relative"
                   style={{
-                    height: 'calc(1rem * 1.5 * 15 + 16px)', // 15 lines with normal readable font + padding
+                    height: 'calc(1rem * 1.5 * 16 + 16px)', // 16 lines with normal readable font + padding
                   }}
                 >
                   {/* Bullets layer with invisible text for proper line wrapping */}
@@ -264,7 +264,7 @@ export const ProductFormPage: React.FC = () => {
                 </div>
               </div>
               <p className="mt-1 text-xs text-gray-500">
-                Každý řádek automaticky začíná bullet pointem (•). Stiskněte Enter pro nový řádek. Zobrazí se max. 15 vizuálních řádků.
+                Každý řádek automaticky začíná bullet pointem (•). Stiskněte Enter pro nový řádek. Zobrazí se max. 16 vizuálních řádků.
               </p>
             </div>
 
@@ -386,8 +386,8 @@ export const ProductFormPage: React.FC = () => {
               Takto bude produkt vypadat v jednom slotu letáku - zobrazeno ve skutečné velikosti.
             </p>
             <div className="border-2 border-gray-300 rounded-lg bg-gray-50 p-4 flex justify-center items-center" style={{ minHeight: '500px' }}>
-              {/* Show actual slot size: 346px width, 241px height (matches FlyerPageView calculations), zoomed to 150% */}
-              <div className="bg-white rounded shadow overflow-hidden" style={{ width: '346px', height: '241px', zoom: '150%' }}>
+              {/* Show actual slot size: 322px width, 233px height (calculated from FlyerPageView: (700-32-8)/2 - 8px padding = 322x233), zoomed to 150% */}
+              <div className="bg-white rounded shadow overflow-hidden" style={{ width: '322px', height: '233px', zoom: '150%' }}>
                   <ProductFlyerLayout
                     product={{
                       id: id || 'preview',
@@ -397,6 +397,7 @@ export const ProductFormPage: React.FC = () => {
                       originalPrice: formData.originalPrice,
                       eanCode: formData.ean,
                       brandId: formData.brandId,
+                      brandName: brands.find(b => b.id === formData.brandId)?.name,
                       supplierId: '',
                       icons: formData.iconIds.map((iconId, index) => {
                         const icon = icons.find(i => i.id === iconId);

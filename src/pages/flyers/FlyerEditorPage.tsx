@@ -12,6 +12,7 @@ import { CompletionBar } from '../../components/ui/CompletionBar';
 import { FlyerPageView } from '../../components/flyer/FlyerPageView';
 import { DraggableProduct } from '../../components/flyer/DraggableProduct';
 import { DraggablePromoImage } from '../../components/flyer/DraggablePromoImage';
+import { RejectionHistory } from '../../components/flyer/RejectionHistory';
 import { Product, FlyerPage, FlyerSlot } from '../../types';
 import { calculateCompletionPercentage } from '../../utils/helpers';
 import { useAutoSave } from '../../hooks/useAutoSave';
@@ -158,17 +159,12 @@ export const FlyerEditorPage: React.FC = () => {
       let pdfBlob: Blob;
 
       if (flyer?.status === 'draft') {
+        // For drafts, always generate new PDF
         await flyersService.generatePdf(id);
         pdfBlob = await flyersService.getPdfBlob(id, true);
       } else {
-        try {
-          pdfBlob = await flyersService.getPdfBlob(id, false);
-        } catch (error: any) {
-          if (error.response?.status === 404) {
-            await flyersService.generatePdf(id);
-            pdfBlob = await flyersService.getPdfBlob(id, false);
-          } else throw error;
-        }
+        // For non-drafts (pending_approval, approved, active), only show saved PDF
+        pdfBlob = await flyersService.getPdfBlob(id, false);
       }
 
       const blobUrl = URL.createObjectURL(pdfBlob);
@@ -180,7 +176,7 @@ export const FlyerEditorPage: React.FC = () => {
         setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
       }
     } catch (error) {
-      alert('Chyba při generování PDF');
+      alert('Chyba při zobrazení PDF');
     } finally {
       setIsGeneratingPdf(false);
     }
@@ -324,7 +320,7 @@ export const FlyerEditorPage: React.FC = () => {
             <div className="flex space-x-2">
               <Button variant="outline" onClick={handleViewPdf} isLoading={isGeneratingPdf} disabled={isNew}>
                 <FileText className="w-4 h-4 mr-2" />
-                PDF
+                {flyer?.status === 'draft' ? 'Generuj PDF' : 'Zobrazit PDF'}
               </Button>
               <Button variant="outline" onClick={() => saveDraftMutation.mutate(flyerData)} isLoading={saveDraftMutation.isPending}>
                 <Save className="w-4 h-4 mr-2" />
@@ -354,6 +350,9 @@ export const FlyerEditorPage: React.FC = () => {
 
           <CompletionBar percentage={calculateCompletionPercentage(flyerData.pages)} />
         </div>
+
+        {/* Rejection History */}
+        <RejectionHistory approvals={flyer?.approvals} rejectionReason={flyer?.rejectionReason} />
 
         {/* Page Navigation */}
         <div className="bg-white rounded-lg shadow p-4 mb-6">

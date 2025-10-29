@@ -56,10 +56,14 @@ export class PdfService {
           autoFirstPage: false,
         });
 
-        // Register Arial font for Czech characters support
+        // Register fonts for Czech characters support
         try {
           const arialPath = 'C:\\Windows\\Fonts\\arial.ttf';
           const arialBoldPath = 'C:\\Windows\\Fonts\\arialbd.ttf';
+          const arialNarrowPath = 'C:\\Windows\\Fonts\\arialn.ttf';
+          const vodafoneRgPath = 'C:\\Windows\\Fonts\\VodafoneRg.ttf';
+          const vodafoneRgBdPath = 'C:\\Windows\\Fonts\\VodafoneRgBd.ttf';
+          const vodafoneLtPath = 'C:\\Windows\\Fonts\\VodafoneLt.ttf';
 
           if (fs.existsSync(arialPath)) {
             doc.registerFont('Arial', arialPath);
@@ -67,8 +71,20 @@ export class PdfService {
           if (fs.existsSync(arialBoldPath)) {
             doc.registerFont('Arial-Bold', arialBoldPath);
           }
+          if (fs.existsSync(arialNarrowPath)) {
+            doc.registerFont('Arial-Narrow', arialNarrowPath);
+          }
+          if (fs.existsSync(vodafoneRgPath)) {
+            doc.registerFont('Vodafone-Rg', vodafoneRgPath);
+          }
+          if (fs.existsSync(vodafoneRgBdPath)) {
+            doc.registerFont('Vodafone-Rg-Bold', vodafoneRgBdPath);
+          }
+          if (fs.existsSync(vodafoneLtPath)) {
+            doc.registerFont('Vodafone-Lt', vodafoneLtPath);
+          }
         } catch (error) {
-          this.logger.warn(`Could not register Arial font: ${error.message}`);
+          this.logger.warn(`Could not register fonts: ${error.message}`);
         }
 
         // Collect PDF data in buffer
@@ -238,30 +254,59 @@ export class PdfService {
     doc.rect(x, y, width, headerHeight)
        .fill('#000000');
 
-    // Product name in header - text-xs = 12px font size, centered
-    doc.fontSize(9) // Smaller font for better fit in header
-       .font('Arial-Bold')
-       .fillColor('#FFFFFF')
-       .text(product.name, x + padding, y + 6, { // 6px top padding (py-1.5)
-         width: width - (padding * 2),
-         height: headerHeight - 12, // 6px top + 6px bottom padding
-         align: 'center', // Center align text
-         ellipsis: true,
-         lineBreak: true,
-       });
+    // Brand and product name in header - text-[0.7rem] = ~9px font size, centered
+    // Brand is bold, name is regular, with space between them
+    doc.fontSize(9); // 0.7rem ≈ 9px
+
+    if (product.brandName) {
+      // Calculate widths for centering both brand and name together
+      const brandWidth = doc.font('Vodafone-Rg-Bold').widthOfString(product.brandName);
+      const spaceWidth = doc.widthOfString(' ');
+      const nameWidth = doc.font('Vodafone-Rg').widthOfString(product.name);
+      const totalWidth = brandWidth + spaceWidth + nameWidth;
+
+      // Center the combined text
+      const startX = x + (width - totalWidth) / 2;
+      const textY = y + 6; // 6px top padding (py-1.5)
+
+      // Draw brand (bold)
+      doc.font('Vodafone-Rg-Bold')
+         .fillColor('#FFFFFF')
+         .text(product.brandName, startX, textY, {
+           continued: true,
+         });
+
+      // Draw space
+      doc.text(' ', { continued: true });
+
+      // Draw name (regular)
+      doc.font('Vodafone-Rg')
+         .text(product.name);
+    } else {
+      // No brand, just center the name
+      doc.font('Vodafone-Rg')
+         .fillColor('#FFFFFF')
+         .text(product.name, x + padding, y + 6, {
+           width: width - (padding * 2),
+           height: headerHeight - 12,
+           align: 'center',
+           ellipsis: true,
+           lineBreak: true,
+         });
+    }
 
     // Content area below header
     const contentY = y + headerHeight;
     const contentHeight = height - headerHeight;
 
-    // Left side (45% width): Image + prices - matches React layout
-    const leftWidth = width * 0.45;
+    // Left side (49% width): Image + prices - matches React layout
+    const leftWidth = width * 0.49;
     const leftX = x + 3; // p-1 = 4px, using 3px for PDF
-    const leftY = contentY + 5; // Increased top padding by 2px (was 3px, now 5px)
+    const leftY = contentY + 2; // Reduced top padding to 2px
 
     // Image area - flex-1 takes remaining space after prices
     // Prices take roughly: icon (12px if present) + 2 price boxes (20px each) + gaps = ~56px
-    const pricesReservedHeight = 56;
+    const pricesReservedHeight = 45; // Reduced from 56 to make image larger
     const imageHeight = contentHeight - pricesReservedHeight - 8; // 8px total padding (5px top + 3px bottom)
 
     if (product.imageData) {
@@ -283,7 +328,8 @@ export class PdfService {
         // Convert to PNG (handles WebP and other formats)
         const pngBuffer = await this.convertImageToPNG(imageBuffer);
 
-        const imageWidth = leftWidth - 12;
+        // Make image square (same width as height)
+        const imageWidth = imageHeight;
         doc.image(pngBuffer, leftX, leftY, {
           fit: [imageWidth, imageHeight],
           align: 'center',
@@ -378,10 +424,10 @@ export class PdfService {
       doc.rect(pricesX, currentPriceY, priceBoxWidthPercent, priceBoxHeight)
          .fill('#000000');
 
-      doc.fontSize(10) // text-[0.625rem] = 10px
-         .font('Arial-Bold')
+      doc.fontSize(12) // text-[0.75rem] = 12px
+         .font('Vodafone-Rg-Bold')
          .fillColor('#FFFFFF')
-         .text(formatPrice(parseFloat(product.originalPrice)), pricesX, currentPriceY + (priceBoxHeight - 10) / 2, {
+         .text(formatPrice(parseFloat(product.originalPrice)), pricesX, currentPriceY + (priceBoxHeight - 12) / 2, {
            width: priceBoxWidthPercent,
            align: 'center',
            valign: 'center',
@@ -392,10 +438,10 @@ export class PdfService {
          .fill('#E5E7EB');
 
       doc.fontSize(6.5) // Smaller font to prevent wrapping
-         .font('Arial')
+         .font('Vodafone-Rg')
          .fillColor('#374151')
-         .text('Doporučená\ncena', pricesX + priceBoxWidthPercent + 2 + 2, currentPriceY + 3, {
-           width: labelBoxWidthPercent - 6,
+         .text('Doporučená\ncena', pricesX + priceBoxWidthPercent + 2 + 6, currentPriceY + 3, {
+           width: labelBoxWidthPercent - 8,
            align: 'left',
            lineGap: -1,
          });
@@ -412,10 +458,10 @@ export class PdfService {
     doc.rect(pricesX, currentPriceY, priceBoxWidthPercent, priceBoxHeight)
        .fill('#DC2626');
 
-    doc.fontSize(10) // text-[0.625rem] = 10px
-       .font('Arial-Bold')
+    doc.fontSize(12) // text-[0.75rem] = 12px
+       .font('Vodafone-Rg-Bold')
        .fillColor('#FFFFFF')
-       .text(formatPrice(parseFloat(product.price)), pricesX, currentPriceY + (priceBoxHeight - 10) / 2, {
+       .text(formatPrice(parseFloat(product.price)), pricesX, currentPriceY + (priceBoxHeight - 12) / 2, {
          width: priceBoxWidthPercent,
          align: 'center',
          valign: 'center',
@@ -426,58 +472,58 @@ export class PdfService {
        .fill('#E5E7EB');
 
     doc.fontSize(6.5) // Smaller font to prevent wrapping
-       .font('Arial')
+       .font('Vodafone-Rg')
        .fillColor('#374151')
-       .text(promoText, pricesX + priceBoxWidthPercent + 2 + 2, currentPriceY + 3, {
-         width: labelBoxWidthPercent - 6,
+       .text(promoText, pricesX + priceBoxWidthPercent + 2 + 6, currentPriceY + 3, {
+         width: labelBoxWidthPercent - 8,
          align: 'left',
          lineGap: -1,
        });
 
-    // Right side (55% width): Description with bullet points
-    // Max 15 VISUAL lines (text can wrap, each wrap counts as a line)
+    // Right side: Description with bullet points
+    // Max 16 VISUAL lines (text can wrap, each wrap counts as a line)
     if (product.description) {
-      const rightX = x + leftWidth;
-      const rightWidth = width * 0.55;
-      const maxVisualLines = 15;
-      const lineHeight = 11; // ~8.8px font + 1.25 line height
+      // Start right after the square image + 4px padding
+      const rightX = leftX + imageHeight + 4;
+      const rightWidth = width * 0.51;
+      const maxVisualLines = 16; // Exactly 16 visual lines
+      const lineHeight = 8.8 * 1.7; // ~8.8px font * 1.7 line height ≈ 14.96px
       const maxHeight = maxVisualLines * lineHeight;
 
-      const lines = product.description.split('\n');
+      const lines = product.description.trim().split('\n');
 
-      let descY = leftY;
+      let descY = leftY; // No additional paddingTop, use leftY directly
       let visualLinesUsed = 0;
 
       doc.fontSize(8.8) // text-[0.55rem] = ~8.8px
-         .font('Arial')
+         .font('Vodafone-Rg')
          .fillColor('#000000');
 
       for (const line of lines) {
-        if (visualLinesUsed >= maxVisualLines) break;
-
         // Calculate how many visual lines this text will take
-        const textWidth = rightWidth - 14;
+        // Text starts at rightX + 10, so available width is from there to end of slot
+        const textWidth = (x + width) - (rightX + 10);
         const textHeight = doc.heightOfString(line || ' ', {
           width: textWidth,
-          lineGap: 0,
+          lineGap: 1,
         });
-        const linesForThisText = Math.ceil(textHeight / lineHeight);
+        const linesForThisText = Math.floor(textHeight / lineHeight); // Use floor to be more lenient
 
-        // Check if we have space for this line
+        // Allow up to 16 lines - stop only if we would clearly exceed
         if (visualLinesUsed + linesForThisText > maxVisualLines) {
           break; // Stop, won't fit
         }
 
         // Draw bullet point
-        doc.text('•', rightX + 1.5, descY, {
+        doc.text('•', rightX, descY, {
           width: 10,
           continued: false,
         });
 
         // Draw line text
-        doc.text(line, rightX + 1.5 + 10, descY, {
+        doc.text(line, rightX + 10, descY, {
           width: textWidth,
-          lineGap: 0,
+          lineGap: 1,
           continued: false,
         });
 

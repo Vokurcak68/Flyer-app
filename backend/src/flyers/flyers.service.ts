@@ -1168,6 +1168,7 @@ export class FlyersService {
               ...slot.product,
               price: slot.product.price ? parseFloat(slot.product.price.toString()) : 0,
               originalPrice: slot.product.originalPrice ? parseFloat(slot.product.originalPrice.toString()) : null,
+              brandName: slot.product.brand?.name,
               icons: slot.product.icons ? slot.product.icons.map((productIcon: any) => ({
                 id: productIcon.icon.id,
                 name: productIcon.icon.name,

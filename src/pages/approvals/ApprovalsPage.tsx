@@ -41,7 +41,9 @@ export const ApprovalsPage: React.FC = () => {
 
   const handleApprove = async () => {
     if (selectedApproval) {
-      await approveMutation.mutateAsync(selectedApproval.id);
+      // Backend expects approval ID in format: flyerId_approverId
+      const approvalId = `${selectedApproval.flyerId}_${selectedApproval.approverId}`;
+      await approveMutation.mutateAsync(approvalId);
     }
   };
 
@@ -51,26 +53,17 @@ export const ApprovalsPage: React.FC = () => {
       alert('Prosím uveďte důvod zamítnutí');
       return;
     }
-    await rejectMutation.mutateAsync(selectedApproval.id);
+    // Backend expects approval ID in format: flyerId_approverId
+    const approvalId = `${selectedApproval.flyerId}_${selectedApproval.approverId}`;
+    await rejectMutation.mutateAsync(approvalId);
   };
 
   const handleViewPdf = async (flyerId: string) => {
     try {
       setIsGeneratingPdf(true);
 
-      // Try to get existing PDF first
-      let pdfBlob: Blob;
-      try {
-        pdfBlob = await flyersService.getPdfBlob(flyerId);
-      } catch (error: any) {
-        // If PDF doesn't exist (404), generate it first
-        if (error.response?.status === 404) {
-          await flyersService.generatePdf(flyerId);
-          pdfBlob = await flyersService.getPdfBlob(flyerId);
-        } else {
-          throw error;
-        }
-      }
+      // For approval stage, only show the saved PDF (generated during submission)
+      const pdfBlob = await flyersService.getPdfBlob(flyerId);
 
       // Create blob URL and open in new window
       const blobUrl = URL.createObjectURL(pdfBlob);
@@ -87,7 +80,7 @@ export const ApprovalsPage: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Chyba při zobrazení PDF:', error);
-      alert('Nepodařilo se zobrazit PDF náhled. Ujistěte se, že leták má alespoň jednu stránku.');
+      alert('Nepodařilo se zobrazit PDF náhled.');
     } finally {
       setIsGeneratingPdf(false);
     }
