@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Save, ArrowLeft, Upload } from 'lucide-react';
 import { productsService } from '../../services/productsService';
 import { brandsService } from '../../services/brandsService';
+import { categoriesService } from '../../services/categoriesService';
 import iconsService from '../../services/iconsService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -21,6 +22,8 @@ export const ProductFormPage: React.FC = () => {
     name: '',
     description: '',
     brandId: '',
+    categoryId: '',
+    subcategoryId: '',
     price: 0,
     originalPrice: 0,
     imageData: '',
@@ -32,6 +35,17 @@ export const ProductFormPage: React.FC = () => {
   const { data: brands = [] } = useQuery({
     queryKey: ['brands', 'my'],
     queryFn: () => brandsService.getMyBrands(),
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => categoriesService.getAllCategories(),
+  });
+
+  const { data: subcategories = [] } = useQuery({
+    queryKey: ['subcategories', formData.categoryId],
+    queryFn: () => categoriesService.getSubcategories(formData.categoryId),
+    enabled: !!formData.categoryId,
   });
 
   const { data: icons = [] } = useQuery({
@@ -52,6 +66,8 @@ export const ProductFormPage: React.FC = () => {
         name: product.name,
         description: product.description || '',
         brandId: product.brandId,
+        categoryId: (product as any).categoryId || '',
+        subcategoryId: (product as any).subcategoryId || '',
         price: product.price,
         originalPrice: product.originalPrice || 0,
         imageData: '',
@@ -118,6 +134,8 @@ export const ProductFormPage: React.FC = () => {
         price: data.price,
         originalPrice: data.originalPrice,
         iconIds: data.iconIds,
+        categoryId: data.categoryId || undefined,
+        subcategoryId: data.subcategoryId || undefined,
       };
 
       // Only include eanCode and brandId when creating (not when editing)
@@ -200,6 +218,38 @@ export const ProductFormPage: React.FC = () => {
                 ))}
               </select>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Kategorie</label>
+              <select
+                value={formData.categoryId}
+                onChange={(e) => {
+                  setFormData({ ...formData, categoryId: e.target.value, subcategoryId: '' });
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Vyberte kategorii</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>{category.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {formData.categoryId && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Podkategorie</label>
+                <select
+                  value={formData.subcategoryId}
+                  onChange={(e) => setFormData({ ...formData, subcategoryId: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Vyberte podkategorii</option>
+                  {subcategories.map((subcategory) => (
+                    <option key={subcategory.id} value={subcategory.id}>{subcategory.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

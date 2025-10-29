@@ -38,6 +38,14 @@ export class CreateProductDto {
   @IsNotEmpty()
   brandId: string;
 
+  @IsString()
+  @IsOptional()
+  categoryId?: string;
+
+  @IsString()
+  @IsOptional()
+  subcategoryId?: string;
+
   @IsArray()
   @IsUUID('4', { each: true })
   @ArrayMaxSize(4, { message: 'Maximum 4 icons allowed per product' })

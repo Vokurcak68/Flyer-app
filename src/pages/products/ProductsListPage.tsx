@@ -1,20 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit2, Trash2, Search } from 'lucide-react';
+import { Plus, Edit2, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { productsService } from '../../services/productsService';
 import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
+import { SearchInput } from '../../components/SearchInput';
 import { formatCurrency, getProductImageUrl } from '../../utils/helpers';
 
 export const ProductsListPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const limit = 50;
 
-  const { data: products = [], isLoading } = useQuery({
-    queryKey: ['products', 'my'],
-    queryFn: () => productsService.getMyProducts(),
+  // Stable callback for search changes
+  const handleSearchChange = useCallback((value: string) => {
+    setDebouncedSearch(value);
+    setPage(1);
+  }, []);
+
+  const { data, isLoading: isInitialLoading } = useQuery({
+    queryKey: ['products', 'my', debouncedSearch, page],
+    queryFn: () => productsService.getProducts({
+      search: debouncedSearch || undefined,
+      page,
+      limit
+    }),
+    notifyOnChangeProps: ['data'], // Only re-render when data changes, not loading states
   });
 
   const deleteMutation = useMutation({
@@ -30,21 +43,12 @@ export const ProductsListPage: React.FC = () => {
     }
   };
 
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.eanCode.includes(search) ||
-    p.brandName?.toLowerCase().includes(search.toLowerCase())
-  );
+  const products = data?.data || [];
+  const totalPages = data?.totalPages || 0;
+  const total = data?.total || 0;
 
-  if (isLoading) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
-      </div>
-    );
-  }
+  // Only show loading on initial load, not during search/pagination
+  const isLoading = isInitialLoading && !data;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -59,29 +63,25 @@ export const ProductsListPage: React.FC = () => {
         </Button>
       </div>
 
-      <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <Input
-            type="text"
-            placeholder="Hledat podle názvu, EAN nebo značky..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-      </div>
+      <SearchInput onSearchChange={handleSearchChange} />
 
-      {filteredProducts.length === 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      ) : (
+        <>
+
+      {products.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-12 text-center">
           <div className="text-gray-400 mb-4">
             <Plus className="w-16 h-16 mx-auto" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">Žádné produkty nenalezeny</h3>
           <p className="text-gray-600 mb-6">
-            {search ? 'Zkuste upravit vyhledávání' : 'Začněte vytvořením prvního produktu'}
+            {debouncedSearch ? 'Zkuste upravit vyhledávání' : 'Začněte vytvořením prvního produktu'}
           </p>
-          {!search && (
+          {!debouncedSearch && (
             <Button onClick={() => navigate('/products/new')}>
               <Plus className="w-4 h-4 mr-2" />
               Vytvořit produkt
@@ -103,6 +103,12 @@ export const ProductsListPage: React.FC = () => {
                   Značka
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Kategorie
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Podkategorie
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Cena
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -111,7 +117,7 @@ export const ProductsListPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredProducts.map((product) => (
+              {products.map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-center">
@@ -134,9 +140,6 @@ export const ProductsListPage: React.FC = () => {
                       )}
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-gray-900 truncate">{product.name}</div>
-                        {product.description && (
-                          <div className="text-sm text-gray-500 line-clamp-2 max-w-md">{product.description}</div>
-                        )}
                       </div>
                     </div>
                   </td>
@@ -145,6 +148,12 @@ export const ProductsListPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {product.brandName}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {(product as any).categoryName || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {(product as any).subcategoryName || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-bold text-gray-900">{formatCurrency(product.price)}</div>
@@ -174,7 +183,63 @@ export const ProductsListPage: React.FC = () => {
               ))}
             </tbody>
           </table>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
+              <div className="flex-1 flex justify-between sm:hidden">
+                <Button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  variant="outline"
+                >
+                  Předchozí
+                </Button>
+                <Button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  variant="outline"
+                >
+                  Další
+                </Button>
+              </div>
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    Zobrazeno <span className="font-medium">{(page - 1) * limit + 1}</span> až{' '}
+                    <span className="font-medium">{Math.min(page * limit, total)}</span> z{' '}
+                    <span className="font-medium">{total}</span> produktů
+                  </p>
+                </div>
+                <div>
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    <button
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="sr-only">Předchozí</span>
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                      Strana {page} z {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="sr-only">Další</span>
+                      <ChevronRight className="h-5 w-5" />
+                    </button>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+      )}
+        </>
       )}
     </div>
   );

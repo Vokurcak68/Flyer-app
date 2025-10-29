@@ -96,11 +96,26 @@ export class ProductsService {
     }
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-        { eanCode: { contains: search } },
-      ];
+      // Split search into words and create AND logic
+      // Each word must be found in at least one field
+      const searchWords = search.trim().split(/\s+/).filter(word => word.length > 0);
+
+      console.log('🔍 Search query:', search);
+      console.log('📝 Search words:', searchWords);
+
+      if (searchWords.length > 0) {
+        where.AND = searchWords.map(word => ({
+          OR: [
+            { name: { contains: word, mode: 'insensitive' } },
+            { eanCode: { contains: word } },
+            { brand: { name: { contains: word, mode: 'insensitive' } } },
+            { category: { name: { contains: word, mode: 'insensitive' } } },
+            { subcategory: { name: { contains: word, mode: 'insensitive' } } },
+          ],
+        }));
+
+        console.log('🎯 Prisma where clause:', JSON.stringify(where, null, 2));
+      }
     }
 
     // If user is a supplier, only show their products
@@ -125,6 +140,8 @@ export class ProductsService {
           orderBy: { position: 'asc' },
         },
         brand: true,
+        category: true,
+        subcategory: true,
         supplier: {
           select: {
             id: true,
@@ -177,6 +194,8 @@ export class ProductsService {
   }
 
   async update(id: string, updateProductDto: UpdateProductDto, userId: string) {
+    console.log('🔍 Update product DTO:', JSON.stringify(updateProductDto, null, 2));
+
     const product = await this.prisma.product.findUnique({
       where: { id },
       include: { brand: true },
@@ -199,6 +218,8 @@ export class ProductsService {
     // Prepare data object
     const { iconIds, imageData, imageMimeType, ...productData } = updateProductDto;
     const data: any = { ...productData };
+
+    console.log('💾 Product data to update in DB:', JSON.stringify(data, null, 2));
 
     // Convert base64 image data to Buffer if provided
     if (imageData && imageMimeType) {
@@ -357,6 +378,10 @@ export class ProductsService {
       isActive: product.isActive,
       brandId: product.brandId,
       brandName: product.brand?.name,
+      categoryId: product.categoryId,
+      categoryName: product.category?.name,
+      subcategoryId: product.subcategoryId,
+      subcategoryName: product.subcategory?.name,
       brand: product.brand ? {
         id: product.brand.id,
         name: product.brand.name,
