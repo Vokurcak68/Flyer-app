@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Save, ArrowLeft, Upload } from 'lucide-react';
+import { Save, ArrowLeft, Upload, Image as ImageIcon } from 'lucide-react';
 import { productsService } from '../../services/productsService';
 import { brandsService } from '../../services/brandsService';
 import { categoriesService } from '../../services/categoriesService';
 import iconsService from '../../services/iconsService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { Modal } from '../../components/ui/Modal';
 import { ProductFlyerLayout } from '../../components/product/ProductFlyerLayout';
 import { Product } from '../../types';
 
@@ -31,6 +32,8 @@ export const ProductFormPage: React.FC = () => {
     iconIds: [] as string[],
   });
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
+  const [iconSearch, setIconSearch] = useState('');
 
   const { data: brands = [] } = useQuery({
     queryKey: ['brands', 'my'],
@@ -174,35 +177,37 @@ export const ProductFormPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="mb-6">
-        <Button variant="outline" onClick={() => navigate('/products')} className="mb-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mb-6 flex items-center">
+        <Button variant="outline" onClick={() => navigate('/products')}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Zpět na produkty
         </Button>
-        <h1 className="text-3xl font-bold text-gray-900">
+        <h1 className="text-3xl font-bold text-gray-900 flex-1 text-center">
           {isEdit ? 'Upravit produkt' : 'Nový produkt'}
         </h1>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid gap-8" style={{ gridTemplateColumns: '1fr 2fr' }}>
-          <div className="space-y-6 bg-white rounded-lg shadow p-6">
-            <Input
-              label="EAN kód *"
-              value={formData.ean}
-              onChange={(e) => setFormData({ ...formData, ean: e.target.value })}
-              required
-              pattern="[0-9]{8,13}"
-              title="EAN kód musí mít 8-13 číslic"
-            />
+        <div className="grid gap-8" style={{ gridTemplateColumns: '2fr 1fr' }}>
+          <div className="space-y-4 bg-white rounded-lg shadow p-6">
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="EAN kód *"
+                value={formData.ean}
+                onChange={(e) => setFormData({ ...formData, ean: e.target.value })}
+                required
+                pattern="[0-9]{8,13}"
+                title="EAN kód musí mít 8-13 číslic"
+              />
 
-            <Input
-              label="Název produktu *"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-            />
+              <Input
+                label="Název produktu *"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Značka *</label>
@@ -219,29 +224,30 @@ export const ProductFormPage: React.FC = () => {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Kategorie</label>
-              <select
-                value={formData.categoryId}
-                onChange={(e) => {
-                  setFormData({ ...formData, categoryId: e.target.value, subcategoryId: '' });
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Vyberte kategorii</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>{category.name}</option>
-                ))}
-              </select>
-            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kategorie</label>
+                <select
+                  value={formData.categoryId}
+                  onChange={(e) => {
+                    setFormData({ ...formData, categoryId: e.target.value, subcategoryId: '' });
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Vyberte kategorii</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>{category.name}</option>
+                  ))}
+                </select>
+              </div>
 
-            {formData.categoryId && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Podkategorie</label>
                 <select
                   value={formData.subcategoryId}
                   onChange={(e) => setFormData({ ...formData, subcategoryId: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={!formData.categoryId}
                 >
                   <option value="">Vyberte podkategorii</option>
                   {subcategories.map((subcategory) => (
@@ -249,7 +255,28 @@ export const ProductFormPage: React.FC = () => {
                   ))}
                 </select>
               </div>
-            )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Cena *"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                required
+              />
+
+              <Input
+                label="Původní cena"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.originalPrice}
+                onChange={(e) => setFormData({ ...formData, originalPrice: parseFloat(e.target.value) || 0 })}
+              />
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -322,60 +349,47 @@ export const ProductFormPage: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Ikony produktu (max. 4)
               </label>
-              <div className="grid grid-cols-4 gap-3">
-                {icons.map((icon) => {
-                  const isSelected = formData.iconIds.includes(icon.id);
-                  const canSelect = formData.iconIds.length < 4 || isSelected;
-
-                  return (
-                    <div
-                      key={icon.id}
-                      onClick={() => {
-                        if (isSelected) {
-                          setFormData({
-                            ...formData,
-                            iconIds: formData.iconIds.filter(id => id !== icon.id),
-                          });
-                        } else if (canSelect) {
-                          setFormData({
-                            ...formData,
-                            iconIds: [...formData.iconIds, icon.id],
-                          });
-                        }
-                      }}
-                      className={`
-                        relative cursor-pointer rounded-lg border-2 p-3 transition-all
-                        ${isSelected
-                          ? 'border-blue-500 bg-blue-50'
-                          : canSelect
-                            ? 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
-                            : 'border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed'
-                        }
-                      `}
-                    >
-                      <div className="aspect-square flex items-center justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsIconModalOpen(true)}
+                className="w-full"
+              >
+                <ImageIcon className="w-4 h-4 mr-2" />
+                Vybrat ikony ({formData.iconIds.length}/4)
+              </Button>
+              {formData.iconIds.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {formData.iconIds.map((iconId) => {
+                    const icon = icons.find(i => i.id === iconId);
+                    if (!icon) return null;
+                    return (
+                      <div
+                        key={iconId}
+                        className="relative w-16 h-16 border-2 border-blue-500 rounded-lg p-1 bg-blue-50"
+                      >
                         <img
                           src={icon.imageUrl}
                           alt={icon.name}
-                          className="max-w-full max-h-full object-contain"
+                          className="w-full h-full object-contain"
+                          title={icon.name}
                         />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData({
+                              ...formData,
+                              iconIds: formData.iconIds.filter(id => id !== iconId),
+                            });
+                          }}
+                          className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs hover:bg-red-600"
+                        >
+                          ×
+                        </button>
                       </div>
-                      <p className="mt-2 text-xs text-center text-gray-700 truncate" title={icon.name}>
-                        {icon.name}
-                      </p>
-                      {isSelected && (
-                        <div className="absolute top-1 right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">✓</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              {icons.length === 0 && (
-                <p className="text-sm text-gray-500 italic">
-                  Zatím nejsou k dispozici žádné ikony. Můžete je vytvořit v administraci.
-                </p>
+                    );
+                  })}
+                </div>
               )}
               <p className="mt-2 text-xs text-gray-500">
                 Ikony se zobrazí v levé části obrázku produktu, zarovnané vertikálně.
@@ -406,27 +420,6 @@ export const ProductFormPage: React.FC = () => {
               <p className="mt-2 text-sm text-gray-500">
                 Maximální velikost: 5MB. Podporované formáty: JPG, PNG, GIF, WebP
               </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="Cena *"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                required
-              />
-
-              <Input
-                label="Původní cena"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.originalPrice}
-                onChange={(e) => setFormData({ ...formData, originalPrice: parseFloat(e.target.value) || 0 })}
-              />
             </div>
           </div>
 
@@ -479,6 +472,96 @@ export const ProductFormPage: React.FC = () => {
           </Button>
         </div>
       </form>
+
+      {/* Icons Selection Modal */}
+      <Modal
+        isOpen={isIconModalOpen}
+        onClose={() => {
+          setIsIconModalOpen(false);
+          setIconSearch('');
+        }}
+        title="Vybrat ikony produktu"
+      >
+        <div className="space-y-4">
+          <Input
+            label="Vyhledat ikony"
+            value={iconSearch}
+            onChange={(e) => setIconSearch(e.target.value)}
+            placeholder="Zadejte název ikony..."
+          />
+
+          {icons.length === 0 ? (
+            <p className="text-sm text-gray-500 italic text-center py-8">
+              Zatím nejsou k dispozici žádné ikony. Můžete je vytvořit v administraci.
+            </p>
+          ) : (
+            <div className="grid grid-cols-4 gap-3 max-h-96 overflow-y-auto">
+              {icons
+                .filter(icon =>
+                  iconSearch === '' ||
+                  icon.name.toLowerCase().includes(iconSearch.toLowerCase())
+                )
+                .map((icon) => {
+                  const isSelected = formData.iconIds.includes(icon.id);
+                  const canSelect = formData.iconIds.length < 4 || isSelected;
+
+                  return (
+                    <div
+                      key={icon.id}
+                      onClick={() => {
+                        if (isSelected) {
+                          setFormData({
+                            ...formData,
+                            iconIds: formData.iconIds.filter(id => id !== icon.id),
+                          });
+                        } else if (canSelect) {
+                          setFormData({
+                            ...formData,
+                            iconIds: [...formData.iconIds, icon.id],
+                          });
+                        }
+                      }}
+                      className={`
+                        relative cursor-pointer rounded-lg border-2 p-3 transition-all
+                        ${isSelected
+                          ? 'border-blue-500 bg-blue-50'
+                          : canSelect
+                            ? 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                            : 'border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed'
+                        }
+                      `}
+                    >
+                      <div className="aspect-square flex items-center justify-center">
+                        <img
+                          src={icon.imageUrl}
+                          alt={icon.name}
+                          className="max-w-full max-h-full object-contain"
+                        />
+                      </div>
+                      <p className="mt-2 text-xs text-center text-gray-700 truncate" title={icon.name}>
+                        {icon.name}
+                      </p>
+                      {isSelected && (
+                        <div className="absolute top-1 right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">✓</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+
+          <div className="flex justify-between items-center pt-4 border-t">
+            <span className="text-sm text-gray-600">
+              Vybráno: {formData.iconIds.length}/4
+            </span>
+            <Button onClick={() => setIsIconModalOpen(false)}>
+              Hotovo
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
