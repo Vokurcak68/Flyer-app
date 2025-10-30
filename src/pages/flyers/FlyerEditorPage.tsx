@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core';
@@ -28,6 +28,7 @@ export const FlyerEditorPage: React.FC = () => {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [productPage, setProductPage] = useState(1);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const previousSearchRef = useRef(search);
 
   const preparePagesForAPI = (pages: FlyerPage[]): any[] => {
     return pages.map(page => ({
@@ -72,19 +73,21 @@ export const FlyerEditorPage: React.FC = () => {
   // Při změně stránky nebo při prvním načtení přidáme produkty do seznamu
   useEffect(() => {
     if (productsData?.data) {
-      if (productPage === 1) {
+      // Pokud se změnil search, resetuj seznam
+      if (previousSearchRef.current !== search) {
+        previousSearchRef.current = search;
+        setProductPage(1);
         setAllProducts(productsData.data);
       } else {
-        setAllProducts(prev => [...prev, ...productsData.data]);
+        // Normální paginace - přidej nebo nahraď
+        if (productPage === 1) {
+          setAllProducts(productsData.data);
+        } else {
+          setAllProducts(prev => [...prev, ...productsData.data]);
+        }
       }
     }
-  }, [productsData, productPage]);
-
-  // Resetovat stránku při změně vyhledávání
-  useEffect(() => {
-    setProductPage(1);
-    setAllProducts([]);
-  }, [search]);
+  }, [productsData, productPage, search]);
 
   const { data: promoImages = [] } = useQuery({
     queryKey: ['promo-images'],
