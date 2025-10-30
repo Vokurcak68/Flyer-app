@@ -19,6 +19,7 @@ export interface ProductFilters {
   search?: string;
   page?: number;
   limit?: number;
+  isActive?: boolean;
 }
 
 export const productsService = {
@@ -49,5 +50,24 @@ export const productsService = {
   async getMyProducts(): Promise<Product[]> {
     const response = await api.get<PaginatedResponse<Product>>('/products');
     return response.data.data; // Extract products array from paginated response
+  },
+
+  async exportProducts(): Promise<Blob> {
+    const response = await api.get('/products/export/csv', {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  async importProducts(file: File): Promise<{ imported: number; updated: number; skipped: number; errors: string[] }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await api.post('/products/import/csv', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
   },
 };

@@ -13,7 +13,11 @@ import {
   HttpStatus,
   Res,
   NotFoundException,
+  UseInterceptors,
+  UploadedFile,
+  StreamableFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { ProductsService } from './products.service';
 import { CreateProductDto, UpdateProductDto, ProductFilterDto } from './dto';
@@ -84,4 +88,30 @@ export class ProductsController {
 
   // Icon management removed - icons are now managed via /icons endpoint
   // and assigned to products via iconIds array in create/update
+
+  @Get('export/csv')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('supplier')
+  async exportToCsv(@Request() req: any, @Res() res: Response) {
+    const { zipBuffer, filename } = await this.productsService.exportProductsToZip(req.user.userId);
+
+    res.set({
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': zipBuffer.length,
+    });
+
+    res.send(zipBuffer);
+  }
+
+  @Post('import/csv')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('supplier')
+  @UseInterceptors(FileInterceptor('file'))
+  async importFromCsv(
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req: any,
+  ) {
+    return this.productsService.importProductsFromZip(file.buffer, req.user.userId);
+  }
 }

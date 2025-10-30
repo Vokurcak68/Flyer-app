@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit2, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Edit2, Trash2, ChevronLeft, ChevronRight, Download, Upload } from 'lucide-react';
 import { productsService } from '../../services/productsService';
 import { Button } from '../../components/ui/Button';
 import { SearchInput } from '../../components/SearchInput';
@@ -12,6 +12,9 @@ export const ProductsListPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const limit = 50;
 
   // Stable callback for search changes
@@ -25,7 +28,8 @@ export const ProductsListPage: React.FC = () => {
     queryFn: () => productsService.getProducts({
       search: debouncedSearch || undefined,
       page,
-      limit
+      limit,
+      isActive: true
     }),
     notifyOnChangeProps: ['data'], // Only re-render when data changes, not loading states
   });
@@ -43,6 +47,63 @@ export const ProductsListPage: React.FC = () => {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      const blob = await productsService.exportProducts();
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `products-export-${new Date().toISOString().split('T')[0]}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error: any) {
+      alert(`Chyba při exportu: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsImporting(true);
+      const result = await productsService.importProducts(file);
+
+      // Show results
+      const message = [
+        `Import dokončen:`,
+        `- Importováno: ${result.imported}`,
+        `- Aktualizováno: ${result.updated}`,
+        `- Přeskočeno: ${result.skipped}`,
+        result.errors.length > 0 ? `\n\nChyby:\n${result.errors.slice(0, 5).join('\n')}` : '',
+      ].join('\n');
+
+      alert(message);
+
+      // Refresh product list
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    } catch (error: any) {
+      alert(`Chyba při importu: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setIsImporting(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   const products = data?.data || [];
   const totalPages = data?.totalPages || 0;
   const total = data?.total || 0;
@@ -57,10 +118,35 @@ export const ProductsListPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">Produkty</h1>
           <p className="mt-2 text-gray-600">Spravujte katalog produktů</p>
         </div>
-        <Button onClick={() => navigate('/products/new')}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nový produkt
-        </Button>
+        <div className="flex space-x-2">
+          <Button
+            onClick={handleExport}
+            disabled={isExporting}
+            variant="outline"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            {isExporting ? 'Exportuji...' : 'Export'}
+          </Button>
+          <Button
+            onClick={handleImportClick}
+            disabled={isImporting}
+            variant="outline"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            {isImporting ? 'Importuji...' : 'Import'}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".zip"
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+          />
+          <Button onClick={() => navigate('/products/new')}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nový produkt
+          </Button>
+        </div>
       </div>
 
       <SearchInput onSearchChange={handleSearchChange} />
