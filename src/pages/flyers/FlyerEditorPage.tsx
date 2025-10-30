@@ -279,6 +279,15 @@ export const FlyerEditorPage: React.FC = () => {
     await submitMutation.mutateAsync();
   };
 
+  // Get all product IDs that are already used in the flyer
+  const usedProductIds = new Set(
+    flyerData.pages.flatMap(page =>
+      page.slots
+        .filter(slot => slot?.type === 'product' && slot.product)
+        .map(slot => slot.product!.id)
+    )
+  );
+
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) || p.eanCode.includes(search)
   );
@@ -399,7 +408,11 @@ export const FlyerEditorPage: React.FC = () => {
               />
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
                 {filteredProducts.map(product => (
-                  <DraggableProduct key={product.id} product={product} />
+                  <DraggableProduct
+                    key={product.id}
+                    product={product}
+                    isUsed={usedProductIds.has(product.id)}
+                  />
                 ))}
               </div>
             </div>

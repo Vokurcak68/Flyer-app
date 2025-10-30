@@ -773,6 +773,23 @@ export class FlyersService {
       throw new ForbiddenException('You can only add your own products');
     }
 
+    // Check if product is already used in this flyer
+    const existingProductInFlyer = await this.prisma.flyerPageSlot.findFirst({
+      where: {
+        page: {
+          flyerId: page.flyerId,
+        },
+        productId: addProductDto.productId,
+        slotType: SlotType.product,
+      },
+    });
+
+    if (existingProductInFlyer) {
+      throw new BadRequestException(
+        'This product is already used in this flyer',
+      );
+    }
+
     // Update slot with product
     const updatedSlot = await this.prisma.flyerPageSlot.update({
       where: { id: slot.id },

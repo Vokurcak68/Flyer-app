@@ -5,22 +5,26 @@ import { formatCurrency, getProductImageUrl } from '../../utils/helpers';
 
 interface DraggableProductProps {
   product: Product;
+  isUsed?: boolean;
 }
 
-export const DraggableProduct: React.FC<DraggableProductProps> = ({ product }) => {
+export const DraggableProduct: React.FC<DraggableProductProps> = ({ product, isUsed = false }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: product.id,
     data: product,
+    disabled: isUsed,
   });
 
   return (
     <div
       ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      className={`border rounded-lg p-2 cursor-move hover:shadow-md transition-shadow bg-white ${
-        isDragging ? 'opacity-50' : ''
-      }`}
+      {...(!isUsed ? listeners : {})}
+      {...(!isUsed ? attributes : {})}
+      className={`border rounded-lg p-2 transition-shadow relative ${
+        isUsed
+          ? 'opacity-50 bg-gray-100 cursor-not-allowed'
+          : 'cursor-move hover:shadow-md bg-white'
+      } ${isDragging ? 'opacity-50' : ''}`}
     >
       <div className="flex items-start gap-2">
         <img
@@ -34,6 +38,9 @@ export const DraggableProduct: React.FC<DraggableProductProps> = ({ product }) =
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-xs truncate">{product.name}</div>
           <div className="text-blue-600 font-bold text-sm">{formatCurrency(product.price)}</div>
+          {isUsed && (
+            <div className="text-xs text-gray-500 mt-1">Již použito v letáku</div>
+          )}
         </div>
       </div>
     </div>
