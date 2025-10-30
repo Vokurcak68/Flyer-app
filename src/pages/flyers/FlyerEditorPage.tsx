@@ -26,6 +26,8 @@ export const FlyerEditorPage: React.FC = () => {
   const [promoSearch, setPromoSearch] = useState('');
   const [activeProduct, setActiveProduct] = useState<Product | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [productPage, setProductPage] = useState(1);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
 
   const preparePagesForAPI = (pages: FlyerPage[]): any[] => {
     return pages.map(page => ({
@@ -57,10 +59,32 @@ export const FlyerEditorPage: React.FC = () => {
     enabled: !isNew,
   });
 
-  const { data: products = [] } = useQuery({
-    queryKey: ['products', 'my'],
-    queryFn: () => productsService.getMyProducts(),
+  const { data: productsData, isLoading: isLoadingProducts } = useQuery({
+    queryKey: ['products', 'flyer-editor', search, productPage],
+    queryFn: () => productsService.getProducts({
+      search: search || undefined,
+      page: productPage,
+      limit: 20,
+      isActive: true,
+    }),
   });
+
+  // Při změně stránky nebo při prvním načtení přidáme produkty do seznamu
+  useEffect(() => {
+    if (productsData?.data) {
+      if (productPage === 1) {
+        setAllProducts(productsData.data);
+      } else {
+        setAllProducts(prev => [...prev, ...productsData.data]);
+      }
+    }
+  }, [productsData, productPage]);
+
+  // Resetovat stránku při změně vyhledávání
+  useEffect(() => {
+    setProductPage(1);
+    setAllProducts([]);
+  }, [search]);
 
   const { data: promoImages = [] } = useQuery({
     queryKey: ['promo-images'],
@@ -288,9 +312,7 @@ export const FlyerEditorPage: React.FC = () => {
     )
   );
 
-  const filteredProducts = products.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase()) || p.eanCode.includes(search)
-  );
+  const filteredProducts = allProducts;
 
   const filteredPromoImages = promoImages.filter(p =>
     p.name.toLowerCase().includes(promoSearch.toLowerCase())
@@ -407,13 +429,36 @@ export const FlyerEditorPage: React.FC = () => {
                 className="mb-4"
               />
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {filteredProducts.map(product => (
-                  <DraggableProduct
-                    key={product.id}
-                    product={product}
-                    isUsed={usedProductIds.has(product.id)}
-                  />
-                ))}
+                {isLoadingProducts && productPage === 1 ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : filteredProducts.length === 0 ? (
+                  <p className="text-sm text-gray-500 text-center py-8">
+                    Žádné produkty
+                  </p>
+                ) : (
+                  <>
+                    {filteredProducts.map(product => (
+                      <DraggableProduct
+                        key={product.id}
+                        product={product}
+                        isUsed={usedProductIds.has(product.id)}
+                      />
+                    ))}
+                    {productsData && productsData.total > allProducts.length && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setProductPage(prev => prev + 1)}
+                        isLoading={isLoadingProducts}
+                        className="w-full mt-2"
+                      >
+                        Načíst více ({allProducts.length} z {productsData.total})
+                      </Button>
+                    )}
+                  </>
+                )}
               </div>
             </div>
 
