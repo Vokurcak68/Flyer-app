@@ -205,7 +205,7 @@ export const FlyerEditorPage: React.FC = () => {
   };
 
   const handleDragStart = (event: DragStartEvent) => {
-    const product = products.find(p => p.id === event.active.id);
+    const product = allProducts.find(p => p.id === event.active.id);
     if (product) setActiveProduct(product);
   };
 
@@ -240,7 +240,7 @@ export const FlyerEditorPage: React.FC = () => {
     const pageIndex = parseInt(slotMatch[1]);
     const slotIndex = parseInt(slotMatch[2]);
 
-    const product = products.find(p => p.id === active.id);
+    const product = allProducts.find(p => p.id === active.id);
     const promoId = active.id.toString().startsWith('promo-') ? active.id.toString().replace('promo-', '') : null;
     const promo = promoId ? promoImages.find(p => p.id === promoId) : null;
 
