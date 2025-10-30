@@ -60,6 +60,10 @@ export interface Product {
   description?: string;
   brandId: string;
   brandName?: string;
+  categoryId?: string;
+  categoryName?: string;
+  subcategoryId?: string;
+  subcategoryName?: string;
   price: number;
   originalPrice?: number;
   icons?: ProductIcon[];
