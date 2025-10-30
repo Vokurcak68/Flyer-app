@@ -29,6 +29,7 @@ export const FlyerEditorPage: React.FC = () => {
   const [productPage, setProductPage] = useState(1);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const previousSearchRef = useRef(search);
+  const [activeTab, setActiveTab] = useState<'products' | 'promos'>('products');
 
   const preparePagesForAPI = (pages: FlyerPage[]): any[] => {
     return pages.map(page => ({
@@ -333,61 +334,176 @@ export const FlyerEditorPage: React.FC = () => {
 
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" onClick={() => navigate('/flyers')}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Zpět
-              </Button>
-              <Input
-                value={flyerData.name}
-                onChange={(e) => setFlyerData({ ...flyerData, name: e.target.value })}
-                className="text-lg font-bold border-0 border-b-2 rounded-none focus:ring-0"
-              />
-              <span className="text-sm text-gray-500">
-                {isSaving ? 'Ukládání...' : lastSaved ? `Uloženo ${lastSaved.toLocaleTimeString()}` : ''}
-              </span>
+      <div className="max-w-7xl mx-auto px-4 py-3">
+        {/* Rejection History - Full Width Top */}
+        <RejectionHistory approvals={flyer?.approvals} rejectionReason={flyer?.rejectionReason} />
+
+        {/* Main Content - 2 column layout */}
+        <div className="grid grid-cols-5 gap-6 mb-6">
+          {/* Left Column: Controls & Products/Promos */}
+          <div className="col-span-2 flex flex-col gap-6">
+            {/* Header Panel */}
+            <div className="bg-white rounded-lg shadow p-4 flex-shrink-0">
+              <div className="mb-4">
+                <Button variant="outline" onClick={() => navigate('/flyers')} size="sm" className="mb-3">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Zpět
+                </Button>
+                <Input
+                  value={flyerData.name}
+                  onChange={(e) => setFlyerData({ ...flyerData, name: e.target.value })}
+                  className="text-lg font-bold border-0 border-b-2 rounded-none focus:ring-0 mb-2"
+                  placeholder="Název letáku"
+                />
+                <span className="text-xs text-gray-500">
+                  {isSaving ? 'Ukládání...' : lastSaved ? `Uloženo ${lastSaved.toLocaleTimeString()}` : ''}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <Input
+                  type="date"
+                  label="Platnost od"
+                  value={flyerData.validFrom}
+                  onChange={(e) => setFlyerData({ ...flyerData, validFrom: e.target.value })}
+                />
+                <Input
+                  type="date"
+                  label="Platnost do"
+                  value={flyerData.validTo}
+                  onChange={(e) => setFlyerData({ ...flyerData, validTo: e.target.value })}
+                />
+              </div>
+
+              <div className="flex flex-col space-y-2">
+                <Button variant="outline" onClick={handleViewPdf} isLoading={isGeneratingPdf} disabled={isNew} size="sm">
+                  <FileText className="w-4 h-4 mr-2" />
+                  {flyer?.status === 'draft' ? 'Generuj PDF' : 'Zobrazit PDF'}
+                </Button>
+                <Button variant="outline" onClick={() => saveDraftMutation.mutate(flyerData)} isLoading={saveDraftMutation.isPending} size="sm">
+                  <Save className="w-4 h-4 mr-2" />
+                  Uložit
+                </Button>
+                <Button onClick={handleSubmit} isLoading={submitMutation.isPending} size="sm">
+                  <Send className="w-4 h-4 mr-2" />
+                  Odeslat k autorizaci
+                </Button>
+              </div>
             </div>
-            <div className="flex space-x-2">
-              <Button variant="outline" onClick={handleViewPdf} isLoading={isGeneratingPdf} disabled={isNew}>
-                <FileText className="w-4 h-4 mr-2" />
-                {flyer?.status === 'draft' ? 'Generuj PDF' : 'Zobrazit PDF'}
-              </Button>
-              <Button variant="outline" onClick={() => saveDraftMutation.mutate(flyerData)} isLoading={saveDraftMutation.isPending}>
-                <Save className="w-4 h-4 mr-2" />
-                Uložit
-              </Button>
-              <Button onClick={handleSubmit} isLoading={submitMutation.isPending}>
-                <Send className="w-4 h-4 mr-2" />
-                Odeslat
-              </Button>
+
+            {/* Products & Promos with Tabs */}
+            <div className="bg-white rounded-lg shadow flex flex-col overflow-hidden max-h-[680px]">
+              {/* Tabs */}
+              <div className="flex border-b">
+                <button
+                  onClick={() => setActiveTab('products')}
+                  className={`flex-1 px-4 py-3 text-sm font-medium ${
+                    activeTab === 'products'
+                      ? 'border-b-2 border-blue-600 text-blue-600'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  <Search className="w-4 h-4 inline mr-2" />
+                  Produkty
+                </button>
+                <button
+                  onClick={() => setActiveTab('promos')}
+                  className={`flex-1 px-4 py-3 text-sm font-medium ${
+                    activeTab === 'promos'
+                      ? 'border-b-2 border-blue-600 text-blue-600'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  <FileText className="w-4 h-4 inline mr-2" />
+                  Promo obrázky
+                </button>
+              </div>
+
+              {/* Tab Content */}
+              <div className="p-4 flex-1 flex flex-col overflow-hidden">
+                {activeTab === 'products' ? (
+                  <>
+                    <Input
+                      placeholder="Hledat produkty..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="mb-4 flex-shrink-0"
+                    />
+                    <div className="space-y-2 flex-1 overflow-y-auto">
+                      {isLoadingProducts && productPage === 1 ? (
+                        <div className="flex justify-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        </div>
+                      ) : filteredProducts.length === 0 ? (
+                        <p className="text-sm text-gray-500 text-center py-8">
+                          Žádné produkty
+                        </p>
+                      ) : (
+                        <>
+                          {filteredProducts.map(product => (
+                            <DraggableProduct
+                              key={product.id}
+                              product={product}
+                              isUsed={usedProductIds.has(product.id)}
+                            />
+                          ))}
+                          {productsData && productsData.total > allProducts.length && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setProductPage(prev => prev + 1)}
+                              isLoading={isLoadingProducts}
+                              className="w-full mt-2"
+                            >
+                              Načíst více ({allProducts.length} z {productsData.total})
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Input
+                      placeholder="Hledat promo obrázky..."
+                      value={promoSearch}
+                      onChange={(e) => setPromoSearch(e.target.value)}
+                      className="mb-4 flex-shrink-0"
+                    />
+                    <div className="space-y-2 flex-1 overflow-y-auto">
+                      {filteredPromoImages.length === 0 ? (
+                        <p className="text-sm text-gray-500 text-center py-8">
+                          {promoImages.length === 0 ? (
+                            <>Žádné promo obrázky.<br />Nahrajte je v sekci "Promo obrázky"</>
+                          ) : (
+                            'Nenalezeny žádné výsledky'
+                          )}
+                        </p>
+                      ) : (
+                        filteredPromoImages.map(promo => <DraggablePromoImage key={promo.id} promoImage={promo} />)
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <Input
-              type="date"
-              label="Platnost od"
-              value={flyerData.validFrom}
-              onChange={(e) => setFlyerData({ ...flyerData, validFrom: e.target.value })}
-            />
-            <Input
-              type="date"
-              label="Platnost do"
-              value={flyerData.validTo}
-              onChange={(e) => setFlyerData({ ...flyerData, validTo: e.target.value })}
+          {/* Right Column: Flyer Preview */}
+          <div className="col-span-3">
+            {/* Flyer Preview */}
+            <FlyerPageView
+              page={flyerData.pages[currentPageIndex]}
+              pageIndex={currentPageIndex}
+              onRemoveProduct={handleRemoveProduct}
+              onRemoveFooter={handleRemoveFooter}
+              isEditable
             />
           </div>
         </div>
 
-        {/* Rejection History */}
-        <RejectionHistory approvals={flyer?.approvals} rejectionReason={flyer?.rejectionReason} />
-
-        {/* Page Navigation */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
+        {/* Page Navigation - Full Width Bottom */}
+        <div className="bg-white rounded-lg shadow p-4">
           <div className="flex justify-between items-center">
             <h3 className="font-bold">Stránka {currentPageIndex + 1} / {flyerData.pages.length}</h3>
             <div className="flex items-center space-x-4">
@@ -415,94 +531,6 @@ export const FlyerEditorPage: React.FC = () => {
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="grid grid-cols-5 gap-6">
-          {/* Left: Products & Promos */}
-          <div className="col-span-2 space-y-6">
-            <div className="bg-white rounded-lg shadow p-4">
-              <h3 className="font-bold mb-4 flex items-center">
-                <Search className="w-4 h-4 mr-2" />
-                Produkty
-              </h3>
-              <Input
-                placeholder="Hledat..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="mb-4"
-              />
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {isLoadingProducts && productPage === 1 ? (
-                  <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  </div>
-                ) : filteredProducts.length === 0 ? (
-                  <p className="text-sm text-gray-500 text-center py-8">
-                    Žádné produkty
-                  </p>
-                ) : (
-                  <>
-                    {filteredProducts.map(product => (
-                      <DraggableProduct
-                        key={product.id}
-                        product={product}
-                        isUsed={usedProductIds.has(product.id)}
-                      />
-                    ))}
-                    {productsData && productsData.total > allProducts.length && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setProductPage(prev => prev + 1)}
-                        isLoading={isLoadingProducts}
-                        className="w-full mt-2"
-                      >
-                        Načíst více ({allProducts.length} z {productsData.total})
-                      </Button>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-4">
-              <h3 className="font-bold mb-4 flex items-center">
-                <FileText className="w-4 h-4 mr-2" />
-                Promo obrázky
-              </h3>
-              <Input
-                placeholder="Hledat promo..."
-                value={promoSearch}
-                onChange={(e) => setPromoSearch(e.target.value)}
-                className="mb-4"
-              />
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {filteredPromoImages.length === 0 ? (
-                  <p className="text-sm text-gray-500 text-center py-8">
-                    {promoImages.length === 0 ? (
-                      <>Žádné promo obrázky.<br />Nahrajte je v sekci "Promo obrázky"</>
-                    ) : (
-                      'Nenalezeny žádné výsledky'
-                    )}
-                  </p>
-                ) : (
-                  filteredPromoImages.map(promo => <DraggablePromoImage key={promo.id} promoImage={promo} />)
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Right: Flyer Preview */}
-          <div className="col-span-3">
-            <FlyerPageView
-              page={flyerData.pages[currentPageIndex]}
-              pageIndex={currentPageIndex}
-              onRemoveProduct={handleRemoveProduct}
-              onRemoveFooter={handleRemoveFooter}
-              isEditable
-            />
           </div>
         </div>
       </div>
