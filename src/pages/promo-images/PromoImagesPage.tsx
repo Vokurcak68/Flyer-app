@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Upload, Image as ImageIcon } from 'lucide-react';
 import { promoImagesService } from '../../services/promoImagesService';
+import { brandsService } from '../../services/brandsService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
@@ -14,10 +15,16 @@ export const PromoImagesPage: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<'single' | 'horizontal' | 'square' | 'full_page' | 'footer'>('single');
+  const [selectedBrandId, setSelectedBrandId] = useState<string>('');
 
   const { data: promoImages = [], isLoading } = useQuery({
     queryKey: ['promo-images'],
     queryFn: () => promoImagesService.getPromoImages(),
+  });
+
+  const { data: brands = [] } = useQuery({
+    queryKey: ['brands', 'my-brands'],
+    queryFn: () => brandsService.getMyBrands(),
   });
 
   // Debug
@@ -26,7 +33,7 @@ export const PromoImagesPage: React.FC = () => {
   }, [promoImages]);
 
   const uploadMutation = useMutation({
-    mutationFn: (data: { name: string; image: File; defaultSize: 'single' | 'horizontal' | 'square' | 'full_page' | 'footer' }) =>
+    mutationFn: (data: { name: string; image: File; defaultSize: 'single' | 'horizontal' | 'square' | 'full_page' | 'footer'; brandId?: string }) =>
       promoImagesService.createPromoImage(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['promo-images'] });
@@ -35,6 +42,7 @@ export const PromoImagesPage: React.FC = () => {
       setSelectedFile(null);
       setPreviewUrl(null);
       setSelectedSize('single');
+      setSelectedBrandId('');
     },
   });
 
@@ -72,7 +80,12 @@ export const PromoImagesPage: React.FC = () => {
       alert('Prosím vyberte soubor');
       return;
     }
-    await uploadMutation.mutateAsync({ name: uploadName, image: selectedFile, defaultSize: selectedSize });
+    await uploadMutation.mutateAsync({
+      name: uploadName,
+      image: selectedFile,
+      defaultSize: selectedSize,
+      brandId: selectedBrandId || undefined
+    });
   };
 
   const handleDelete = async (id: string, name: string) => {
@@ -140,7 +153,10 @@ export const PromoImagesPage: React.FC = () => {
                 />
               </div>
               <div className="p-4">
-                <h3 className="font-semibold text-gray-900 mb-2 truncate">{promoImage.name}</h3>
+                <h3 className="font-semibold text-gray-900 mb-1 truncate">{promoImage.name}</h3>
+                {promoImage.brand && (
+                  <p className="text-xs text-blue-600 mb-2 truncate">{promoImage.brand.name}</p>
+                )}
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-gray-500">
                     {new Date(promoImage.createdAt).toLocaleDateString('cs-CZ')}
@@ -167,6 +183,7 @@ export const PromoImagesPage: React.FC = () => {
           setUploadName('');
           setSelectedFile(null);
           setPreviewUrl(null);
+          setSelectedBrandId('');
         }}
         title="Nahrát promo obrázek"
       >
@@ -181,6 +198,27 @@ export const PromoImagesPage: React.FC = () => {
               onChange={(e) => setUploadName(e.target.value)}
               placeholder="např. Letní akce, Sleva 50%, ..."
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Značka (volitelné)
+            </label>
+            <select
+              value={selectedBrandId}
+              onChange={(e) => setSelectedBrandId(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Bez značky</option>
+              {brands.map((brand) => (
+                <option key={brand.id} value={brand.id}>
+                  {brand.name}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Přiřaďte promo obrázek ke značce pro lepší organizaci
+            </p>
           </div>
 
           <div>
@@ -247,6 +285,7 @@ export const PromoImagesPage: React.FC = () => {
                 setUploadName('');
                 setSelectedFile(null);
                 setPreviewUrl(null);
+                setSelectedBrandId('');
               }}
             >
               Zrušit
