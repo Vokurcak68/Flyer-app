@@ -33,6 +33,7 @@ export const MainLayout: React.FC = () => {
           { to: '/admin/users', icon: Users, label: 'Uživatelé' },
           { to: '/admin/icons', icon: Star, label: 'Ikony' },
           { to: '/brands', icon: Tag, label: 'Značky' },
+          { to: '/promo-images', icon: Image, label: 'Promo obrázky' },
         ];
       case 'supplier':
         return [

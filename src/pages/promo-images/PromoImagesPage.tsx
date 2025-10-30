@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Upload, Image as ImageIcon } from 'lucide-react';
 import { promoImagesService } from '../../services/promoImagesService';
 import { brandsService } from '../../services/brandsService';
+import { useAuthStore } from '../../store/authStore';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
@@ -10,6 +11,7 @@ import { Modal } from '../../components/ui/Modal';
 export const PromoImagesPage: React.FC = () => {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuthStore();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [uploadName, setUploadName] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -22,9 +24,10 @@ export const PromoImagesPage: React.FC = () => {
     queryFn: () => promoImagesService.getPromoImages(),
   });
 
+  // Admin gets all brands, suppliers get only their brands
   const { data: brands = [] } = useQuery({
-    queryKey: ['brands', 'my-brands'],
-    queryFn: () => brandsService.getMyBrands(),
+    queryKey: user?.role === 'admin' ? ['brands', 'all'] : ['brands', 'my-brands'],
+    queryFn: () => user?.role === 'admin' ? brandsService.getAllBrands() : brandsService.getMyBrands(),
   });
 
   // Debug
@@ -33,7 +36,7 @@ export const PromoImagesPage: React.FC = () => {
   }, [promoImages]);
 
   const uploadMutation = useMutation({
-    mutationFn: (data: { name: string; image: File; defaultSize: 'single' | 'horizontal' | 'square' | 'full_page' | 'footer'; brandId?: string }) =>
+    mutationFn: (data: { name: string; image: File; defaultSize: 'single' | 'horizontal' | 'square' | 'full_page' | 'footer'; brandId: string }) =>
       promoImagesService.createPromoImage(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['promo-images'] });
@@ -80,11 +83,15 @@ export const PromoImagesPage: React.FC = () => {
       alert('Prosím vyberte soubor');
       return;
     }
+    if (!selectedBrandId) {
+      alert('Prosím vyberte značku');
+      return;
+    }
     await uploadMutation.mutateAsync({
       name: uploadName,
       image: selectedFile,
       defaultSize: selectedSize,
-      brandId: selectedBrandId || undefined
+      brandId: selectedBrandId
     });
   };
 
@@ -202,14 +209,14 @@ export const PromoImagesPage: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Značka (volitelné)
+              Značka *
             </label>
             <select
               value={selectedBrandId}
               onChange={(e) => setSelectedBrandId(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Bez značky</option>
+              <option value="">Vyberte značku</option>
               {brands.map((brand) => (
                 <option key={brand.id} value={brand.id}>
                   {brand.name}
@@ -217,7 +224,7 @@ export const PromoImagesPage: React.FC = () => {
               ))}
             </select>
             <p className="mt-1 text-xs text-gray-500">
-              Přiřaďte promo obrázek ke značce pro lepší organizaci
+              Vyberte značku, ke které promo obrázek patří
             </p>
           </div>
 
@@ -293,7 +300,7 @@ export const PromoImagesPage: React.FC = () => {
             <Button
               onClick={handleUpload}
               isLoading={uploadMutation.isPending}
-              disabled={!uploadName.trim() || !selectedFile}
+              disabled={!uploadName.trim() || !selectedFile || !selectedBrandId}
             >
               Nahrát
             </Button>

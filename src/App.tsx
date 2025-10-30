@@ -133,11 +133,11 @@ function App() {
             }
           />
 
-          {/* Promo Images Routes (Supplier) */}
+          {/* Promo Images Routes (Supplier + Admin) */}
           <Route
             path="promo-images"
             element={
-              <ProtectedRoute allowedRoles={['supplier']}>
+              <ProtectedRoute allowedRoles={['supplier', 'admin']}>
                 <PromoImagesPage />
               </ProtectedRoute>
             }

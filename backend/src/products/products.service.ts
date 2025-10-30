@@ -124,9 +124,33 @@ export class ProductsService {
       }
     }
 
-    // If user is a supplier, only show their products
+    // If user is a supplier, filter by their brands
     if (userRole === 'supplier' && userId) {
-      where.supplierId = userId;
+      // Get user's brands
+      const userBrands = await this.prisma.userBrand.findMany({
+        where: { userId },
+        select: { brandId: true },
+      });
+
+      const brandIds = userBrands.map(ub => ub.brandId);
+
+      // Filter products by user's brands
+      if (brandIds.length > 0) {
+        where.brandId = {
+          in: brandIds,
+        };
+      } else {
+        // If user has no brands, return empty result
+        return {
+          data: [],
+          meta: {
+            total: 0,
+            page,
+            limit,
+            totalPages: 0,
+          },
+        };
+      }
     }
 
     // Get total count

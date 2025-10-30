@@ -12,9 +12,9 @@ export class PromoImagesController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('supplier')
+  @Roles('supplier', 'admin')
   create(@Request() req: any, @Body() dto: CreatePromoImageDto) {
-    return this.promoImagesService.create(req.user.userId, dto);
+    return this.promoImagesService.create(req.user.userId, req.user.role, dto);
   }
 
   @Get()

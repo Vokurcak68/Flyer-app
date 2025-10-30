@@ -6,9 +6,9 @@ import { CreatePromoImageDto, PromoImageFilterDto } from './dto';
 export class PromoImagesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(userId: string, dto: CreatePromoImageDto) {
-    // Verify brand access if brandId is provided
-    if (dto.brandId) {
+  async create(userId: string, userRole: string, dto: CreatePromoImageDto) {
+    // Verify brand access if brandId is provided (skip for admin)
+    if (dto.brandId && userRole !== 'admin') {
       const hasAccess = await this.prisma.userBrand.findFirst({
         where: {
           userId,
@@ -41,7 +41,23 @@ export class PromoImagesService {
 
     // Role-based filtering
     if (role === 'supplier') {
-      where.supplierId = userId;
+      // Get user's brands
+      const userBrands = await this.prisma.userBrand.findMany({
+        where: { userId },
+        select: { brandId: true },
+      });
+
+      const brandIds = userBrands.map(ub => ub.brandId);
+
+      // Filter promo images by user's brands
+      if (brandIds.length > 0) {
+        where.brandId = {
+          in: brandIds,
+        };
+      } else {
+        // If user has no brands, return empty list
+        return [];
+      }
     }
 
     // Apply filters

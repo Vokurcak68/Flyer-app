@@ -14,8 +14,7 @@ export class CreatePromoImageDto {
   defaultSize: 'single' | 'horizontal' | 'square' | 'full_page' | 'footer';
 
   @IsUUID()
-  @IsOptional()
-  brandId?: string;
+  brandId: string;
 }
 
 export class PromoImageFilterDto {
