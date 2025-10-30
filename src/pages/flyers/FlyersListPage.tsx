@@ -5,7 +5,6 @@ import { Plus, Edit2, Trash2, Eye } from 'lucide-react';
 import { flyersService } from '../../services/flyersService';
 import { Button } from '../../components/ui/Button';
 import { StatusBadge } from '../../components/ui/StatusBadge';
-import { CompletionBar } from '../../components/ui/CompletionBar';
 import { formatDate } from '../../utils/helpers';
 
 export const FlyersListPage: React.FC = () => {
@@ -79,9 +78,6 @@ export const FlyersListPage: React.FC = () => {
                     <div>Platnost: {formatDate(flyer.validFrom)} - {formatDate(flyer.validTo)}</div>
                     <div>Stránky: {flyer.pages?.length || 0} | Produkty: {flyer.pages?.reduce((s, p) => s + (p.slots?.filter(slot => slot && slot.type === 'product').length || 0), 0) || 0}</div>
                     <div>Vytvořeno: {formatDate(flyer.createdAt)}</div>
-                  </div>
-                  <div className="mt-3 max-w-xs">
-                    <CompletionBar percentage={flyer.completionPercentage} showLabel={false} />
                   </div>
                 </div>
                 <div className="flex space-x-2">

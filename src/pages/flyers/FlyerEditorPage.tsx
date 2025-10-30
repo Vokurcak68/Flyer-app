@@ -8,13 +8,11 @@ import { productsService } from '../../services/productsService';
 import { promoImagesService } from '../../services/promoImagesService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { CompletionBar } from '../../components/ui/CompletionBar';
 import { FlyerPageView } from '../../components/flyer/FlyerPageView';
 import { DraggableProduct } from '../../components/flyer/DraggableProduct';
 import { DraggablePromoImage } from '../../components/flyer/DraggablePromoImage';
 import { RejectionHistory } from '../../components/flyer/RejectionHistory';
 import { Product, FlyerPage, FlyerSlot } from '../../types';
-import { calculateCompletionPercentage } from '../../utils/helpers';
 import { useAutoSave } from '../../hooks/useAutoSave';
 
 export const FlyerEditorPage: React.FC = () => {
@@ -144,7 +142,7 @@ export const FlyerEditorPage: React.FC = () => {
     onSave: async (data) => {
       if (!isNew) await saveDraftMutation.mutateAsync(data);
     },
-    delay: 30000,
+    delay: 120000, // 2 minutes
     enabled: !isNew,
   });
 
@@ -347,8 +345,6 @@ export const FlyerEditorPage: React.FC = () => {
               onChange={(e) => setFlyerData({ ...flyerData, validTo: e.target.value })}
             />
           </div>
-
-          <CompletionBar percentage={calculateCompletionPercentage(flyerData.pages)} />
         </div>
 
         {/* Rejection History */}

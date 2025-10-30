@@ -177,7 +177,7 @@ export class FlyersService {
   }
 
   async getActiveFlyers(userId: string, userRole: UserRole) {
-    // Get all active flyers with full data for end users
+    // Get all active flyers with optimized data for end users
     const flyers = await this.prisma.flyer.findMany({
       where: {
         status: FlyerStatus.active,
@@ -188,11 +188,25 @@ export class FlyersService {
             slots: {
               include: {
                 product: {
-                  include: {
+                  select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    eanCode: true,
+                    price: true,
+                    originalPrice: true,
+                    brandId: true,
                     brand: true,
                     icons: {
-                      include: {
-                        icon: true,
+                      select: {
+                        icon: {
+                          select: {
+                            id: true,
+                            name: true,
+                            isEnergyClass: true,
+                          },
+                        },
+                        position: true,
                       },
                       orderBy: {
                         position: 'asc',
@@ -200,13 +214,23 @@ export class FlyersService {
                     },
                   },
                 },
-                promoImage: true,
+                promoImage: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
               },
               orderBy: {
                 slotPosition: 'asc',
               },
             },
-            footerPromoImage: true,
+            footerPromoImage: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
           orderBy: {
             pageNumber: 'asc',
@@ -220,6 +244,106 @@ export class FlyersService {
 
     // Transform flyers for frontend
     return flyers.map(flyer => this.transformFlyerForFrontend(flyer));
+  }
+
+  // Separate method for PDF generation that includes image binary data
+  async findOneForPdf(id: string, userId: string, userRole: UserRole) {
+    const flyer = await this.prisma.flyer.findUnique({
+      where: { id },
+      include: {
+        supplier: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        pages: {
+          include: {
+            slots: {
+              include: {
+                product: {
+                  select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    eanCode: true,
+                    price: true,
+                    originalPrice: true,
+                    imageData: true, // INCLUDED for PDF generation
+                    imageMimeType: true, // INCLUDED for PDF generation
+                    brandId: true,
+                    supplierId: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    brand: true,
+                    icons: {
+                      select: {
+                        icon: {
+                          select: {
+                            id: true,
+                            name: true,
+                            isEnergyClass: true,
+                            imageData: true, // INCLUDED for PDF generation
+                            imageMimeType: true, // INCLUDED for PDF generation
+                          },
+                        },
+                        position: true,
+                      },
+                      orderBy: {
+                        position: 'asc',
+                      },
+                    },
+                  },
+                },
+                promoImage: {
+                  select: {
+                    id: true,
+                    name: true,
+                    imageData: true, // INCLUDED for PDF generation
+                    imageMimeType: true, // INCLUDED for PDF generation
+                    supplierId: true,
+                    createdAt: true,
+                  },
+                },
+              },
+              orderBy: {
+                slotPosition: 'asc',
+              },
+            },
+            footerPromoImage: {
+              select: {
+                id: true,
+                name: true,
+                imageData: true, // INCLUDED for PDF generation
+                imageMimeType: true, // INCLUDED for PDF generation
+                supplierId: true,
+                createdAt: true,
+              },
+            },
+          },
+          orderBy: {
+            pageNumber: 'asc',
+          },
+        },
+      },
+    });
+
+    if (!flyer) {
+      throw new NotFoundException(`Flyer with ID ${id} not found`);
+    }
+
+    // Verify permissions
+    if (userRole === UserRole.supplier && flyer.supplierId !== userId) {
+      throw new ForbiddenException('You do not have access to this flyer');
+    }
+
+    if (userRole === UserRole.end_user && flyer.status !== FlyerStatus.active) {
+      throw new ForbiddenException('This flyer is not active');
+    }
+
+    return this.transformFlyerForFrontend(flyer);
   }
 
   async findOne(id: string, userId: string, userRole: UserRole) {
@@ -242,20 +366,29 @@ export class FlyersService {
                   select: {
                     id: true,
                     name: true,
-                    description: true, // ADDED: Product description for right panel
-                    eanCode: true, // ADDED: EAN code
+                    description: true,
+                    eanCode: true,
                     price: true,
                     originalPrice: true,
-                    imageData: true,
-                    imageMimeType: true,
+                    // imageData: excluded for performance - frontend uses URL
+                    // imageMimeType: excluded for performance
                     brandId: true,
                     supplierId: true,
                     createdAt: true,
                     updatedAt: true,
                     brand: true,
                     icons: {
-                      include: {
-                        icon: true,
+                      select: {
+                        icon: {
+                          select: {
+                            id: true,
+                            name: true,
+                            isEnergyClass: true,
+                            // imageData: excluded for performance - frontend uses URL
+                            // imageMimeType: excluded for performance
+                          },
+                        },
+                        position: true,
                       },
                       orderBy: {
                         position: 'asc',
@@ -267,8 +400,8 @@ export class FlyersService {
                   select: {
                     id: true,
                     name: true,
-                    imageData: true,
-                    imageMimeType: true,
+                    // imageData: excluded for performance - frontend uses URL
+                    // imageMimeType: excluded for performance
                     supplierId: true,
                     createdAt: true,
                   },
@@ -282,8 +415,8 @@ export class FlyersService {
               select: {
                 id: true,
                 name: true,
-                imageData: true,
-                imageMimeType: true,
+                // imageData: excluded for performance - frontend uses URL
+                // imageMimeType: excluded for performance
                 supplierId: true,
                 createdAt: true,
               },
@@ -877,8 +1010,8 @@ export class FlyersService {
     // Create a version snapshot before submission
     await this.createVersionSnapshot(flyerId, userId, 'Submitted for verification');
 
-    // Get full flyer data for PDF generation
-    const flyerForPdf = await this.findOne(flyerId, userId, UserRole.supplier);
+    // Get full flyer data with images for PDF generation
+    const flyerForPdf = await this.findOneForPdf(flyerId, userId, UserRole.supplier);
 
     // Generate and save PDF permanently
     const pdfData = await this.pdfService.generateFlyerPDF(flyerForPdf);
@@ -1156,10 +1289,16 @@ export class FlyersService {
 
     // Transform pages to match frontend expected format
     const transformedPages = flyer.pages.map((page: any) => {
-      // Create an array of 8 empty slots
+      // Only create slot array if slots data exists (for detail view)
+      // For list view, page.slots will be undefined, so skip this expensive operation
+      if (!page.slots || !Array.isArray(page.slots) || page.slots.length === 0) {
+        return page; // Return page as-is for list view (no slots transformation needed)
+      }
+
+      // Create an array of 8 empty slots (only for detail view with slots data)
       const slotsArray = new Array(8).fill(null).map(() => ({ type: 'empty' }));
 
-      // Fill in slots at their positions (if slots exist)
+      // Fill in slots at their positions
       if (page.slots && Array.isArray(page.slots)) {
         page.slots.forEach((slot: any) => {
           if (slot.slotPosition >= 0 && slot.slotPosition < 8) {

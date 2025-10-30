@@ -25,12 +25,29 @@ export class PdfService {
   }
 
   /**
-   * Convert image to PNG format if needed (for WebP and other formats PDFKit doesn't support)
+   * Convert and optimize image for PDF (compress and resize if needed)
    */
-  private async convertImageToPNG(imageBuffer: Buffer): Promise<Buffer> {
+  private async convertImageToPNG(imageBuffer: Buffer, maxWidth: number = 800): Promise<Buffer> {
     try {
-      // Use sharp to convert any image format to PNG
-      return await sharp(imageBuffer).png().toBuffer();
+      const image = sharp(imageBuffer);
+      const metadata = await image.metadata();
+
+      // Resize if image is too large (maintain aspect ratio)
+      if (metadata.width && metadata.width > maxWidth) {
+        image.resize(maxWidth, null, {
+          fit: 'inside',
+          withoutEnlargement: true,
+        });
+      }
+
+      // Convert to JPEG with quality 85 for much smaller file size
+      // JPEG is better for photos/product images and creates smaller PDFs
+      return await image
+        .jpeg({
+          quality: 85,
+          mozjpeg: true, // Use MozJPEG for better compression
+        })
+        .toBuffer();
     } catch (error) {
       this.logger.error(`Failed to convert image: ${error.message}`);
       throw error;
@@ -49,11 +66,12 @@ export class PdfService {
         const filename = `flyer-${flyer.id}-${Date.now()}.pdf`;
         const filepath = path.join(this.uploadsDir, filename);
 
-        // Create PDF document with no margins for full-bleed layout
+        // Create PDF document with no margins for full-bleed layout and compression
         const doc = new PDFDocument({
           size: 'A4',
           margins: { top: 0, bottom: 0, left: 0, right: 0 },
           autoFirstPage: false,
+          compress: true, // Enable PDF compression
         });
 
         // Register fonts for Czech characters support
@@ -325,8 +343,8 @@ export class PdfService {
           imageBuffer = Buffer.from(product.imageData);
         }
 
-        // Convert to PNG (handles WebP and other formats)
-        const pngBuffer = await this.convertImageToPNG(imageBuffer);
+        // Convert and compress image (max 600px width for product images)
+        const pngBuffer = await this.convertImageToPNG(imageBuffer, 600);
 
         // Make image square (same width as height)
         const imageWidth = imageHeight;
@@ -380,8 +398,8 @@ export class PdfService {
               iconBuffer = Buffer.from(icon.imageData);
             }
 
-            // Convert to PNG (handles WebP and other formats)
-            const pngIconBuffer = await this.convertImageToPNG(iconBuffer);
+            // Convert and compress icon (max 100px width for small icons)
+            const pngIconBuffer = await this.convertImageToPNG(iconBuffer, 100);
 
             // Energy class icons are 2x wider (48px width, 24px height)
             // Regular icons are square (24px × 24px)
@@ -558,8 +576,8 @@ export class PdfService {
           imageBuffer = Buffer.from(promoImage.imageData);
         }
 
-        // Convert to PNG (handles WebP and other formats)
-        const pngBuffer = await this.convertImageToPNG(imageBuffer);
+        // Convert and compress promo image (max 1200px width for larger promo images)
+        const pngBuffer = await this.convertImageToPNG(imageBuffer, 1200);
 
         // Use exact width and height to fill entire area without white space
         doc.image(pngBuffer, x, y, {
