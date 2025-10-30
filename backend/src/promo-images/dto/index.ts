@@ -13,7 +13,7 @@ export class CreatePromoImageDto {
   @IsEnum(['single', 'horizontal', 'square', 'full_page', 'footer'])
   defaultSize: 'single' | 'horizontal' | 'square' | 'full_page' | 'footer';
 
-  @IsUUID()
+  @IsString()
   brandId: string;
 }
 

@@ -83,10 +83,18 @@ export const PromoImagesPage: React.FC = () => {
       alert('Prosím vyberte soubor');
       return;
     }
-    if (!selectedBrandId) {
+    if (!selectedBrandId || selectedBrandId.trim() === '') {
       alert('Prosím vyberte značku');
       return;
     }
+
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(selectedBrandId)) {
+      alert('Neplatná značka. Prosím vyberte značku ze seznamu.');
+      return;
+    }
+
     await uploadMutation.mutateAsync({
       name: uploadName,
       image: selectedFile,
