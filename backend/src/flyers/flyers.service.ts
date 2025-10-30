@@ -132,7 +132,19 @@ export class FlyersService {
     // Get flyers
     const flyers = await this.prisma.flyer.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        name: true,
+        validFrom: true,
+        validTo: true,
+        status: true,
+        supplierId: true,
+        completionPercentage: true,
+        createdAt: true,
+        updatedAt: true,
+        publishedAt: true,
+        rejectionReason: true,
+        lastEditedAt: true,
         supplier: {
           select: {
             id: true,
@@ -148,6 +160,25 @@ export class FlyersService {
           },
           orderBy: {
             pageNumber: 'asc',
+          },
+        },
+        approvals: {
+          select: {
+            id: true,
+            status: true,
+            comment: true,
+            decidedAt: true,
+            approver: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
           },
         },
         _count: {
@@ -1041,6 +1072,7 @@ export class FlyersService {
         isDraft: false,
         pdfData: pdfData,
         pdfMimeType: 'application/pdf',
+        rejectionReason: null, // Clear rejection reason when resubmitting
       },
       include: {
         pages: {

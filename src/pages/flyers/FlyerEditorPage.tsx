@@ -159,7 +159,9 @@ export const FlyerEditorPage: React.FC = () => {
       return flyersService.submitForApproval(id!);
     },
     onSuccess: () => {
+      // Invalidate both detail and list queries to refresh rejection status
       queryClient.invalidateQueries({ queryKey: ['flyers'] });
+      queryClient.invalidateQueries({ queryKey: ['flyers', 'my'] });
       navigate('/flyers');
     },
   });

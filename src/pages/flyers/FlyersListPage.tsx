@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit2, Trash2, Eye } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, AlertCircle } from 'lucide-react';
 import { flyersService } from '../../services/flyersService';
 import { Button } from '../../components/ui/Button';
 import { StatusBadge } from '../../components/ui/StatusBadge';
@@ -79,9 +79,22 @@ export const FlyersListPage: React.FC = () => {
                     <div>Stránky: {flyer.pages?.length || 0} | Produkty: {flyer.pages?.reduce((s, p) => s + (p.slots?.filter(slot => slot && slot.type === 'product').length || 0), 0) || 0}</div>
                     <div>Vytvořeno: {formatDate(flyer.createdAt)}</div>
                   </div>
+
+                  {/* Rejection reason for rejected flyers */}
+                  {flyer.rejectionReason && (
+                    <div className="mt-3 bg-red-50 border border-red-200 rounded-lg p-3">
+                      <div className="flex items-start space-x-2">
+                        <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-red-900 mb-1">Důvod zamítnutí:</p>
+                          <p className="text-sm text-red-800">{flyer.rejectionReason}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="flex space-x-2">
-                  {flyer.status === 'draft' && (
+                  {flyer.status === 'draft' && !flyer.rejectionReason && (
                     <>
                       <Button size="sm" onClick={() => navigate(`/flyers/${flyer.id}`)}>
                         <Edit2 className="w-4 h-4 mr-1" />
@@ -94,6 +107,12 @@ export const FlyersListPage: React.FC = () => {
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </>
+                  )}
+                  {flyer.status === 'draft' && flyer.rejectionReason && (
+                    <Button size="sm" onClick={() => navigate(`/flyers/${flyer.id}`)} className="bg-orange-600 hover:bg-orange-700">
+                      <Edit2 className="w-4 h-4 mr-1" />
+                      Opravit a odeslat znovu
+                    </Button>
                   )}
                   {flyer.status !== 'draft' && (
                     <Button size="sm" variant="outline" onClick={() => navigate(`/flyers/${flyer.id}`)}>
