@@ -82,11 +82,11 @@ function App() {
             }
           />
 
-          {/* Brands Routes (Admin + Supplier) */}
+          {/* Brands Routes (Admin only) */}
           <Route
             path="brands"
             element={
-              <ProtectedRoute allowedRoles={['admin', 'supplier']}>
+              <ProtectedRoute allowedRoles={['admin']}>
                 <BrandsListPage />
               </ProtectedRoute>
             }
@@ -94,7 +94,7 @@ function App() {
           <Route
             path="brands/new"
             element={
-              <ProtectedRoute allowedRoles={['admin', 'supplier']}>
+              <ProtectedRoute allowedRoles={['admin']}>
                 <BrandFormPage />
               </ProtectedRoute>
             }
@@ -102,7 +102,7 @@ function App() {
           <Route
             path="brands/:id/edit"
             element={
-              <ProtectedRoute allowedRoles={['admin', 'supplier']}>
+              <ProtectedRoute allowedRoles={['admin']}>
                 <BrandFormPage />
               </ProtectedRoute>
             }

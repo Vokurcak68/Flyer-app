@@ -38,7 +38,6 @@ export const MainLayout: React.FC = () => {
       case 'supplier':
         return [
           { to: '/dashboard', icon: Home, label: 'Přehled' },
-          { to: '/brands', icon: Tag, label: 'Značky' },
           { to: '/products', icon: Package, label: 'Produkty' },
           { to: '/promo-images', icon: Image, label: 'Promo obrázky' },
           { to: '/flyers', icon: FileText, label: 'Letáky' },
