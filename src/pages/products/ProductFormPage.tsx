@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Save, ArrowLeft, Upload, Image as ImageIcon } from 'lucide-react';
+import { Save, ArrowLeft, Upload, Image as ImageIcon, CheckCircle, AlertCircle } from 'lucide-react';
 import { productsService } from '../../services/productsService';
 import { brandsService } from '../../services/brandsService';
 import { categoriesService } from '../../services/categoriesService';
@@ -34,6 +34,17 @@ export const ProductFormPage: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
   const [iconSearch, setIconSearch] = useState('');
+  const [eanValidation, setEanValidation] = useState<{
+    eanFound: boolean | null;
+    priceMatch: boolean | null;
+    originalPriceMatch: boolean | null;
+    isLoading: boolean;
+  }>({
+    eanFound: null,
+    priceMatch: null,
+    originalPriceMatch: null,
+    isLoading: false,
+  });
 
   const { data: brands = [] } = useQuery({
     queryKey: ['brands', 'my'],
@@ -159,10 +170,48 @@ export const ProductFormPage: React.FC = () => {
         return productsService.createProduct(payload);
       }
     },
-    onSuccess: () => {
+    onSuccess: async (savedProduct) => {
       console.log('Product saved successfully');
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      navigate('/products');
+
+      // Validate EAN after saving
+      if (formData.ean) {
+        setEanValidation({
+          eanFound: null,
+          priceMatch: null,
+          originalPriceMatch: null,
+          isLoading: true,
+        });
+        try {
+          const result = await productsService.validateEAN(
+            formData.ean,
+            formData.price,
+            formData.originalPrice,
+          );
+
+          // Check individual price matches
+          const priceMatch = result.found && result.erpPrice === formData.price;
+          const originalPriceMatch = result.found && result.erpOriginalPrice === formData.originalPrice;
+
+          setEanValidation({
+            eanFound: result.found,
+            priceMatch,
+            originalPriceMatch,
+            isLoading: false,
+          });
+        } catch (error) {
+          console.error('Error validating EAN:', error);
+          setEanValidation({
+            eanFound: false,
+            priceMatch: false,
+            originalPriceMatch: false,
+            isLoading: false,
+          });
+        }
+      }
+
+      // Don't navigate immediately - show validation result first
+      // navigate('/products');
     },
     onError: (error) => {
       console.error('Error saving product:', error);
@@ -192,14 +241,31 @@ export const ProductFormPage: React.FC = () => {
         <div className="grid gap-8" style={{ gridTemplateColumns: '2fr 1fr' }}>
           <div className="space-y-4 bg-white rounded-lg shadow p-6">
             <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="EAN kód *"
-                value={formData.ean}
-                onChange={(e) => setFormData({ ...formData, ean: e.target.value })}
-                required
-                pattern="[0-9]{8,13}"
-                title="EAN kód musí mít 8-13 číslic"
-              />
+              <div className="relative">
+                <Input
+                  label="EAN kód *"
+                  value={formData.ean}
+                  onChange={(e) => setFormData({ ...formData, ean: e.target.value })}
+                  required
+                  pattern="[0-9]{8,13}"
+                  title="EAN kód musí mít 8-13 číslic"
+                />
+                {eanValidation.isLoading && (
+                  <div className="absolute right-3 top-9 text-gray-400">
+                    <div className="animate-spin h-5 w-5 border-2 border-gray-400 border-t-transparent rounded-full"></div>
+                  </div>
+                )}
+                {!eanValidation.isLoading && eanValidation.eanFound === true && (
+                  <div className="absolute right-3 top-9 text-green-600">
+                    <CheckCircle className="h-5 w-5" />
+                  </div>
+                )}
+                {!eanValidation.isLoading && eanValidation.eanFound === false && (
+                  <div className="absolute right-3 top-9 text-red-600">
+                    <AlertCircle className="h-5 w-5" />
+                  </div>
+                )}
+              </div>
 
               <Input
                 label="Název produktu *"
@@ -258,24 +324,58 @@ export const ProductFormPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="Cena *"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                required
-              />
+              <div className="relative">
+                <Input
+                  label="Cena *"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                  required
+                />
+                {eanValidation.isLoading && (
+                  <div className="absolute right-3 top-9 text-gray-400">
+                    <div className="animate-spin h-5 w-5 border-2 border-gray-400 border-t-transparent rounded-full"></div>
+                  </div>
+                )}
+                {!eanValidation.isLoading && eanValidation.priceMatch === true && (
+                  <div className="absolute right-3 top-9 text-green-600">
+                    <CheckCircle className="h-5 w-5" />
+                  </div>
+                )}
+                {!eanValidation.isLoading && eanValidation.priceMatch === false && (
+                  <div className="absolute right-3 top-9 text-red-600">
+                    <AlertCircle className="h-5 w-5" />
+                  </div>
+                )}
+              </div>
 
-              <Input
-                label="Původní cena"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.originalPrice}
-                onChange={(e) => setFormData({ ...formData, originalPrice: parseFloat(e.target.value) || 0 })}
-              />
+              <div className="relative">
+                <Input
+                  label="Původní cena"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.originalPrice}
+                  onChange={(e) => setFormData({ ...formData, originalPrice: parseFloat(e.target.value) || 0 })}
+                />
+                {eanValidation.isLoading && (
+                  <div className="absolute right-3 top-9 text-gray-400">
+                    <div className="animate-spin h-5 w-5 border-2 border-gray-400 border-t-transparent rounded-full"></div>
+                  </div>
+                )}
+                {!eanValidation.isLoading && eanValidation.originalPriceMatch === true && (
+                  <div className="absolute right-3 top-9 text-green-600">
+                    <CheckCircle className="h-5 w-5" />
+                  </div>
+                )}
+                {!eanValidation.isLoading && eanValidation.originalPriceMatch === false && (
+                  <div className="absolute right-3 top-9 text-red-600">
+                    <AlertCircle className="h-5 w-5" />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>

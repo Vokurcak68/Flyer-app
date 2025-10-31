@@ -24,10 +24,14 @@ import { CreateProductDto, UpdateProductDto, ProductFilterDto } from './dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { MssqlService } from '../common/mssql.service';
 
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly mssqlService: MssqlService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -113,5 +117,26 @@ export class ProductsController {
     @Request() req: any,
   ) {
     return this.productsService.importProductsFromZip(file.buffer, req.user.userId);
+  }
+
+  @Get(':ean/validate-ean')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('supplier')
+  async validateEAN(
+    @Param('ean') ean: string,
+    @Query('price') price?: string,
+    @Query('originalPrice') originalPrice?: string,
+  ) {
+    const priceNum = price ? parseFloat(price) : undefined;
+    const originalPriceNum = originalPrice ? parseFloat(originalPrice) : undefined;
+
+    const result = await this.mssqlService.validateEAN(ean, priceNum, originalPriceNum);
+    return {
+      ean,
+      found: result.found,
+      pricesMatch: result.pricesMatch,
+      erpPrice: result.erpPrice,
+      erpOriginalPrice: result.erpOriginalPrice,
+    };
   }
 }

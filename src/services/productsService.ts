@@ -70,4 +70,29 @@ export const productsService = {
     });
     return response.data;
   },
+
+  async validateEAN(
+    ean: string,
+    price?: number,
+    originalPrice?: number,
+  ): Promise<{
+    ean: string;
+    found: boolean;
+    pricesMatch: boolean;
+    erpPrice?: number;
+    erpOriginalPrice?: number;
+  }> {
+    const params: any = {};
+    if (price !== undefined) params.price = price.toString();
+    if (originalPrice !== undefined) params.originalPrice = originalPrice.toString();
+
+    const response = await api.get<{
+      ean: string;
+      found: boolean;
+      pricesMatch: boolean;
+      erpPrice?: number;
+      erpOriginalPrice?: number;
+    }>(`/products/${ean}/validate-ean`, { params });
+    return response.data;
+  },
 };

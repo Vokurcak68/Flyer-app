@@ -13,6 +13,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { UsersModule } from './users/users.module';
 import { UploadService } from './common/upload.service';
 import { UploadController } from './common/upload.controller';
+import { MssqlService } from './common/mssql.service';
 
 @Module({
   imports: [
@@ -30,6 +31,6 @@ import { UploadController } from './common/upload.controller';
     ApprovalsModule,
   ],
   controllers: [UploadController],
-  providers: [UploadService],
+  providers: [UploadService, MssqlService],
 })
 export class AppModule {}
