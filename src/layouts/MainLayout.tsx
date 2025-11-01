@@ -17,6 +17,7 @@ export const MainLayout: React.FC = () => {
     const roleLabels: Record<string, string> = {
       'admin': 'Administrátor',
       'supplier': 'Dodavatel',
+      'pre_approver': 'Předschvalovatel',
       'approver': 'Schvalovatel',
       'end_user': 'Koncový uživatel',
     };
@@ -41,6 +42,12 @@ export const MainLayout: React.FC = () => {
           { to: '/products', icon: Package, label: 'Produkty' },
           { to: '/promo-images', icon: Image, label: 'Promo obrázky' },
           { to: '/flyers', icon: FileText, label: 'Letáky' },
+        ];
+      case 'pre_approver':
+        return [
+          { to: '/dashboard', icon: Home, label: 'Přehled' },
+          { to: '/approvals', icon: CheckCircle, label: 'Předschvalování' },
+          { to: '/active-flyers', icon: FileText, label: 'Aktivní letáky' },
         ];
       case 'approver':
         return [

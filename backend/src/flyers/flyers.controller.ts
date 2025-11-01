@@ -53,7 +53,7 @@ export class FlyersController {
   }
 
   @Get('active')
-  @Roles('end_user')
+  @Roles('end_user', 'approver', 'pre_approver')
   async getActiveFlyers(@Request() req) {
     // Get active flyers with full data (pages, slots, products)
     const activeFlyers = await this.flyersService.getActiveFlyers(

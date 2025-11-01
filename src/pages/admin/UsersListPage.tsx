@@ -12,6 +12,7 @@ const getRoleLabel = (role: UserRole): string => {
   const roleLabels: Record<UserRole, string> = {
     admin: 'Administrátor',
     supplier: 'Dodavatel',
+    pre_approver: 'Předschvalovatel',
     approver: 'Schvalovatel',
     end_user: 'Koncový uživatel',
   };

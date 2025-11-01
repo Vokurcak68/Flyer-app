@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Package, FileText, CheckCircle, TrendingUp, Clock, Grid, Users, Tag } from 'lucide-react';
+import { Package, FileText, CheckCircle, TrendingUp, Clock, Grid, Users, Tag, XCircle } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { productsService } from '../services/productsService';
 import { flyersService } from '../services/flyersService';
@@ -20,6 +20,8 @@ export const DashboardPage: React.FC = () => {
     case 'supplier':
       return <SupplierDashboard />;
     case 'approver':
+      return <ApproverDashboard />;
+    case 'pre_approver':
       return <ApproverDashboard />;
     case 'end_user':
       return <EndUserDashboard />;
@@ -45,6 +47,7 @@ const SupplierDashboard: React.FC = () => {
     totalProducts: productStats?.active || 0,
     activeFlyers: flyers.filter((f) => f.status === 'active').length,
     pendingApproval: flyers.filter((f) => f.status === 'pending_approval').length,
+    rejectedFlyers: flyers.filter((f) => f.status === 'draft' && f.rejectionReason).length,
     draftFlyers: flyers.filter((f) => f.status === 'draft').length,
   };
 
@@ -56,7 +59,7 @@ const SupplierDashboard: React.FC = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -89,6 +92,18 @@ const SupplierDashboard: React.FC = () => {
             </div>
             <div className="p-3 bg-yellow-100 rounded-full">
               <Clock className="w-6 h-6 text-yellow-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Zamítnuté letáky</p>
+              <p className="mt-2 text-3xl font-bold text-red-600">{stats.rejectedFlyers}</p>
+            </div>
+            <div className="p-3 bg-red-100 rounded-full">
+              <XCircle className="w-6 h-6 text-red-600" />
             </div>
           </div>
         </div>
@@ -132,30 +147,44 @@ const SupplierDashboard: React.FC = () => {
 
 const ApproverDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const isPreApprover = user?.role === 'pre_approver';
 
   const { data: approvals = [] } = useQuery({
     queryKey: ['approvals', 'pending'],
     queryFn: () => approvalsService.getPendingApprovals(),
   });
 
+  const { data: activeFlyers = [] } = useQuery({
+    queryKey: ['flyers', 'active'],
+    queryFn: () => flyersService.getActiveFlyers(),
+  });
+
   const stats = {
-    pending: approvals.filter((a) => a.status === 'pending').length,
-    approved: approvals.filter((a) => a.status === 'approved').length,
-    rejected: approvals.filter((a) => a.status === 'rejected').length,
+    pending: approvals.filter((a) => a.status === 'pending' || a.preApprovalStatus === 'pending').length,
+    approved: approvals.filter((a) => a.status === 'approved' || a.preApprovalStatus === 'pre_approved').length,
+    rejected: approvals.filter((a) => a.status === 'rejected' || a.preApprovalStatus === 'rejected').length,
+    activeFlyers: activeFlyers.length,
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Přehled schvalovatele</h1>
-        <p className="mt-2 text-gray-600">Kontrolujte a schvalujte letáky</p>
+        <h1 className="text-3xl font-bold text-gray-900">
+          {isPreApprover ? 'Přehled předschvalovatele' : 'Přehled schvalovatele'}
+        </h1>
+        <p className="mt-2 text-gray-600">
+          {isPreApprover ? 'Kontrolujte a předschvalujte letáky' : 'Kontrolujte a schvalujte letáky'}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Čeká na schválení</p>
+              <p className="text-sm font-medium text-gray-600">
+                {isPreApprover ? 'Čeká na předschválení' : 'Čeká na schválení'}
+              </p>
               <p className="mt-2 text-3xl font-bold text-yellow-600">{stats.pending}</p>
             </div>
             <div className="p-3 bg-yellow-100 rounded-full">
@@ -167,7 +196,9 @@ const ApproverDashboard: React.FC = () => {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Schváleno</p>
+              <p className="text-sm font-medium text-gray-600">
+                {isPreApprover ? 'Předschváleno' : 'Schváleno'}
+              </p>
               <p className="mt-2 text-3xl font-bold text-green-600">{stats.approved}</p>
             </div>
             <div className="p-3 bg-green-100 rounded-full">
@@ -189,13 +220,30 @@ const ApproverDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-8 text-white">
-        <CheckCircle className="w-12 h-12 mb-4" />
-        <h2 className="text-2xl font-bold mb-2">Fronta ke schválení</h2>
-        <p className="mb-6 text-blue-100">Zkontrolujte čekající letáky a schvalte nebo zamítněte je</p>
-        <Button variant="outline" className="bg-white text-blue-600 hover:bg-blue-50" onClick={() => navigate('/approvals')}>
-          Zobrazit schvalování ({stats.pending})
-        </Button>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-8 text-white">
+          <CheckCircle className="w-12 h-12 mb-4" />
+          <h2 className="text-2xl font-bold mb-2">
+            {isPreApprover ? 'Fronta k předschválení' : 'Fronta ke schválení'}
+          </h2>
+          <p className="mb-6 text-blue-100">
+            {isPreApprover
+              ? 'Zkontrolujte čekající letáky a předschvalte nebo zamítněte je'
+              : 'Zkontrolujte čekající letáky a schvalte nebo zamítněte je'}
+          </p>
+          <Button variant="outline" className="bg-white text-blue-600 hover:bg-blue-50" onClick={() => navigate('/approvals')}>
+            {isPreApprover ? 'Zobrazit předschvalování' : 'Zobrazit schvalování'} ({stats.pending})
+          </Button>
+        </div>
+
+        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-8 text-white">
+          <FileText className="w-12 h-12 mb-4" />
+          <h2 className="text-2xl font-bold mb-2">Aktivní letáky</h2>
+          <p className="mb-6 text-green-100">Prohlížejte schválené a aktivní propagační letáky</p>
+          <Button variant="outline" className="bg-white text-green-600 hover:bg-green-50" onClick={() => navigate('/active-flyers')}>
+            Zobrazit letáky ({stats.activeFlyers})
+          </Button>
+        </div>
       </div>
     </div>
   );

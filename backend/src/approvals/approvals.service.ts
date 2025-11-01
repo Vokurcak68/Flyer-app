@@ -21,7 +21,7 @@ export class ApprovalsService {
   }
 
   /**
-   * Request approval from an approver
+   * Request approval from an approver or pre-approver
    */
   async requestApproval(flyerId: string, approverId: string) {
     // Check if approval already exists
@@ -38,12 +38,29 @@ export class ApprovalsService {
       throw new BadRequestException('Approval request already exists for this approver');
     }
 
+    // Get the approver's role to determine if we need to set preApprovalStatus
+    const approver = await this.prisma.user.findUnique({
+      where: { id: approverId },
+      select: { role: true },
+    });
+
+    if (!approver) {
+      throw new NotFoundException('Approver not found');
+    }
+
+    // If it's a pre-approver, set preApprovalStatus to pending
+    const data: any = {
+      flyerId,
+      approverId,
+      status: ApprovalStatus.pending,
+    };
+
+    if (approver.role === 'pre_approver') {
+      data.preApprovalStatus = PreApprovalStatus.pending;
+    }
+
     return this.prisma.approval.create({
-      data: {
-        flyerId,
-        approverId,
-        status: ApprovalStatus.pending,
-      },
+      data,
     });
   }
 
@@ -333,6 +350,9 @@ export class ApprovalsService {
       where: {
         approverId,
         preApprovalStatus: PreApprovalStatus.pending,
+        flyer: {
+          status: FlyerStatus.pending_approval, // Only show flyers still pending approval
+        },
       },
       include: {
         flyer: {
@@ -406,6 +426,9 @@ export class ApprovalsService {
       where: {
         approverId,
         status: ApprovalStatus.pending,
+        flyer: {
+          status: FlyerStatus.pending_approval, // Only show flyers still pending approval
+        },
       },
       include: {
         flyer: {

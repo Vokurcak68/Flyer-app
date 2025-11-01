@@ -29,4 +29,14 @@ export const approvalsService = {
     const response = await api.post<Approval>(`/approvals/${approvalId}/reject`, data);
     return response.data;
   },
+
+  async preApprove(approvalId: string, data?: ApproveDTO): Promise<Approval> {
+    const response = await api.post<Approval>(`/approvals/${approvalId}/pre-approve`, data);
+    return response.data;
+  },
+
+  async preReject(approvalId: string, data: RejectDTO): Promise<Approval> {
+    const response = await api.post<Approval>(`/approvals/${approvalId}/pre-reject`, data);
+    return response.data;
+  },
 };

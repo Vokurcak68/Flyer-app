@@ -165,17 +165,17 @@ function App() {
           <Route
             path="approvals"
             element={
-              <ProtectedRoute allowedRoles={['approver']}>
+              <ProtectedRoute allowedRoles={['approver', 'pre_approver']}>
                 <ApprovalsPage />
               </ProtectedRoute>
             }
           />
 
-          {/* Active Flyers Routes (Approver + End User) */}
+          {/* Active Flyers Routes (Approver + Pre-Approver + End User) */}
           <Route
             path="active-flyers"
             element={
-              <ProtectedRoute allowedRoles={['approver', 'end_user']}>
+              <ProtectedRoute allowedRoles={['approver', 'pre_approver', 'end_user']}>
                 <ActiveFlyersPage />
               </ProtectedRoute>
             }

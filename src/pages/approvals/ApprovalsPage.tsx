@@ -8,13 +8,17 @@ import { Modal } from '../../components/ui/Modal';
 import { FlyerPageView } from '../../components/flyer/FlyerPageView';
 import { Approval } from '../../types';
 import { formatDate } from '../../utils/helpers';
+import { useAuthStore } from '../../store/authStore';
 
 export const ApprovalsPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
   const [selectedApproval, setSelectedApproval] = useState<Approval | null>(null);
   const [comment, setComment] = useState('');
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  const isPreApprover = user?.role === 'pre_approver';
 
   const { data: approvals = [], isLoading } = useQuery({
     queryKey: ['approvals', 'pending'],
@@ -22,7 +26,12 @@ export const ApprovalsPage: React.FC = () => {
   });
 
   const approveMutation = useMutation({
-    mutationFn: (id: string) => approvalsService.approve(id, { comment }),
+    mutationFn: (id: string) => {
+      if (isPreApprover) {
+        return approvalsService.preApprove(id, { comment });
+      }
+      return approvalsService.approve(id, { comment });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['approvals'] });
       setSelectedApproval(null);
@@ -31,7 +40,12 @@ export const ApprovalsPage: React.FC = () => {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: (id: string) => approvalsService.reject(id, { comment }),
+    mutationFn: (id: string) => {
+      if (isPreApprover) {
+        return approvalsService.preReject(id, { comment });
+      }
+      return approvalsService.reject(id, { comment });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['approvals'] });
       setSelectedApproval(null);
@@ -99,15 +113,21 @@ export const ApprovalsPage: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Schvalování</h1>
-        <p className="mt-2 text-gray-600">{approvals.length} letáků čeká na vaše schválení</p>
+        <h1 className="text-3xl font-bold text-gray-900">
+          {isPreApprover ? 'Předschvalování' : 'Schvalování'}
+        </h1>
+        <p className="mt-2 text-gray-600">
+          {approvals.length} letáků čeká na vaše {isPreApprover ? 'předschválení' : 'schválení'}
+        </p>
       </div>
 
       {approvals.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-12 text-center">
           <Check className="w-16 h-16 mx-auto mb-4 text-gray-300" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Vše hotovo!</h3>
-          <p className="text-gray-600">Žádná čekající schválení</p>
+          <p className="text-gray-600">
+            {isPreApprover ? 'Žádná čekající předschválení' : 'Žádná čekající schválení'}
+          </p>
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow divide-y">
@@ -115,11 +135,21 @@ export const ApprovalsPage: React.FC = () => {
             <div key={approval.id} className="p-6">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold mb-2">{approval.flyer?.name}</h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-lg font-semibold">{approval.flyer?.name}</h3>
+                    {!isPreApprover && approval.preApprovalStatus === 'pre_approved' && (
+                      <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+                        Předschváleno
+                      </span>
+                    )}
+                  </div>
                   <div className="text-sm text-gray-600 space-y-1">
                     <div>Platnost: {approval.flyer ? `${formatDate(approval.flyer.validFrom)} - ${formatDate(approval.flyer.validTo)}` : 'N/A'}</div>
                     <div>Stránek: {approval.flyer?.pages.length || 0}</div>
                     <div>Odesláno: {formatDate(approval.createdAt)}</div>
+                    {!isPreApprover && approval.preApprovalStatus === 'pre_approved' && approval.preApprovedAt && (
+                      <div>Předschváleno: {formatDate(approval.preApprovedAt)}</div>
+                    )}
                   </div>
                 </div>
                 <Button onClick={() => { setSelectedApproval(approval); setCurrentPageIndex(0); }}>
@@ -144,6 +174,15 @@ export const ApprovalsPage: React.FC = () => {
             <div className="mb-4 text-sm text-gray-600">
               <div>Platnost: {formatDate(selectedApproval.flyer.validFrom)} - {formatDate(selectedApproval.flyer.validTo)}</div>
               <div>Strana {currentPageIndex + 1} z {selectedApproval.flyer.pages.length}</div>
+              {!isPreApprover && selectedApproval.preApprovalStatus === 'pre_approved' && selectedApproval.preApprovedAt && (
+                <div className="mt-2 p-2 bg-blue-50 rounded">
+                  <span className="font-medium text-blue-900">Předschváleno:</span>{' '}
+                  <span className="text-blue-700">{formatDate(selectedApproval.preApprovedAt)}</span>
+                  {selectedApproval.comment && (
+                    <div className="mt-1 text-blue-700 italic">"{selectedApproval.comment}"</div>
+                  )}
+                </div>
+              )}
             </div>
 
             <FlyerPageView
@@ -193,7 +232,7 @@ export const ApprovalsPage: React.FC = () => {
                 </Button>
                 <Button variant="success" onClick={handleApprove} isLoading={approveMutation.isPending}>
                   <Check className="w-4 h-4 mr-2" />
-                  Schválit
+                  {isPreApprover ? 'Předschválit' : 'Schválit'}
                 </Button>
               </div>
             </div>

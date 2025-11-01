@@ -1162,11 +1162,15 @@ export class FlyersService {
     });
     console.log(`✅ Deleted ${deletedCount.count} approval records for flyer ${flyerId}`);
 
-    // Get all approvers and create approval requests
+    // Get all approvers and pre-approvers and create approval requests
     const approvers = await this.prisma.user.findMany({
-      where: { role: UserRole.approver },
+      where: {
+        role: {
+          in: [UserRole.approver, UserRole.pre_approver]
+        }
+      },
     });
-    console.log(`👥 Found ${approvers.length} approvers`);
+    console.log(`👥 Found ${approvers.length} approvers and pre-approvers`);
 
     // Create approval workflow
     const workflow = await this.approvalsService.createApprovalWorkflow(flyerId, 1);
