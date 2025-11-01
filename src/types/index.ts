@@ -1,8 +1,10 @@
-export type UserRole = 'admin' | 'supplier' | 'approver' | 'end_user';
+export type UserRole = 'admin' | 'supplier' | 'pre_approver' | 'approver' | 'end_user';
 
 export type FlyerStatus = 'draft' | 'pending_approval' | 'approved' | 'rejected' | 'active' | 'expired';
 
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
+
+export type PreApprovalStatus = 'pending' | 'pre_approved' | 'rejected';
 
 export type SlotType = 'empty' | 'product' | 'promo';
 
@@ -123,9 +125,11 @@ export interface Approval {
   approverId: string;
   approver?: User;
   status: ApprovalStatus;
+  preApprovalStatus?: PreApprovalStatus;
   comment?: string;
   createdAt: string;
   decidedAt?: string;
+  preApprovedAt?: string;
 }
 
 export interface UserFlyer {
