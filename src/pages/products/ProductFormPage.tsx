@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Save, ArrowLeft, Upload, Image as ImageIcon, CheckCircle, AlertCircle } from 'lucide-react';
+import { Save, ArrowLeft, Upload, Image as ImageIcon, CheckCircle, AlertCircle, Copy } from 'lucide-react';
 import { productsService } from '../../services/productsService';
 import { brandsService } from '../../services/brandsService';
 import { categoriesService } from '../../services/categoriesService';
@@ -17,6 +17,7 @@ export const ProductFormPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isEdit = !!id;
+  const [searchParams] = useSearchParams();
 
   const [formData, setFormData] = useState({
     ean: '',
@@ -92,11 +93,96 @@ export const ProductFormPage: React.FC = () => {
       if (id) {
         setImagePreview(`http://localhost:4000/api/products/${id}/image`);
       }
+
+      // Validate EAN when loading existing product
+      const validateProductEAN = async () => {
+        if (product.eanCode) {
+          setEanValidation({
+            eanFound: null,
+            priceMatch: null,
+            originalPriceMatch: null,
+            isLoading: true,
+          });
+          try {
+            const result = await productsService.validateEAN(
+              product.eanCode,
+              product.price,
+              product.originalPrice || 0,
+            );
+
+            // Check individual price matches
+            const priceMatch = result.found && result.erpPrice === product.price;
+            const originalPriceMatch = result.found && result.erpOriginalPrice === (product.originalPrice || 0);
+
+            setEanValidation({
+              eanFound: result.found,
+              priceMatch,
+              originalPriceMatch,
+              isLoading: false,
+            });
+          } catch (error) {
+            console.error('Error validating EAN:', error);
+            setEanValidation({
+              eanFound: false,
+              priceMatch: false,
+              originalPriceMatch: false,
+              isLoading: false,
+            });
+          }
+        }
+      };
+
+      validateProductEAN();
+    } else if (!isEdit && searchParams.get('copyFrom')) {
+      // Načítáme kopii produktu - data ze sessionStorage
+      const copyFromId = searchParams.get('copyFrom');
+
+      console.log('=== NAČÍTÁNÍ KOPIE PRODUKTU V useEffect ===');
+      console.log('copyFromId:', copyFromId);
+
+      // Načteme data ze sessionStorage
+      const imageData = sessionStorage.getItem('copyProductImage');
+      const imageMimeType = sessionStorage.getItem('copyProductImageMimeType');
+
+      console.log('Data ze sessionStorage:');
+      console.log('- imageData existuje:', !!imageData);
+      console.log('- imageData délka:', imageData?.length);
+      console.log('- imageData náhled:', imageData?.substring(0, 50));
+      console.log('- imageMimeType:', imageMimeType);
+
+      // Nastavíme formData s daty ze sessionStorage
+      setFormData({
+        ean: searchParams.get('ean') || '',
+        name: searchParams.get('name') || '',
+        description: searchParams.get('description') || '',
+        brandId: searchParams.get('brandId') || '',
+        categoryId: searchParams.get('categoryId') || '',
+        subcategoryId: searchParams.get('subcategoryId') || '',
+        price: parseFloat(searchParams.get('price') || '0'),
+        originalPrice: parseFloat(searchParams.get('originalPrice') || '0'),
+        imageData: imageData || '',
+        imageMimeType: imageMimeType || '',
+        iconIds: searchParams.get('iconIds') ? JSON.parse(searchParams.get('iconIds')!) : [],
+      });
+
+      console.log('FormData nastavena s imageData délkou:', imageData?.length || 0);
+
+      // Nastavíme preview
+      if (imageData && imageMimeType) {
+        const imageUrl = `http://localhost:4000/api/products/${copyFromId}/image`;
+        setImagePreview(imageUrl);
+        console.log('Preview nastaven na:', imageUrl);
+      }
+
+      // Vymažeme data ze sessionStorage po použití
+      sessionStorage.removeItem('copyProductImage');
+      sessionStorage.removeItem('copyProductImageMimeType');
+      console.log('SessionStorage vyčištěn');
     } else if (brands.length > 0 && !formData.brandId) {
       setFormData(prev => ({ ...prev, brandId: brands[0].id }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product, brands]);
+  }, [product, brands, searchParams.get('copyFrom')]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -133,13 +219,15 @@ export const ProductFormPage: React.FC = () => {
 
   const saveMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      console.log('Saving product with payload:', {
+      console.log('=== ZAČÁTEK UKLÁDÁNÍ PRODUKTU ===');
+      console.log('FormData:', {
         ean: data.ean,
         name: data.name,
         brandId: data.brandId,
         hasImageData: !!data.imageData,
         imageMimeType: data.imageMimeType,
-        imageDataLength: data.imageData?.length
+        imageDataLength: data.imageData?.length,
+        imageDataPreview: data.imageData?.substring(0, 50)
       });
 
       const payload: any = {
@@ -160,9 +248,18 @@ export const ProductFormPage: React.FC = () => {
 
       // Only include image data if a new file was uploaded
       if (data.imageData && data.imageMimeType) {
+        console.log('Přidávám imageData do payload');
         payload.imageData = data.imageData;
         payload.imageMimeType = data.imageMimeType;
+      } else {
+        console.log('NEPŘIDÁVÁM imageData - data.imageData:', !!data.imageData, 'data.imageMimeType:', data.imageMimeType);
       }
+
+      console.log('Finální payload:', {
+        ...payload,
+        imageData: payload.imageData ? `${payload.imageData.substring(0, 50)}... (${payload.imageData.length} znaků)` : 'ŽÁDNÁ DATA',
+        imageMimeType: payload.imageMimeType || 'ŽÁDNÝ MIME TYPE'
+      });
 
       if (isEdit && id) {
         return productsService.updateProduct(id, payload);
@@ -171,10 +268,25 @@ export const ProductFormPage: React.FC = () => {
       }
     },
     onSuccess: async (savedProduct) => {
-      console.log('Product saved successfully');
+      console.log('=== ONSUCCESS CALLBACK ===');
+      console.log('Product saved successfully:', savedProduct);
+      console.log('savedProduct má id:', savedProduct?.id);
+      console.log('isEdit:', isEdit);
+      console.log('Podmínka pro navigaci (!isEdit && savedProduct && savedProduct.id):', !isEdit && savedProduct && savedProduct.id);
+
       queryClient.invalidateQueries({ queryKey: ['products'] });
 
-      // Validate EAN after saving
+      // Navigate to edit page after creating new product
+      if (!isEdit && savedProduct && savedProduct.id) {
+        console.log('NAVIGACE - Přecházím na editační stránku produktu:', savedProduct.id);
+        console.log('URL:', `/products/${savedProduct.id}/edit`);
+        // Use replace to avoid adding to history, making the flow smoother
+        navigate(`/products/${savedProduct.id}/edit`, { replace: true });
+        console.log('NAVIGACE - navigate() byla zavolána');
+        return; // Exit early, don't validate EAN yet
+      }
+
+      // Validate EAN after saving (only for edits)
       if (formData.ean) {
         setEanValidation({
           eanFound: null,
@@ -209,9 +321,6 @@ export const ProductFormPage: React.FC = () => {
           });
         }
       }
-
-      // Don't navigate immediately - show validation result first
-      // navigate('/products');
     },
     onError: (error) => {
       console.error('Error saving product:', error);
@@ -223,6 +332,84 @@ export const ProductFormPage: React.FC = () => {
     e.preventDefault();
     console.log('Form submitted', formData);
     saveMutation.mutate(formData);
+  };
+
+  const handleCreateCopy = async () => {
+    console.log('=== VYTVÁŘENÍ KOPIE PRODUKTU ===');
+    console.log('ID produktu:', id);
+
+    // Načteme obrázek před navigací
+    const imageUrl = `http://localhost:4000/api/products/${id}/image`;
+    console.log('URL obrázku:', imageUrl);
+
+    try {
+      const axios = (await import('axios')).default;
+      console.log('Stahování obrázku...');
+      const response = await axios.get(imageUrl, { responseType: 'blob' });
+      const blob = response.data;
+      console.log('Obrázek stažen, velikost blob:', blob.size, 'bytes, typ:', blob.type);
+
+      // Konvertujeme blob na base64
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        const base64Data = base64String.split(',')[1];
+
+        console.log('Base64 konverze dokončena:');
+        console.log('- Délka base64:', base64Data.length);
+        console.log('- Náhled:', base64Data.substring(0, 50));
+        console.log('- MIME type:', blob.type);
+
+        // Uložíme data obrázku do sessionStorage
+        sessionStorage.setItem('copyProductImage', base64Data);
+        sessionStorage.setItem('copyProductImageMimeType', blob.type);
+        console.log('Data uložena do sessionStorage');
+
+        // Ověříme, že se data opravdu uložila
+        const verify = sessionStorage.getItem('copyProductImage');
+        console.log('Ověření uložení - délka dat v sessionStorage:', verify?.length);
+
+        // Navigujeme s ostatními daty
+        const queryParams = new URLSearchParams({
+          copyFrom: id!,
+          ean: formData.ean,
+          name: formData.name,
+          description: formData.description,
+          brandId: formData.brandId,
+          categoryId: formData.categoryId,
+          subcategoryId: formData.subcategoryId,
+          price: formData.price.toString(),
+          originalPrice: formData.originalPrice.toString(),
+          iconIds: JSON.stringify(formData.iconIds),
+        });
+
+        console.log('Navigace na novou stránku...');
+        navigate(`/products/new?${queryParams.toString()}`);
+      };
+
+      reader.onerror = (error) => {
+        console.error('Chyba při čtení FileReader:', error);
+      };
+
+      reader.readAsDataURL(blob);
+    } catch (error) {
+      console.error('Chyba při načítání obrázku:', error);
+      // I když se obrázek nepodaří načíst, můžeme pokračovat bez něj
+      const queryParams = new URLSearchParams({
+        copyFrom: id!,
+        ean: formData.ean,
+        name: formData.name,
+        description: formData.description,
+        brandId: formData.brandId,
+        categoryId: formData.categoryId,
+        subcategoryId: formData.subcategoryId,
+        price: formData.price.toString(),
+        originalPrice: formData.originalPrice.toString(),
+        iconIds: JSON.stringify(formData.iconIds),
+      });
+
+      navigate(`/products/new?${queryParams.toString()}`);
+    }
   };
 
   return (
@@ -249,6 +436,7 @@ export const ProductFormPage: React.FC = () => {
                   required
                   pattern="[0-9]{8,13}"
                   title="EAN kód musí mít 8-13 číslic"
+                  disabled={isEdit}
                 />
                 {eanValidation.isLoading && (
                   <div className="absolute right-3 top-9 text-gray-400">
@@ -562,14 +750,24 @@ export const ProductFormPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end space-x-4">
-          <Button type="button" variant="outline" onClick={() => navigate('/products')}>
-            Zrušit
-          </Button>
-          <Button type="submit" isLoading={saveMutation.isPending}>
-            <Save className="w-4 h-4 mr-2" />
-            {isEdit ? 'Aktualizovat produkt' : 'Vytvořit produkt'}
-          </Button>
+        <div className="mt-6 flex justify-between items-center">
+          <div>
+            {isEdit && (
+              <Button type="button" variant="outline" onClick={handleCreateCopy}>
+                <Copy className="w-4 h-4 mr-2" />
+                Vytvořit kopii
+              </Button>
+            )}
+          </div>
+          <div className="flex space-x-4">
+            <Button type="button" variant="outline" onClick={() => navigate('/products')}>
+              Zrušit
+            </Button>
+            <Button type="submit" isLoading={saveMutation.isPending}>
+              <Save className="w-4 h-4 mr-2" />
+              {isEdit ? 'Aktualizovat produkt' : 'Vytvořit produkt'}
+            </Button>
+          </div>
         </div>
       </form>
 

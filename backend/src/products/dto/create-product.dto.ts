@@ -16,12 +16,12 @@ export class CreateProductDto {
   description?: string;
 
   @IsString()
-  @IsNotEmpty()
-  imageData: string; // Base64 encoded product image
+  @IsOptional()
+  imageData?: string; // Base64 encoded product image
 
   @IsString()
-  @IsNotEmpty()
-  imageMimeType: string; // e.g., 'image/jpeg', 'image/png'
+  @IsOptional()
+  imageMimeType?: string; // e.g., 'image/jpeg', 'image/png'
 
   @Transform(({ value }) => parseFloat(value))
   @IsNumber({ maxDecimalPlaces: 2 })

@@ -41,8 +41,8 @@ export class ProductsService {
       data: {
         ...productData,
         supplierId: userId,
-        imageData: Buffer.from(imageData, 'base64'),
-        imageMimeType,
+        imageData: imageData && imageData.length > 0 ? Buffer.from(imageData, 'base64') : undefined,
+        imageMimeType: imageMimeType && imageMimeType.length > 0 ? imageMimeType : undefined,
         icons: iconIds && iconIds.length > 0 ? {
           create: iconIds.map((iconId, index) => ({
             iconId,

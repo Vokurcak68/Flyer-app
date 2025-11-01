@@ -107,8 +107,8 @@ model Product {
   eanCode       String   @unique @map("ean_code")
   name          String
   description   String?
-  imageData     Bytes    @map("image_data")
-  imageMimeType String   @map("image_mime_type")
+  imageData     Bytes?   @map("image_data")
+  imageMimeType String?  @map("image_mime_type")
   price         Decimal  @db.Decimal(10, 2)
   originalPrice Decimal? @map("original_price") @db.Decimal(10, 2)
   isActive      Boolean  @default(true) @map("is_active")
