@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core';
-import { ArrowLeft, Save, Send, Plus, Minus, Search, FileText } from 'lucide-react';
+import { ArrowLeft, Save, Send, Plus, Minus, Search, FileText, AlertCircle } from 'lucide-react';
 import { flyersService } from '../../services/flyersService';
 import { productsService } from '../../services/productsService';
 import { promoImagesService } from '../../services/promoImagesService';
@@ -30,6 +30,9 @@ export const FlyerEditorPage: React.FC = () => {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const previousSearchRef = useRef(search);
   const [activeTab, setActiveTab] = useState<'products' | 'promos'>('products');
+
+  // Check if flyer is locked for editing (active or pending_approval status)
+  const isLocked = flyer?.status === 'active' || flyer?.status === 'pending_approval';
 
   const preparePagesForAPI = (pages: FlyerPage[]): any[] => {
     return pages.map(page => ({
@@ -218,7 +221,7 @@ export const FlyerEditorPage: React.FC = () => {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveProduct(null);
-    if (!over) return;
+    if (!over || isLocked) return; // Prevent drag & drop when locked
 
     const dropId = over.id as string;
 
@@ -338,6 +341,22 @@ export const FlyerEditorPage: React.FC = () => {
         {/* Rejection History - Full Width Top */}
         <RejectionHistory approvals={flyer?.approvals} rejectionReason={flyer?.rejectionReason} />
 
+        {/* Locked Flyer Warning */}
+        {isLocked && (
+          <div className="mb-4 bg-yellow-50 border-l-4 border-yellow-400 p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <AlertCircle className="h-5 w-5 text-yellow-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">
+                  <strong>Leták je ve stavu "{flyer?.status === 'active' ? 'aktivní' : 'ke schválení'}".</strong> Editace letáku je zakázána.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Main Content - 2 column layout */}
         <div className="grid grid-cols-5 gap-6 mb-6">
           {/* Left Column: Controls & Products/Promos */}
@@ -354,6 +373,7 @@ export const FlyerEditorPage: React.FC = () => {
                   onChange={(e) => setFlyerData({ ...flyerData, name: e.target.value })}
                   className="text-lg font-bold border-0 border-b-2 rounded-none focus:ring-0 mb-2"
                   placeholder="Název letáku"
+                  disabled={isLocked}
                 />
                 <span className="text-xs text-gray-500">
                   {isSaving ? 'Ukládání...' : lastSaved ? `Uloženo ${lastSaved.toLocaleTimeString()}` : ''}
@@ -366,12 +386,14 @@ export const FlyerEditorPage: React.FC = () => {
                   label="Platnost od"
                   value={flyerData.validFrom}
                   onChange={(e) => setFlyerData({ ...flyerData, validFrom: e.target.value })}
+                  disabled={isLocked}
                 />
                 <Input
                   type="date"
                   label="Platnost do"
                   value={flyerData.validTo}
                   onChange={(e) => setFlyerData({ ...flyerData, validTo: e.target.value })}
+                  disabled={isLocked}
                 />
               </div>
 
@@ -380,11 +402,11 @@ export const FlyerEditorPage: React.FC = () => {
                   <FileText className="w-4 h-4 mr-2" />
                   {flyer?.status === 'draft' ? 'Generuj PDF' : 'Zobrazit PDF'}
                 </Button>
-                <Button variant="outline" onClick={() => saveDraftMutation.mutate(flyerData)} isLoading={saveDraftMutation.isPending} size="sm">
+                <Button variant="outline" onClick={() => saveDraftMutation.mutate(flyerData)} isLoading={saveDraftMutation.isPending} disabled={isLocked} size="sm">
                   <Save className="w-4 h-4 mr-2" />
                   Uložit
                 </Button>
-                <Button onClick={handleSubmit} isLoading={submitMutation.isPending} size="sm">
+                <Button onClick={handleSubmit} isLoading={submitMutation.isPending} disabled={isLocked} size="sm">
                   <Send className="w-4 h-4 mr-2" />
                   Odeslat k autorizaci
                 </Button>
@@ -497,7 +519,7 @@ export const FlyerEditorPage: React.FC = () => {
               pageIndex={currentPageIndex}
               onRemoveProduct={handleRemoveProduct}
               onRemoveFooter={handleRemoveFooter}
-              isEditable
+              isEditable={!isLocked}
             />
           </div>
         </div>
@@ -521,11 +543,11 @@ export const FlyerEditorPage: React.FC = () => {
                 ))}
               </div>
               <div className="flex space-x-2">
-                <Button variant="outline" size="sm" onClick={() => handleRemovePage(currentPageIndex)} disabled={flyerData.pages.length === 1}>
+                <Button variant="outline" size="sm" onClick={() => handleRemovePage(currentPageIndex)} disabled={flyerData.pages.length === 1 || isLocked}>
                   <Minus className="w-4 h-4 mr-1" />
                   Odebrat
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleAddPage}>
+                <Button variant="outline" size="sm" onClick={handleAddPage} disabled={isLocked}>
                   <Plus className="w-4 h-4 mr-1" />
                   Přidat
                 </Button>

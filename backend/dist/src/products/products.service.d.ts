@@ -68,6 +68,7 @@ export declare class ProductsService {
         };
     }>;
     findOne(id: string): Promise<{
+        isInActiveFlyer: boolean;
         id: any;
         eanCode: any;
         name: any;
@@ -155,6 +156,7 @@ export declare class ProductsService {
         imageData: Buffer<ArrayBufferLike>;
         imageMimeType: string;
     }>;
+    private isProductInActiveApprovedFlyer;
     private validateEanCodeUniqueness;
     private validateUserBrandAccess;
     private validateIconIds;

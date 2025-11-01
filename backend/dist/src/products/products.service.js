@@ -181,7 +181,11 @@ let ProductsService = class ProductsService {
         if (!product) {
             throw new common_1.NotFoundException(`Product with ID ${id} not found`);
         }
-        return this.formatProductResponse(product);
+        const isInActiveFlyer = await this.isProductInActiveApprovedFlyer(id);
+        return {
+            ...this.formatProductResponse(product),
+            isInActiveFlyer,
+        };
     }
     async update(id, updateProductDto, userId) {
         console.log('🔍 Update product DTO:', JSON.stringify(updateProductDto, null, 2));
@@ -278,6 +282,39 @@ let ProductsService = class ProductsService {
             throw new common_1.NotFoundException(`Product with ID ${id} not found`);
         }
         return product;
+    }
+    async isProductInActiveApprovedFlyer(productId) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const activeFlyer = await this.prisma.flyerPageSlot.findFirst({
+            where: {
+                productId,
+                page: {
+                    flyer: {
+                        status: {
+                            in: ['approved', 'active'],
+                        },
+                        validTo: {
+                            gte: today,
+                        },
+                    },
+                },
+            },
+            include: {
+                page: {
+                    include: {
+                        flyer: true,
+                    },
+                },
+            },
+        });
+        console.log(`🔍 Checking if product ${productId} is in active flyer:`, {
+            found: !!activeFlyer,
+            flyerId: activeFlyer?.page?.flyer?.id,
+            flyerStatus: activeFlyer?.page?.flyer?.status,
+            validTo: activeFlyer?.page?.flyer?.validTo,
+        });
+        return !!activeFlyer;
     }
     async validateEanCodeUniqueness(eanCode, excludeProductId) {
         const enforceUniqueEan = process.env.ENFORCE_UNIQUE_EAN === 'true';
@@ -562,7 +599,7 @@ let ProductsService = class ProductsService {
                     const imageExt = path.extname(imageFile).substring(1);
                     const imageMimeType = `image/${imageExt}`;
                     const iconIds = row['Icon IDs'] ? row['Icon IDs'].split(',').filter(Boolean) : [];
-                    const existingProduct = await this.prisma.product.findUnique({
+                    const existingProduct = await this.prisma.product.findFirst({
                         where: { eanCode },
                     });
                     const productData = {

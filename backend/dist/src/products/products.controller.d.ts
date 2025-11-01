@@ -72,6 +72,7 @@ export declare class ProductsController {
     }>;
     getImage(id: string, res: Response): Promise<void>;
     findOne(id: string): Promise<{
+        isInActiveFlyer: boolean;
         id: any;
         eanCode: any;
         name: any;
