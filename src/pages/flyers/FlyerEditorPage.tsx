@@ -31,9 +31,6 @@ export const FlyerEditorPage: React.FC = () => {
   const previousSearchRef = useRef(search);
   const [activeTab, setActiveTab] = useState<'products' | 'promos'>('products');
 
-  // Check if flyer is locked for editing (active or pending_approval status)
-  const isLocked = flyer?.status === 'active' || flyer?.status === 'pending_approval';
-
   const preparePagesForAPI = (pages: FlyerPage[]): any[] => {
     return pages.map(page => ({
       pageNumber: page.pageNumber,
@@ -63,6 +60,9 @@ export const FlyerEditorPage: React.FC = () => {
     queryFn: () => flyersService.getFlyer(id!),
     enabled: !isNew,
   });
+
+  // Check if flyer is locked for editing (active or pending_approval status)
+  const isLocked = flyer?.status === 'active' || flyer?.status === 'pending_approval';
 
   const { data: productsData, isLoading: isLoadingProducts } = useQuery({
     queryKey: ['products', 'flyer-editor', search, productPage],
