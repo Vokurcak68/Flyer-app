@@ -35,6 +35,7 @@ export const ProductFormPage: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
   const [iconSearch, setIconSearch] = useState('');
+  const [isInActiveFlyer, setIsInActiveFlyer] = useState(false);
   const [eanValidation, setEanValidation] = useState<{
     eanFound: boolean | null;
     priceMatch: boolean | null;
@@ -93,6 +94,9 @@ export const ProductFormPage: React.FC = () => {
       if (id) {
         setImagePreview(`http://localhost:4000/api/products/${id}/image`);
       }
+
+      // Check if product is in active approved flyer
+      setIsInActiveFlyer((product as any).isInActiveFlyer || false);
 
       // Validate EAN when loading existing product
       const validateProductEAN = async () => {
@@ -464,6 +468,21 @@ export const ProductFormPage: React.FC = () => {
         </h1>
       </div>
 
+      {isInActiveFlyer && (
+        <div className="mb-4 bg-yellow-50 border-l-4 border-yellow-400 p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <AlertCircle className="h-5 w-5 text-yellow-400" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                <strong>Produkt je součástí aktivního schváleného letáku.</strong> Editace produktu je zakázána, dokud platnost letáku nevyprší.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit}>
         <div className="grid gap-8" style={{ gridTemplateColumns: '2fr 1fr' }}>
           <div className="space-y-4 bg-white rounded-lg shadow p-6">
@@ -513,6 +532,7 @@ export const ProductFormPage: React.FC = () => {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
+                disabled={isInActiveFlyer}
               />
             </div>
 
@@ -521,8 +541,9 @@ export const ProductFormPage: React.FC = () => {
               <select
                 value={formData.brandId}
                 onChange={(e) => setFormData({ ...formData, brandId: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 required
+                disabled={isInActiveFlyer}
               >
                 <option value="">Vyberte značku</option>
                 {brands.map((brand) => (
@@ -539,7 +560,8 @@ export const ProductFormPage: React.FC = () => {
                   onChange={(e) => {
                     setFormData({ ...formData, categoryId: e.target.value, subcategoryId: '' });
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  disabled={isInActiveFlyer}
                 >
                   <option value="">Vyberte kategorii</option>
                   {categories.map((category) => (
@@ -553,8 +575,8 @@ export const ProductFormPage: React.FC = () => {
                 <select
                   value={formData.subcategoryId}
                   onChange={(e) => setFormData({ ...formData, subcategoryId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={!formData.categoryId}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  disabled={!formData.categoryId || isInActiveFlyer}
                 >
                   <option value="">Vyberte podkategorii</option>
                   {subcategories.map((subcategory) => (
@@ -574,6 +596,7 @@ export const ProductFormPage: React.FC = () => {
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
                   required
+                  disabled={isInActiveFlyer}
                 />
                 {eanValidation.isLoading && (
                   <div className="absolute right-3 top-9 text-gray-400">
@@ -600,6 +623,7 @@ export const ProductFormPage: React.FC = () => {
                   min="0"
                   value={formData.originalPrice}
                   onChange={(e) => setFormData({ ...formData, originalPrice: parseFloat(e.target.value) || 0 })}
+                  disabled={isInActiveFlyer}
                 />
                 {eanValidation.isLoading && (
                   <div className="absolute right-3 top-9 text-gray-400">
@@ -669,7 +693,7 @@ export const ProductFormPage: React.FC = () => {
                       // Accept new value
                       setFormData({ ...formData, description: newValue });
                     }}
-                    className="absolute inset-0 w-full h-full resize-none bg-transparent focus:outline-none text-base overflow-hidden"
+                    className="absolute inset-0 w-full h-full resize-none bg-transparent focus:outline-none text-base overflow-hidden disabled:cursor-not-allowed disabled:bg-gray-100"
                     style={{
                       padding: '8px 8px 8px calc(8px + 16px + 8px)',
                       zIndex: 2,
@@ -678,6 +702,7 @@ export const ProductFormPage: React.FC = () => {
                       wordBreak: 'break-word'
                     }}
                     placeholder="Píšete zde... každý řádek začne bulletem"
+                    disabled={isInActiveFlyer}
                   />
                 </div>
               </div>
@@ -695,6 +720,7 @@ export const ProductFormPage: React.FC = () => {
                 variant="outline"
                 onClick={() => setIsIconModalOpen(true)}
                 className="w-full"
+                disabled={isInActiveFlyer}
               >
                 <ImageIcon className="w-4 h-4 mr-2" />
                 Vybrat ikony ({formData.iconIds.length}/4)
@@ -742,8 +768,8 @@ export const ProductFormPage: React.FC = () => {
                 Obrázek produktu
               </label>
               <div className="flex items-center space-x-4">
-                <label className="cursor-pointer">
-                  <div className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
+                <label className={isInActiveFlyer ? 'cursor-not-allowed' : 'cursor-pointer'}>
+                  <div className={`flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-md ${isInActiveFlyer ? 'bg-gray-100 cursor-not-allowed' : 'hover:bg-gray-50'}`}>
                     <Upload className="w-4 h-4" />
                     <span>Vybrat soubor</span>
                   </div>
@@ -752,6 +778,7 @@ export const ProductFormPage: React.FC = () => {
                     accept="image/*"
                     onChange={handleFileChange}
                     className="hidden"
+                    disabled={isInActiveFlyer}
                   />
                 </label>
                 {formData.imageData && (
@@ -816,7 +843,7 @@ export const ProductFormPage: React.FC = () => {
             <Button type="button" variant="outline" onClick={() => navigate('/products')}>
               Zrušit
             </Button>
-            <Button type="submit" isLoading={saveMutation.isPending}>
+            <Button type="submit" isLoading={saveMutation.isPending} disabled={isInActiveFlyer}>
               <Save className="w-4 h-4 mr-2" />
               {isEdit ? 'Aktualizovat produkt' : 'Vytvořit produkt'}
             </Button>

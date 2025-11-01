@@ -220,7 +220,13 @@ export class ProductsService {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
 
-    return this.formatProductResponse(product);
+    // Check if product is in an active approved flyer
+    const isInActiveFlyer = await this.isProductInActiveApprovedFlyer(id);
+
+    return {
+      ...this.formatProductResponse(product),
+      isInActiveFlyer,
+    };
   }
 
   async update(id: string, updateProductDto: UpdateProductDto, userId: string) {
@@ -352,6 +358,25 @@ export class ProductsService {
   }
 
   // Helper methods
+
+  private async isProductInActiveApprovedFlyer(productId: string): Promise<boolean> {
+    // Check if product is in any approved flyer where validTo date hasn't passed yet
+    const activeFlyer = await this.prisma.flyerPageSlot.findFirst({
+      where: {
+        productId,
+        page: {
+          flyer: {
+            status: 'approved',
+            validTo: {
+              gte: new Date(), // validTo is today or in the future
+            },
+          },
+        },
+      },
+    });
+
+    return !!activeFlyer;
+  }
 
   private async validateEanCodeUniqueness(eanCode: string, excludeProductId?: string) {
     // Check if EAN uniqueness enforcement is enabled
@@ -720,7 +745,7 @@ export class ProductsService {
           const iconIds = row['Icon IDs'] ? row['Icon IDs'].split(',').filter(Boolean) : [];
 
           // Check if product already exists
-          const existingProduct = await this.prisma.product.findUnique({
+          const existingProduct = await this.prisma.product.findFirst({
             where: { eanCode },
           });
 
