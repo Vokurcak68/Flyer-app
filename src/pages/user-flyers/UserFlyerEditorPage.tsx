@@ -1,22 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core';
-import { ArrowLeft, Save, Plus, Minus, Search, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Minus, Search } from 'lucide-react';
 import { flyersService } from '../../services/flyersService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { FlyerPageView } from '../../components/flyer/FlyerPageView';
 import { DraggableProduct } from '../../components/flyer/DraggableProduct';
 import { Product, FlyerPage, FlyerSlot } from '../../types';
-import { formatDateForInput } from '../../utils/helpers';
 
 export const UserFlyerEditorPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isNew = id === 'new';
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [search, setSearch] = useState('');
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
@@ -50,8 +48,8 @@ export const UserFlyerEditorPage: React.FC = () => {
     if (flyer && !isNew) {
       setFlyerData({
         name: flyer.name,
-        validFrom: formatDateForInput(flyer.validFrom),
-        validTo: formatDateForInput(flyer.validTo),
+        validFrom: flyer.validFrom ? new Date(flyer.validFrom).toISOString().split('T')[0] : '',
+        validTo: flyer.validTo ? new Date(flyer.validTo).toISOString().split('T')[0] : '',
         pages: flyer.pages && flyer.pages.length > 0
           ? flyer.pages.map(page => ({
               ...page,
@@ -97,6 +95,7 @@ export const UserFlyerEditorPage: React.FC = () => {
   const saveDraftMutation = useMutation({
     mutationFn: async (data: typeof flyerData) => {
       const pages = data.pages.map((page, index) => ({
+        id: page.id,
         pageNumber: index + 1,
         slots: page.slots,
       }));
