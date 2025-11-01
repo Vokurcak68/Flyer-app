@@ -217,6 +217,46 @@ export const ProductFormPage: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
+  const handleErpValidation = async () => {
+    if (!formData.ean || formData.ean.length < 8) {
+      return;
+    }
+
+    setEanValidation({
+      eanFound: null,
+      priceMatch: null,
+      originalPriceMatch: null,
+      isLoading: true,
+    });
+
+    try {
+      const result = await productsService.validateEAN(
+        formData.ean,
+        formData.price,
+        formData.originalPrice || 0,
+      );
+
+      // Check individual price matches
+      const priceMatch = result.found && result.erpPrice === formData.price;
+      const originalPriceMatch = result.found && result.erpOriginalPrice === (formData.originalPrice || 0);
+
+      setEanValidation({
+        eanFound: result.found,
+        priceMatch,
+        originalPriceMatch,
+        isLoading: false,
+      });
+    } catch (error) {
+      console.error('Error validating EAN:', error);
+      setEanValidation({
+        eanFound: false,
+        priceMatch: false,
+        originalPriceMatch: false,
+        isLoading: false,
+      });
+    }
+  };
+
   const saveMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       console.log('=== ZAČÁTEK UKLÁDÁNÍ PRODUKTU ===');
@@ -428,31 +468,44 @@ export const ProductFormPage: React.FC = () => {
         <div className="grid gap-8" style={{ gridTemplateColumns: '2fr 1fr' }}>
           <div className="space-y-4 bg-white rounded-lg shadow p-6">
             <div className="grid grid-cols-2 gap-4">
-              <div className="relative">
-                <Input
-                  label="EAN kód *"
-                  value={formData.ean}
-                  onChange={(e) => setFormData({ ...formData, ean: e.target.value })}
-                  required
-                  pattern="[0-9]{8,13}"
-                  title="EAN kód musí mít 8-13 číslic"
-                  disabled={isEdit}
-                />
-                {eanValidation.isLoading && (
-                  <div className="absolute right-3 top-9 text-gray-400">
-                    <div className="animate-spin h-5 w-5 border-2 border-gray-400 border-t-transparent rounded-full"></div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">EAN kód *</label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      value={formData.ean}
+                      onChange={(e) => setFormData({ ...formData, ean: e.target.value })}
+                      required
+                      pattern="[0-9]{8,13}"
+                      title="EAN kód musí mít 8-13 číslic"
+                      disabled={isEdit}
+                    />
+                    {eanValidation.isLoading && (
+                      <div className="absolute right-3 top-2 text-gray-400">
+                        <div className="animate-spin h-5 w-5 border-2 border-gray-400 border-t-transparent rounded-full"></div>
+                      </div>
+                    )}
+                    {!eanValidation.isLoading && eanValidation.eanFound === true && (
+                      <div className="absolute right-3 top-2 text-green-600">
+                        <CheckCircle className="h-5 w-5" />
+                      </div>
+                    )}
+                    {!eanValidation.isLoading && eanValidation.eanFound === false && (
+                      <div className="absolute right-3 top-2 text-red-600">
+                        <AlertCircle className="h-5 w-5" />
+                      </div>
+                    )}
                   </div>
-                )}
-                {!eanValidation.isLoading && eanValidation.eanFound === true && (
-                  <div className="absolute right-3 top-9 text-green-600">
-                    <CheckCircle className="h-5 w-5" />
-                  </div>
-                )}
-                {!eanValidation.isLoading && eanValidation.eanFound === false && (
-                  <div className="absolute right-3 top-9 text-red-600">
-                    <AlertCircle className="h-5 w-5" />
-                  </div>
-                )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleErpValidation}
+                    disabled={!formData.ean || formData.ean.length < 8 || eanValidation.isLoading}
+                    className="mt-0"
+                  >
+                    ERP
+                  </Button>
+                </div>
               </div>
 
               <Input
