@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsOptional, IsUUID } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsUUID, IsBoolean } from 'class-validator';
 
 export class CreatePromoImageDto {
   @IsString()
@@ -15,6 +15,10 @@ export class CreatePromoImageDto {
 
   @IsString()
   brandId: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isForEndUsers?: boolean;
 }
 
 export class PromoImageFilterDto {

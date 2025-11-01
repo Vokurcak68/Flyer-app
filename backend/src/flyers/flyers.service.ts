@@ -96,16 +96,48 @@ export class FlyersService {
 
     // Role-based filtering
     if (userRole === UserRole.supplier) {
-      // Suppliers see only their own flyers
-      where.supplierId = userId;
+      // Suppliers see flyers from suppliers who share at least one brand
+      // Get user's assigned brands
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          brands: {
+            include: {
+              brand: {
+                include: {
+                  users: true, // Get all users assigned to these brands
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (user && user.brands.length > 0) {
+        // Get all user IDs that share at least one brand with this supplier
+        const sharedBrandUserIds = new Set<string>();
+        user.brands.forEach(userBrand => {
+          userBrand.brand.users.forEach(brandUser => {
+            sharedBrandUserIds.add(brandUser.userId);
+          });
+        });
+
+        // Filter flyers by suppliers who share brands
+        where.supplierId = {
+          in: Array.from(sharedBrandUserIds),
+        };
+      } else {
+        // If supplier has no brands assigned, they see only their own flyers
+        where.supplierId = userId;
+      }
     } else if (userRole === UserRole.approver) {
       // Approvers see flyers pending approval
       where.status = {
         in: [FlyerStatus.pending_approval, FlyerStatus.approved],
       };
     } else if (userRole === UserRole.end_user) {
-      // End users see only active flyers
-      where.status = FlyerStatus.active;
+      // End users see only their own flyers (flyers they created)
+      where.supplierId = userId;
     }
 
     // Apply additional filters
@@ -493,7 +525,7 @@ export class FlyersService {
     }
 
     // Check access permissions
-    this.checkAccessPermission(flyer, userId, userRole);
+    await this.checkAccessPermission(flyer, userId, userRole);
 
     // Transform pages to frontend format
     return this.transformFlyerForFrontend(flyer);
@@ -1497,19 +1529,51 @@ export class FlyersService {
     };
   }
 
-  private checkAccessPermission(
+  private async checkAccessPermission(
     flyer: any,
     userId: string,
     userRole: UserRole,
   ) {
     if (userRole === UserRole.supplier) {
-      // Suppliers can only access their own flyers
+      // Suppliers can access flyers from suppliers who share at least one brand
       if (flyer.supplierId !== userId) {
-        throw new ForbiddenException('You do not have access to this flyer');
+        // Check if this supplier shares any brands with the flyer creator
+        const user = await this.prisma.user.findUnique({
+          where: { id: userId },
+          include: {
+            brands: {
+              include: {
+                brand: {
+                  include: {
+                    users: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        if (user && user.brands.length > 0) {
+          // Get all user IDs that share at least one brand with this supplier
+          const sharedBrandUserIds = new Set<string>();
+          user.brands.forEach(userBrand => {
+            userBrand.brand.users.forEach(brandUser => {
+              sharedBrandUserIds.add(brandUser.userId);
+            });
+          });
+
+          // Check if flyer creator shares a brand
+          if (!sharedBrandUserIds.has(flyer.supplierId)) {
+            throw new ForbiddenException('You do not have access to this flyer');
+          }
+        } else {
+          // Supplier has no brands assigned, can only access own flyers
+          throw new ForbiddenException('You do not have access to this flyer');
+        }
       }
     } else if (userRole === UserRole.end_user) {
-      // End users can only access active flyers
-      if (flyer.status !== FlyerStatus.active) {
+      // End users can only access their own flyers
+      if (flyer.supplierId !== userId) {
         throw new ForbiddenException('This flyer is not available');
       }
     }

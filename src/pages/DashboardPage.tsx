@@ -31,9 +31,9 @@ export const DashboardPage: React.FC = () => {
 const SupplierDashboard: React.FC = () => {
   const navigate = useNavigate();
 
-  const { data: products = [] } = useQuery({
-    queryKey: ['products', 'my'],
-    queryFn: () => productsService.getMyProducts(),
+  const { data: productStats } = useQuery({
+    queryKey: ['products', 'stats'],
+    queryFn: () => productsService.getMyProductsStats(),
   });
 
   const { data: flyers = [] } = useQuery({
@@ -42,7 +42,7 @@ const SupplierDashboard: React.FC = () => {
   });
 
   const stats = {
-    totalProducts: products.length,
+    totalProducts: productStats?.active || 0,
     activeFlyers: flyers.filter((f) => f.status === 'active').length,
     pendingApproval: flyers.filter((f) => f.status === 'pending_approval').length,
     draftFlyers: flyers.filter((f) => f.status === 'draft').length,
@@ -209,34 +209,99 @@ const EndUserDashboard: React.FC = () => {
     queryFn: () => flyersService.getActiveFlyers(),
   });
 
+  const { data: myFlyers = [] } = useQuery({
+    queryKey: ['flyers', 'my'],
+    queryFn: () => flyersService.getMyFlyers(),
+  });
+
+  const stats = {
+    activeFlyers: activeFlyers.length,
+    myFlyers: myFlyers.length,
+    myDraftFlyers: myFlyers.filter((f) => f.status === 'draft').length,
+    availableProducts: activeFlyers.reduce((total, flyer) =>
+      total + flyer.pages.reduce((pageTotal, page) =>
+        pageTotal + page.slots.filter(slot => slot && slot.type === 'product' && slot.product).length, 0
+      ), 0
+    ),
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Vítejte</h1>
-        <p className="mt-2 text-gray-600">Procházejte letáky a vytvářejte vlastní</p>
+        <p className="mt-2 text-gray-600">Procházejte aktivní letáky a vytvářejte vlastní</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Aktivní letáky</p>
-              <p className="mt-2 text-3xl font-bold text-blue-600">{activeFlyers.length}</p>
+              <p className="mt-2 text-3xl font-bold text-blue-600">{stats.activeFlyers}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-full">
               <FileText className="w-6 h-6 text-blue-600" />
             </div>
           </div>
         </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Dostupné produkty</p>
+              <p className="mt-2 text-3xl font-bold text-green-600">{stats.availableProducts}</p>
+            </div>
+            <div className="p-3 bg-green-100 rounded-full">
+              <Package className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Moje letáky</p>
+              <p className="mt-2 text-3xl font-bold text-purple-600">{stats.myFlyers}</p>
+            </div>
+            <div className="p-3 bg-purple-100 rounded-full">
+              <Grid className="w-6 h-6 text-purple-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Koncepty</p>
+              <p className="mt-2 text-3xl font-bold text-gray-600">{stats.myDraftFlyers}</p>
+            </div>
+            <div className="p-3 bg-gray-100 rounded-full">
+              <Clock className="w-6 h-6 text-gray-600" />
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg p-8 text-white">
-        <Grid className="w-12 h-12 mb-4" />
-        <h2 className="text-2xl font-bold mb-2">Vytvořte vlastní leták</h2>
-        <p className="mb-6 text-purple-100">Vyberte z dostupných produktů a vytvořte si vlastní letáky</p>
-        <Button variant="outline" className="bg-white text-purple-600 hover:bg-purple-50" onClick={() => navigate('/user-flyers')}>
-          Moje letáky
-        </Button>
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-8 text-white">
+          <FileText className="w-12 h-12 mb-4" />
+          <h2 className="text-2xl font-bold mb-2">Aktivní letáky</h2>
+          <p className="mb-6 text-blue-100">Procházejte aktuální nabídku a stahujte PDF letáky</p>
+          <Button variant="outline" className="bg-white text-blue-600 hover:bg-blue-50" onClick={() => navigate('/active-flyers')}>
+            Zobrazit aktivní letáky
+          </Button>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg p-8 text-white">
+          <Grid className="w-12 h-12 mb-4" />
+          <h2 className="text-2xl font-bold mb-2">Moje letáky</h2>
+          <p className="mb-6 text-purple-100">Vytvořte si vlastní letáky z dostupných produktů</p>
+          <Button variant="outline" className="bg-white text-purple-600 hover:bg-purple-50" onClick={() => navigate('/my-flyers')}>
+            Spravovat moje letáky
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core';
 import { ArrowLeft, Save, Send, Plus, Minus, Search, FileText, AlertCircle, Copy, XCircle } from 'lucide-react';
@@ -14,12 +14,19 @@ import { DraggablePromoImage } from '../../components/flyer/DraggablePromoImage'
 import { RejectionHistory } from '../../components/flyer/RejectionHistory';
 import { Product, FlyerPage, FlyerSlot } from '../../types';
 import { useAutoSave } from '../../hooks/useAutoSave';
+import { useAuthStore } from '../../store/authStore';
 
 export const FlyerEditorPage: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
   const isNew = id === 'new';
+
+  // Determine base path based on current location
+  const isMyFlyers = location.pathname.startsWith('/my-flyers');
+  const basePath = isMyFlyers ? '/my-flyers' : '/flyers';
 
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [search, setSearch] = useState('');
@@ -64,6 +71,14 @@ export const FlyerEditorPage: React.FC = () => {
   // Check if flyer is locked for editing (active, pending_approval, or expired status)
   const isLocked = flyer?.status === 'active' || flyer?.status === 'pending_approval' || flyer?.status === 'expired';
 
+  // For end users, get products from active flyers instead of all products
+  const { data: activeFlyers = [] } = useQuery({
+    queryKey: ['flyers', 'active'],
+    queryFn: () => flyersService.getActiveFlyers(),
+    enabled: isMyFlyers, // Only fetch for end users
+  });
+
+  // For suppliers, fetch products normally
   const { data: productsData, isLoading: isLoadingProducts } = useQuery({
     queryKey: ['products', 'flyer-editor', search, productPage],
     queryFn: () => productsService.getProducts({
@@ -72,29 +87,58 @@ export const FlyerEditorPage: React.FC = () => {
       limit: 20,
       isActive: true,
     }),
+    enabled: !isMyFlyers, // Only fetch for suppliers
   });
 
   // Při změně stránky nebo při prvním načtení přidáme produkty do seznamu
   useEffect(() => {
-    if (productsData?.data) {
-      // Pokud se změnil search, resetuj seznam
-      if (previousSearchRef.current !== search) {
-        previousSearchRef.current = search;
-        setProductPage(1);
-        setAllProducts(productsData.data);
+    if (isMyFlyers) {
+      // For end users: extract products from active flyers
+      if (activeFlyers.length > 0) {
+        const productsFromActiveFlyers = activeFlyers.flatMap(flyer =>
+          flyer.pages.flatMap(page =>
+            page.slots
+              .filter(slot => slot && slot.type === 'product' && slot.product)
+              .map(slot => slot.product!)
+          )
+        );
+
+        // Remove duplicates by product ID
+        const uniqueProducts = Array.from(
+          new Map(productsFromActiveFlyers.map(p => [p.id, p])).values()
+        );
+
+        // Apply search filter
+        const filtered = search
+          ? uniqueProducts.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
+          : uniqueProducts;
+
+        setAllProducts(filtered);
       } else {
-        // Normální paginace - přidej nebo nahraď
-        if (productPage === 1) {
+        setAllProducts([]);
+      }
+    } else {
+      // For suppliers: use normal product pagination
+      if (productsData?.data) {
+        // Pokud se změnil search, resetuj seznam
+        if (previousSearchRef.current !== search) {
+          previousSearchRef.current = search;
+          setProductPage(1);
           setAllProducts(productsData.data);
         } else {
-          setAllProducts(prev => [...prev, ...productsData.data]);
+          // Normální paginace - přidej nebo nahraď
+          if (productPage === 1) {
+            setAllProducts(productsData.data);
+          } else {
+            setAllProducts(prev => [...prev, ...productsData.data]);
+          }
         }
       }
     }
-  }, [productsData, productPage, search]);
+  }, [productsData, productPage, search, isMyFlyers, activeFlyers]);
 
   const { data: promoImages = [] } = useQuery({
-    queryKey: ['promo-images'],
+    queryKey: ['promo-images', user?.role],
     queryFn: () => promoImagesService.getPromoImages(),
   });
 
@@ -137,7 +181,7 @@ export const FlyerEditorPage: React.FC = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['flyers'] });
-      if (isNew) navigate(`/flyers/${data.id}`, { replace: true });
+      if (isNew) navigate(`${basePath}/${data.id}`, { replace: true });
     },
   });
 
@@ -166,7 +210,7 @@ export const FlyerEditorPage: React.FC = () => {
       // Invalidate both detail and list queries to refresh rejection status
       queryClient.invalidateQueries({ queryKey: ['flyers'] });
       queryClient.invalidateQueries({ queryKey: ['flyers', 'my'] });
-      navigate('/flyers');
+      navigate(basePath);
     },
   });
 
@@ -332,7 +376,7 @@ export const FlyerEditorPage: React.FC = () => {
 
       // Navigate to the new flyer
       queryClient.invalidateQueries({ queryKey: ['flyers'] });
-      navigate(`/flyers/${newFlyer.id}`);
+      navigate(`${basePath}/${newFlyer.id}`);
     } catch (error) {
       console.error('Error creating flyer copy:', error);
       alert('Chyba při vytváření kopie letáku');
@@ -418,7 +462,7 @@ export const FlyerEditorPage: React.FC = () => {
             {/* Header Panel */}
             <div className="bg-white rounded-lg shadow p-4 flex-shrink-0">
               <div className="mb-4">
-                <Button variant="outline" onClick={() => navigate('/flyers')} size="sm" className="mb-3">
+                <Button variant="outline" onClick={() => navigate(basePath)} size="sm" className="mb-3">
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Zpět
                 </Button>
@@ -524,13 +568,13 @@ export const FlyerEditorPage: React.FC = () => {
                       className="mb-4 flex-shrink-0"
                     />
                     <div className="space-y-2 flex-1 overflow-y-auto">
-                      {isLoadingProducts && productPage === 1 ? (
+                      {(!isMyFlyers && isLoadingProducts && productPage === 1) ? (
                         <div className="flex justify-center py-8">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                         </div>
                       ) : filteredProducts.length === 0 ? (
                         <p className="text-sm text-gray-500 text-center py-8">
-                          Žádné produkty
+                          {isMyFlyers ? 'Žádné produkty v aktivních letácích' : 'Žádné produkty'}
                         </p>
                       ) : (
                         <>
@@ -541,7 +585,7 @@ export const FlyerEditorPage: React.FC = () => {
                               isUsed={usedProductIds.has(product.id)}
                             />
                           ))}
-                          {productsData && productsData.total > allProducts.length && (
+                          {!isMyFlyers && productsData && productsData.meta.total > allProducts.length && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -549,7 +593,7 @@ export const FlyerEditorPage: React.FC = () => {
                               isLoading={isLoadingProducts}
                               className="w-full mt-2"
                             >
-                              Načíst více ({allProducts.length} z {productsData.total})
+                              Načíst více ({allProducts.length} z {productsData.meta.total})
                             </Button>
                           )}
                         </>

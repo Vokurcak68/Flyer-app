@@ -67,6 +67,7 @@ export interface Product {
   price: number;
   originalPrice?: number;
   icons?: ProductIcon[];
+  isActive?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -78,6 +79,7 @@ export interface PromoImage {
   supplierId: string;
   brandId?: string | null;
   brand?: any;
+  isForEndUsers?: boolean;
   createdAt: string;
 }
 
@@ -153,8 +155,10 @@ export interface ApiError {
 
 export interface PaginatedResponse<T> {
   data: T[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }

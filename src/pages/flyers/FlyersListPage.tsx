@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Edit2, Trash2, Eye, AlertCircle, Search } from 'lucide-react';
 import { flyersService } from '../../services/flyersService';
@@ -12,9 +12,14 @@ type TabType = 'active' | 'archive';
 
 export const FlyersListPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabType>('active');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Determine base path based on current location
+  const isMyFlyers = location.pathname.startsWith('/my-flyers');
+  const basePath = isMyFlyers ? '/my-flyers' : '/flyers';
 
   const { data: flyers = [], isLoading } = useQuery({
     queryKey: ['flyers', 'my'],
@@ -72,10 +77,10 @@ export const FlyersListPage: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Letáky</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{isMyFlyers ? 'Moje letáky' : 'Letáky'}</h1>
           <p className="mt-2 text-gray-600">Spravujte své propagační letáky</p>
         </div>
-        <Button onClick={() => navigate('/flyers/new')}>
+        <Button onClick={() => navigate(`${basePath}/new`)}>
           <Plus className="w-4 h-4 mr-2" />
           Nový leták
         </Button>
@@ -153,7 +158,7 @@ export const FlyersListPage: React.FC = () => {
             <>
               <h3 className="text-lg font-medium text-gray-900 mb-2">Žádné letáky nenalezeny</h3>
               <p className="text-gray-600 mb-6">Začněte vytvořením prvního letáku</p>
-              <Button onClick={() => navigate('/flyers/new')}>
+              <Button onClick={() => navigate(`${basePath}/new`)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Vytvořit leták
               </Button>
@@ -192,7 +197,7 @@ export const FlyersListPage: React.FC = () => {
                 <div className="flex space-x-2">
                   {flyer.status === 'draft' && !flyer.rejectionReason && (
                     <>
-                      <Button size="sm" onClick={() => navigate(`/flyers/${flyer.id}`)}>
+                      <Button size="sm" onClick={() => navigate(`${basePath}/${flyer.id}`)}>
                         <Edit2 className="w-4 h-4 mr-1" />
                         Upravit
                       </Button>
@@ -205,13 +210,13 @@ export const FlyersListPage: React.FC = () => {
                     </>
                   )}
                   {flyer.status === 'draft' && flyer.rejectionReason && (
-                    <Button size="sm" onClick={() => navigate(`/flyers/${flyer.id}`)} className="bg-orange-600 hover:bg-orange-700">
+                    <Button size="sm" onClick={() => navigate(`${basePath}/${flyer.id}`)} className="bg-orange-600 hover:bg-orange-700">
                       <Edit2 className="w-4 h-4 mr-1" />
                       Opravit a odeslat znovu
                     </Button>
                   )}
                   {flyer.status !== 'draft' && (
-                    <Button size="sm" variant="outline" onClick={() => navigate(`/flyers/${flyer.id}`)}>
+                    <Button size="sm" variant="outline" onClick={() => navigate(`${basePath}/${flyer.id}`)}>
                       <Eye className="w-4 h-4 mr-1" />
                       Zobrazit
                     </Button>

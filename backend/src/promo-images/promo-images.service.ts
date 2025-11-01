@@ -29,6 +29,7 @@ export class PromoImagesService {
         imageMimeType: dto.imageMimeType,
         defaultSize: dto.defaultSize,
         brandId: dto.brandId,
+        isForEndUsers: dto.isForEndUsers || false,
       },
       include: {
         brand: true,
@@ -58,7 +59,11 @@ export class PromoImagesService {
         // If user has no brands, return empty list
         return [];
       }
+    } else if (role === 'end_user') {
+      // End users only see promo images marked for them
+      where.isForEndUsers = true;
     }
+    // Admin sees all promo images (no filtering)
 
     // Apply filters
     if (filters.brandId) {
@@ -99,10 +104,11 @@ export class PromoImagesService {
     return promoImage;
   }
 
-  async remove(id: string, userId: string) {
+  async remove(id: string, userId: string, userRole: string) {
     const promoImage = await this.findOne(id);
 
-    if (promoImage.supplierId !== userId) {
+    // Admin can delete any promo image, suppliers can only delete their own
+    if (userRole !== 'admin' && promoImage.supplierId !== userId) {
       throw new ForbiddenException('You can only delete your own promo images');
     }
 

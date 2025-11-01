@@ -52,7 +52,7 @@ export const MainLayout: React.FC = () => {
         return [
           { to: '/dashboard', icon: Home, label: 'Přehled' },
           { to: '/active-flyers', icon: FileText, label: 'Aktivní letáky' },
-          { to: '/user-flyers', icon: Grid, label: 'Moje letáky' },
+          { to: '/my-flyers', icon: Grid, label: 'Moje letáky' },
         ];
       default:
         return [];

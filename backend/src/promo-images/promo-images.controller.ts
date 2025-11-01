@@ -50,8 +50,8 @@ export class PromoImagesController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('supplier')
+  @Roles('supplier', 'admin')
   remove(@Param('id') id: string, @Request() req: any) {
-    return this.promoImagesService.remove(id, req.user.userId);
+    return this.promoImagesService.remove(id, req.user.userId, req.user.role);
   }
 }

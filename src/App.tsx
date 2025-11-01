@@ -14,8 +14,6 @@ import { FlyersListPage } from './pages/flyers/FlyersListPage';
 import { FlyerEditorPage } from './pages/flyers/FlyerEditorPage';
 import { ActiveFlyersPage } from './pages/flyers/ActiveFlyersPage';
 import { ApprovalsPage } from './pages/approvals/ApprovalsPage';
-import { UserFlyersPage } from './pages/user-flyers/UserFlyersPage';
-import { UserFlyerEditorPage } from './pages/user-flyers/UserFlyerEditorPage';
 import { UsersListPage } from './pages/admin/UsersListPage';
 import { UserFormPage } from './pages/admin/UserFormPage';
 import { IconsManagementPage } from './pages/admin/IconsManagementPage';
@@ -183,28 +181,28 @@ function App() {
             }
           />
 
-          {/* End User Routes */}
+          {/* My Flyers Routes (End User) - uses same pages as supplier */}
           <Route
-            path="user-flyers"
+            path="my-flyers"
             element={
               <ProtectedRoute allowedRoles={['end_user']}>
-                <UserFlyersPage />
+                <FlyersListPage />
               </ProtectedRoute>
             }
           />
           <Route
-            path="user-flyers/new"
+            path="my-flyers/new"
             element={
               <ProtectedRoute allowedRoles={['end_user']}>
-                <UserFlyerEditorPage />
+                <FlyerEditorPage />
               </ProtectedRoute>
             }
           />
           <Route
-            path="user-flyers/:id"
+            path="my-flyers/:id"
             element={
               <ProtectedRoute allowedRoles={['end_user']}>
-                <UserFlyerEditorPage />
+                <FlyerEditorPage />
               </ProtectedRoute>
             }
           />

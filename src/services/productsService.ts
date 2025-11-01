@@ -52,6 +52,22 @@ export const productsService = {
     return response.data.data; // Extract products array from paginated response
   },
 
+  async getMyProductsStats(): Promise<{ total: number; active: number }> {
+    const response = await api.get<PaginatedResponse<Product>>('/products', {
+      params: { limit: 1 } // Get minimal data, we only need the count
+    });
+
+    // Count active products from total
+    const activeResponse = await api.get<PaginatedResponse<Product>>('/products', {
+      params: { limit: 1, isActive: true }
+    });
+
+    return {
+      total: response.data.meta?.total || 0,
+      active: activeResponse.data.meta?.total || 0
+    };
+  },
+
   async exportProducts(): Promise<Blob> {
     const response = await api.get('/products/export/csv', {
       responseType: 'blob',
