@@ -79,4 +79,9 @@ export const flyersService = {
     });
     return response.data;
   },
+
+  async expireFlyer(id: string): Promise<Flyer> {
+    const response = await api.post<Flyer>(`/flyers/${id}/expire`);
+    return response.data;
+  },
 };

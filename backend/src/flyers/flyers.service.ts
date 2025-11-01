@@ -89,6 +89,9 @@ export class FlyersService {
   }
 
   async findAll(filterDto: FlyerFilterDto, userId: string, userRole: UserRole) {
+    // First, update all expired flyers
+    await this.updateExpiredFlyers();
+
     const where: any = {};
 
     // Role-based filtering
@@ -208,6 +211,9 @@ export class FlyersService {
   }
 
   async getActiveFlyers(userId: string, userRole: UserRole) {
+    // First, update all expired flyers
+    await this.updateExpiredFlyers();
+
     // Get all active flyers with optimized data for end users
     const flyers = await this.prisma.flyer.findMany({
       where: {
@@ -378,6 +384,9 @@ export class FlyersService {
   }
 
   async findOne(id: string, userId: string, userRole: UserRole) {
+    // First, update all expired flyers
+    await this.updateExpiredFlyers();
+
     const flyer = await this.prisma.flyer.findUnique({
       where: { id },
       include: {
@@ -1191,9 +1200,108 @@ export class FlyersService {
     };
   }
 
+  async expireFlyer(flyerId: string, userId: string, userRole: UserRole) {
+    const flyer = await this.prisma.flyer.findUnique({ where: { id: flyerId } });
+
+    if (!flyer) {
+      throw new NotFoundException('Flyer not found');
+    }
+
+    // Only suppliers can expire their own flyers, or admins can expire any flyer
+    if (userRole !== UserRole.admin && flyer.supplierId !== userId) {
+      throw new ForbiddenException('You do not have permission to expire this flyer');
+    }
+
+    // Only active flyers can be expired
+    if (flyer.status !== FlyerStatus.active) {
+      throw new BadRequestException('Only active flyers can be expired');
+    }
+
+    // Set validTo to yesterday to expire the flyer
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(23, 59, 59, 999);
+
+    const updated = await this.prisma.flyer.update({
+      where: { id: flyerId },
+      data: {
+        validTo: yesterday,
+        status: FlyerStatus.expired,
+      },
+      include: {
+        pages: {
+          include: {
+            slots: {
+              include: {
+                product: {
+                  include: {
+                    brand: true,
+                    icons: {
+                      include: {
+                        icon: true,
+                      },
+                      orderBy: {
+                        position: 'asc',
+                      },
+                    },
+                  },
+                },
+                promoImage: true,
+              },
+              orderBy: {
+                slotPosition: 'asc',
+              },
+            },
+          },
+          orderBy: {
+            pageNumber: 'asc',
+          },
+        },
+      },
+    });
+
+    console.log(`✅ Flyer ${flyerId} expired by ${userRole} (${userId})`);
+
+    return this.transformFlyerForFrontend(updated);
+  }
+
   // ========================================
   // HELPER METHODS
   // ========================================
+
+  private async updateExpiredFlyers() {
+    // Find all active flyers where validTo date has passed
+    // We need to check if validTo is before the start of today (in UTC)
+    const now = new Date();
+    const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+
+    const expiredFlyers = await this.prisma.flyer.findMany({
+      where: {
+        status: FlyerStatus.active,
+        validTo: {
+          lt: todayStart, // validTo is before start of today (UTC)
+        },
+      },
+    });
+
+    if (expiredFlyers.length > 0) {
+      console.log(`🔄 Found ${expiredFlyers.length} flyers with expired validTo date, updating status to expired...`);
+
+      // Update all expired flyers to expired status
+      await this.prisma.flyer.updateMany({
+        where: {
+          id: {
+            in: expiredFlyers.map(f => f.id),
+          },
+        },
+        data: {
+          status: FlyerStatus.expired,
+        },
+      });
+
+      console.log(`✅ Updated ${expiredFlyers.length} flyers to expired status`);
+    }
+  }
 
   private async updateCompletionPercentage(flyerId: string) {
     const flyer = await this.prisma.flyer.findUnique({

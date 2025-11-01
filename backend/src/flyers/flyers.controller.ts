@@ -159,6 +159,12 @@ export class FlyersController {
     return this.flyersService.autoSave(flyerId, req.user.userId);
   }
 
+  @Post(':id/expire')
+  @Roles('supplier', 'admin')
+  expireFlyer(@Param('id') flyerId: string, @Request() req) {
+    return this.flyersService.expireFlyer(flyerId, req.user.userId, req.user.role);
+  }
+
   // ========================================
   // PDF GENERATION & DOWNLOAD
   // ========================================

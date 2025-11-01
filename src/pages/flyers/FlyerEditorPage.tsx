@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core';
-import { ArrowLeft, Save, Send, Plus, Minus, Search, FileText, AlertCircle, Copy } from 'lucide-react';
+import { ArrowLeft, Save, Send, Plus, Minus, Search, FileText, AlertCircle, Copy, XCircle } from 'lucide-react';
 import { flyersService } from '../../services/flyersService';
 import { productsService } from '../../services/productsService';
 import { promoImagesService } from '../../services/promoImagesService';
@@ -61,8 +61,8 @@ export const FlyerEditorPage: React.FC = () => {
     enabled: !isNew,
   });
 
-  // Check if flyer is locked for editing (active or pending_approval status)
-  const isLocked = flyer?.status === 'active' || flyer?.status === 'pending_approval';
+  // Check if flyer is locked for editing (active, pending_approval, or expired status)
+  const isLocked = flyer?.status === 'active' || flyer?.status === 'pending_approval' || flyer?.status === 'expired';
 
   const { data: productsData, isLoading: isLoadingProducts } = useQuery({
     queryKey: ['products', 'flyer-editor', search, productPage],
@@ -339,6 +339,29 @@ export const FlyerEditorPage: React.FC = () => {
     }
   };
 
+  const expireMutation = useMutation({
+    mutationFn: async () => {
+      if (!id) throw new Error('No flyer ID');
+      return flyersService.expireFlyer(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['flyers'] });
+      queryClient.invalidateQueries({ queryKey: ['flyers', id] });
+      alert('Leták byl ukončen a produkty jsou nyní volné k editaci');
+    },
+    onError: (error: any) => {
+      console.error('Error expiring flyer:', error);
+      alert('Chyba při ukončování letáku: ' + (error.response?.data?.message || error.message));
+    },
+  });
+
+  const handleExpireFlyer = async () => {
+    if (!window.confirm('Opravdu chcete ukončit platnost tohoto letáku? Datum platnosti bude nastaveno na včerejší den a produkty budou uvolněny k editaci.')) {
+      return;
+    }
+    await expireMutation.mutateAsync();
+  };
+
   // Get all product IDs that are already used in the flyer
   const usedProductIds = new Set(
     flyerData.pages.flatMap(page =>
@@ -377,7 +400,11 @@ export const FlyerEditorPage: React.FC = () => {
               </div>
               <div className="ml-3">
                 <p className="text-sm text-yellow-700">
-                  <strong>Leták je ve stavu "{flyer?.status === 'active' ? 'aktivní' : 'ke schválení'}".</strong> Editace letáku je zakázána.
+                  <strong>Leták je ve stavu "{
+                    flyer?.status === 'active' ? 'aktivní' :
+                    flyer?.status === 'expired' ? 'vypršelý' :
+                    'ke schválení'
+                  }".</strong> Editace letáku je zakázána.
                 </p>
               </div>
             </div>
@@ -433,6 +460,18 @@ export const FlyerEditorPage: React.FC = () => {
                   <Button variant="outline" onClick={handleCreateCopy} size="sm">
                     <Copy className="w-4 h-4 mr-2" />
                     Vytvořit kopii
+                  </Button>
+                )}
+                {flyer?.status === 'active' && (
+                  <Button
+                    variant="outline"
+                    onClick={handleExpireFlyer}
+                    isLoading={expireMutation.isPending}
+                    size="sm"
+                    className="border-red-500 text-red-600 hover:bg-red-50"
+                  >
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Ukončit platnost
                   </Button>
                 )}
                 <Button variant="outline" onClick={() => saveDraftMutation.mutate(flyerData)} isLoading={saveDraftMutation.isPending} disabled={isLocked} size="sm">

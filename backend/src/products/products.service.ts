@@ -361,6 +361,7 @@ export class ProductsService {
 
   private async isProductInActiveApprovedFlyer(productId: string): Promise<boolean> {
     // Check if product is in any approved or active flyer where validTo date hasn't passed yet
+    // Expired flyers should NOT lock products for editing
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Set to start of day for date comparison
 
@@ -370,7 +371,7 @@ export class ProductsService {
         page: {
           flyer: {
             status: {
-              in: ['approved', 'active'], // Check both approved and active flyers
+              in: ['approved', 'active'], // Check both approved and active flyers (NOT expired)
             },
             validTo: {
               gte: today, // validTo is today or in the future
