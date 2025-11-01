@@ -353,13 +353,26 @@ export class ProductsService {
 
   // Helper methods
 
-  private async validateEanCodeUniqueness(eanCode: string) {
-    const existingProduct = await this.prisma.product.findUnique({
-      where: { eanCode },
+  private async validateEanCodeUniqueness(eanCode: string, excludeProductId?: string) {
+    // Check if EAN uniqueness enforcement is enabled
+    const enforceUniqueEan = process.env.ENFORCE_UNIQUE_EAN === 'true';
+
+    if (!enforceUniqueEan) {
+      // If EAN uniqueness is not enforced, skip validation
+      return;
+    }
+
+    // Check for existing active products with the same EAN code
+    const existingProduct = await this.prisma.product.findFirst({
+      where: {
+        eanCode,
+        isActive: true,
+        ...(excludeProductId ? { id: { not: excludeProductId } } : {}),
+      },
     });
 
     if (existingProduct) {
-      throw new ConflictException(`Product with EAN code ${eanCode} already exists`);
+      throw new ConflictException(`Active product with EAN code ${eanCode} already exists`);
     }
   }
 

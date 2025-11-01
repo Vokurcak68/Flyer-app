@@ -4,7 +4,10 @@
       "Bash(powershell -ExecutionPolicy Bypass -File .deploy.ps1 -SkipBuild)",
       "Bash(docker --version:*)",
       "Bash(docker-compose:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Improve product display in flyer with brand support and PDF enhancements\n\n- Add brandName field to product responses in backend\n- Display brand name (bold) alongside product name in black header\n- Update PDF generation to match frontend layout 1:1:\n  - Use Vodafone Rg font family throughout\n  - Implement bold brand + regular product name in header\n  - Adjust line spacing with lineGap for better readability\n  - Reduce top padding for tighter layout (2px from header)\n  - Fix text trimming to prevent unwanted line wrapping\n  - Support 16 visual lines in product descriptions\n- Frontend improvements:\n  - Consistent Vodafone Rg font across product displays\n  - Improved line height and spacing in descriptions\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []
