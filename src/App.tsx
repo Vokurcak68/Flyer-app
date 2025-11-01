@@ -12,6 +12,7 @@ import { BrandFormPage } from './pages/brands/BrandFormPage';
 import { PromoImagesPage } from './pages/promo-images/PromoImagesPage';
 import { FlyersListPage } from './pages/flyers/FlyersListPage';
 import { FlyerEditorPage } from './pages/flyers/FlyerEditorPage';
+import { ActiveFlyersPage } from './pages/flyers/ActiveFlyersPage';
 import { ApprovalsPage } from './pages/approvals/ApprovalsPage';
 import { UserFlyersPage } from './pages/user-flyers/UserFlyersPage';
 import { UsersListPage } from './pages/admin/UsersListPage';
@@ -167,6 +168,16 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['approver']}>
                 <ApprovalsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Active Flyers Routes (Approver + End User) */}
+          <Route
+            path="active-flyers"
+            element={
+              <ProtectedRoute allowedRoles={['approver', 'end_user']}>
+                <ActiveFlyersPage />
               </ProtectedRoute>
             }
           />

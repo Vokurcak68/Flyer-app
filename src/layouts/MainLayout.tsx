@@ -46,10 +46,12 @@ export const MainLayout: React.FC = () => {
         return [
           { to: '/dashboard', icon: Home, label: 'Přehled' },
           { to: '/approvals', icon: CheckCircle, label: 'Schvalování' },
+          { to: '/active-flyers', icon: FileText, label: 'Aktivní letáky' },
         ];
       case 'end_user':
         return [
           { to: '/dashboard', icon: Home, label: 'Přehled' },
+          { to: '/active-flyers', icon: FileText, label: 'Aktivní letáky' },
           { to: '/user-flyers', icon: Grid, label: 'Moje letáky' },
         ];
       default:
