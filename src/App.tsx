@@ -15,6 +15,7 @@ import { FlyerEditorPage } from './pages/flyers/FlyerEditorPage';
 import { ActiveFlyersPage } from './pages/flyers/ActiveFlyersPage';
 import { ApprovalsPage } from './pages/approvals/ApprovalsPage';
 import { UserFlyersPage } from './pages/user-flyers/UserFlyersPage';
+import { UserFlyerEditorPage } from './pages/user-flyers/UserFlyerEditorPage';
 import { UsersListPage } from './pages/admin/UsersListPage';
 import { UserFormPage } from './pages/admin/UserFormPage';
 import { IconsManagementPage } from './pages/admin/IconsManagementPage';
@@ -188,6 +189,22 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['end_user']}>
                 <UserFlyersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="user-flyers/new"
+            element={
+              <ProtectedRoute allowedRoles={['end_user']}>
+                <UserFlyerEditorPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="user-flyers/:id"
+            element={
+              <ProtectedRoute allowedRoles={['end_user']}>
+                <UserFlyerEditorPage />
               </ProtectedRoute>
             }
           />

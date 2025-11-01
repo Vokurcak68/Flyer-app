@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { FileText, Search, Calendar } from 'lucide-react';
+import { FileText, Search } from 'lucide-react';
 import { flyersService } from '../../services/flyersService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -28,12 +28,9 @@ export const ActiveFlyersPage: React.FC = () => {
     );
   }, [flyers, searchQuery]);
 
-  const handleViewPdf = async (flyerId: string, flyerName: string) => {
+  const handleViewPdf = async (flyerId: string) => {
     try {
-      // First generate PDF if needed
-      await flyersService.generatePdf(flyerId);
-
-      // Then fetch and display it
+      // Fetch and display PDF from database
       const blob = await flyersService.getPdfBlob(flyerId, true);
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
@@ -101,48 +98,27 @@ export const ActiveFlyersPage: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="bg-white rounded-lg shadow divide-y">
           {filteredFlyers.map(flyer => (
-            <div key={flyer.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{flyer.name}</h3>
+            <div key={flyer.id} className="p-6 hover:bg-gray-50">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <h3 className="text-lg font-semibold">{flyer.name}</h3>
                     <StatusBadge status={flyer.status} />
                   </div>
-                </div>
-
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-start text-sm text-gray-600">
-                    <Calendar className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <div className="font-medium">Platnost:</div>
-                      <div>{formatDate(flyer.validFrom)} - {formatDate(flyer.validTo)}</div>
-                    </div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <div>Platnost: {formatDate(flyer.validFrom)} - {formatDate(flyer.validTo)}</div>
+                    <div>Stránky: {flyer.pages?.length || 0} | Produkty: {flyer.pages?.reduce((s, p) => s + (p.slots?.filter(slot => slot && slot.type === 'product').length || 0), 0) || 0}</div>
+                    <div>Vytvořeno: {formatDate(flyer.createdAt)}</div>
                   </div>
-
-                  {flyer.pages && flyer.pages.length > 0 && (
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium">Stránky:</span> {flyer.pages.length}
-                      {' | '}
-                      <span className="font-medium">Produkty:</span>{' '}
-                      {flyer.pages.reduce(
-                        (sum, page) =>
-                          sum + (page.slots?.filter(slot => slot && slot.type === 'product').length || 0),
-                        0
-                      )}
-                    </div>
-                  )}
                 </div>
-
-                <Button
-                  onClick={() => handleViewPdf(flyer.id, flyer.name)}
-                  className="w-full"
-                  size="sm"
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Zobrazit PDF
-                </Button>
+                <div className="flex space-x-2">
+                  <Button size="sm" variant="outline" onClick={() => handleViewPdf(flyer.id)}>
+                    <FileText className="w-4 h-4 mr-1" />
+                    Zobrazit PDF
+                  </Button>
+                </div>
               </div>
             </div>
           ))}
