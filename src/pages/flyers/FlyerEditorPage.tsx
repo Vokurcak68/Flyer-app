@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core';
-import { ArrowLeft, Save, Send, Plus, Minus, Search, FileText, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Save, Send, Plus, Minus, Search, FileText, AlertCircle, Copy } from 'lucide-react';
 import { flyersService } from '../../services/flyersService';
 import { productsService } from '../../services/productsService';
 import { promoImagesService } from '../../services/promoImagesService';
@@ -312,6 +312,33 @@ export const FlyerEditorPage: React.FC = () => {
     await submitMutation.mutateAsync();
   };
 
+  const handleCreateCopy = async () => {
+    if (!flyer) return;
+
+    // Create new flyer with copied data
+    try {
+      const newFlyer = await flyersService.createFlyer({
+        name: `${flyer.name} (kopie)`,
+        validFrom: flyer.validFrom || '',
+        validTo: flyer.validTo || '',
+      });
+
+      // Copy pages structure
+      if (flyer.pages && flyer.pages.length > 0) {
+        await flyersService.updateFlyer(newFlyer.id, {
+          pages: preparePagesForAPI(flyer.pages),
+        });
+      }
+
+      // Navigate to the new flyer
+      queryClient.invalidateQueries({ queryKey: ['flyers'] });
+      navigate(`/flyers/${newFlyer.id}`);
+    } catch (error) {
+      console.error('Error creating flyer copy:', error);
+      alert('Chyba při vytváření kopie letáku');
+    }
+  };
+
   // Get all product IDs that are already used in the flyer
   const usedProductIds = new Set(
     flyerData.pages.flatMap(page =>
@@ -402,6 +429,12 @@ export const FlyerEditorPage: React.FC = () => {
                   <FileText className="w-4 h-4 mr-2" />
                   {flyer?.status === 'draft' ? 'Generuj PDF' : 'Zobrazit PDF'}
                 </Button>
+                {!isNew && (
+                  <Button variant="outline" onClick={handleCreateCopy} size="sm">
+                    <Copy className="w-4 h-4 mr-2" />
+                    Vytvořit kopii
+                  </Button>
+                )}
                 <Button variant="outline" onClick={() => saveDraftMutation.mutate(flyerData)} isLoading={saveDraftMutation.isPending} disabled={isLocked} size="sm">
                   <Save className="w-4 h-4 mr-2" />
                   Uložit
