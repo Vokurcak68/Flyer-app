@@ -14,6 +14,7 @@ import { FlyersListPage } from './pages/flyers/FlyersListPage';
 import { FlyerEditorPage } from './pages/flyers/FlyerEditorPage';
 import { ActiveFlyersPage } from './pages/flyers/ActiveFlyersPage';
 import { ApprovalsPage } from './pages/approvals/ApprovalsPage';
+import { ApprovalReviewPage } from './pages/approvals/ApprovalReviewPage';
 import { UsersListPage } from './pages/admin/UsersListPage';
 import { UserFormPage } from './pages/admin/UserFormPage';
 import { IconsManagementPage } from './pages/admin/IconsManagementPage';
@@ -167,6 +168,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['approver', 'pre_approver']}>
                 <ApprovalsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="approvals/:approvalId"
+            element={
+              <ProtectedRoute allowedRoles={['approver', 'pre_approver']}>
+                <ApprovalReviewPage />
               </ProtectedRoute>
             }
           />

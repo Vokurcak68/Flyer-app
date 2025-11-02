@@ -40,7 +40,7 @@ export class FlyersController {
   // ========================================
 
   @Post()
-  @Roles('supplier')
+  @Roles('supplier', 'end_user')
   create(@Body() createFlyerDto: CreateFlyerDto, @Request() req) {
     console.log('🔍 Create flyer - req.user:', req.user);
     console.log('🔍 Create flyer - userId:', req.user.userId);
@@ -69,7 +69,7 @@ export class FlyersController {
   }
 
   @Patch(':id')
-  @Roles('supplier')
+  @Roles('supplier', 'end_user')
   update(
     @Param('id') id: string,
     @Body() updateFlyerDto: UpdateFlyerDto,
@@ -79,7 +79,7 @@ export class FlyersController {
   }
 
   @Delete(':id')
-  @Roles('supplier')
+  @Roles('supplier', 'end_user')
   remove(@Param('id') id: string, @Request() req) {
     return this.flyersService.remove(id, req.user.userId, req.user.role);
   }

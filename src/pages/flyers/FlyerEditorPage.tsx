@@ -17,12 +17,19 @@ import { useAutoSave } from '../../hooks/useAutoSave';
 import { useAuthStore } from '../../store/authStore';
 
 export const FlyerEditorPage: React.FC = () => {
-  const { id } = useParams();
+  const params = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
+
+  // Determine if this is a new flyer based on URL
+  const isNewFromUrl = location.pathname.endsWith('/new');
+  const id = isNewFromUrl ? 'new' : params.id;
   const isNew = id === 'new';
+
+  // Debug: Log component mount and URL changes
+  console.log('🔍 FlyerEditorPage render - params:', params, 'id:', id, 'location:', location.pathname, 'isNewFromUrl:', isNewFromUrl);
 
   // Determine base path based on current location
   const isMyFlyers = location.pathname.startsWith('/my-flyers');
@@ -68,8 +75,12 @@ export const FlyerEditorPage: React.FC = () => {
     enabled: !isNew,
   });
 
-  // Check if flyer is locked for editing (active, pending_approval, or expired status)
-  const isLocked = flyer?.status === 'active' || flyer?.status === 'pending_approval' || flyer?.status === 'expired';
+  // Check if flyer is locked for editing
+  // For end users on /my-flyers: only lock if expired
+  // For suppliers: lock if active, pending_approval, or expired
+  const isLocked = isMyFlyers && user?.role === 'end_user'
+    ? flyer?.status === 'expired'
+    : (flyer?.status === 'active' || flyer?.status === 'pending_approval' || flyer?.status === 'expired');
 
   // For end users, get products from active flyers instead of all products
   const { data: activeFlyers = [] } = useQuery({
@@ -113,7 +124,13 @@ export const FlyerEditorPage: React.FC = () => {
           ? uniqueProducts.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
           : uniqueProducts;
 
-        setAllProducts(filtered);
+        // Only update if different
+        setAllProducts(prev => {
+          if (JSON.stringify(prev.map(p => p.id)) === JSON.stringify(filtered.map(p => p.id))) {
+            return prev;
+          }
+          return filtered;
+        });
       } else {
         setAllProducts([]);
       }
@@ -135,7 +152,8 @@ export const FlyerEditorPage: React.FC = () => {
         }
       }
     }
-  }, [productsData, productPage, search, isMyFlyers, activeFlyers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productsData, productPage, search, isMyFlyers, activeFlyers.length]);
 
   const { data: promoImages = [] } = useQuery({
     queryKey: ['promo-images', user?.role],
@@ -159,20 +177,34 @@ export const FlyerEditorPage: React.FC = () => {
 
   const saveDraftMutation = useMutation({
     mutationFn: async (data: typeof flyerData) => {
-      if (isNew) {
+      const wasNew = id === 'new';
+      console.log('🔍 saveDraftMutation - id:', id, 'wasNew:', wasNew);
+
+      if (wasNew) {
+        console.log('🔍 Creating new flyer...');
         const created = await flyersService.createFlyer({
           name: data.name,
           validFrom: data.validFrom,
           validTo: data.validTo,
         });
-        return flyersService.updateFlyer(created.id, {
+        console.log('🔍 Flyer created with ID:', created.id);
+
+        const updated = await flyersService.updateFlyer(created.id, {
           name: data.name,
           validFrom: data.validFrom,
           validTo: data.validTo,
           pages: preparePagesForAPI(data.pages)
         });
+        console.log('🔍 Flyer updated, returning with wasNew flag');
+        return { ...updated, wasNew: true };
       }
-      return flyersService.updateFlyer(id!, {
+
+      if (!id) {
+        throw new Error('Flyer ID is missing');
+      }
+
+      console.log('🔍 Updating existing flyer with ID:', id);
+      return flyersService.updateFlyer(id, {
         name: data.name,
         validFrom: data.validFrom,
         validTo: data.validTo,
@@ -180,8 +212,12 @@ export const FlyerEditorPage: React.FC = () => {
       });
     },
     onSuccess: (data) => {
+      console.log('🔍 saveDraftMutation success, data:', data);
       queryClient.invalidateQueries({ queryKey: ['flyers'] });
-      if (isNew) navigate(`${basePath}/${data.id}`, { replace: true });
+      if ((data as any).wasNew) {
+        console.log('🔍 Navigating to:', `${basePath}/${data.id}`);
+        navigate(`${basePath}/${data.id}`, { replace: true });
+      }
     },
   });
 
@@ -233,7 +269,11 @@ export const FlyerEditorPage: React.FC = () => {
       setIsGeneratingPdf(true);
       let pdfBlob: Blob;
 
-      if (flyer?.status === 'draft') {
+      // For end users on /my-flyers, always generate new PDF
+      if (isMyFlyers && user?.role === 'end_user') {
+        await flyersService.generatePdf(id);
+        pdfBlob = await flyersService.getPdfBlob(id, true);
+      } else if (flyer?.status === 'draft') {
         // For drafts, always generate new PDF
         await flyersService.generatePdf(id);
         pdfBlob = await flyersService.getPdfBlob(id, true);
@@ -498,7 +538,7 @@ export const FlyerEditorPage: React.FC = () => {
               <div className="flex flex-col space-y-2">
                 <Button variant="outline" onClick={handleViewPdf} isLoading={isGeneratingPdf} disabled={isNew} size="sm">
                   <FileText className="w-4 h-4 mr-2" />
-                  {flyer?.status === 'draft' ? 'Generuj PDF' : 'Zobrazit PDF'}
+                  {(isMyFlyers && user?.role === 'end_user') ? 'Generuj PDF' : (flyer?.status === 'draft' ? 'Generuj PDF' : 'Zobrazit PDF')}
                 </Button>
                 {!isNew && (
                   <Button variant="outline" onClick={handleCreateCopy} size="sm">
@@ -522,10 +562,13 @@ export const FlyerEditorPage: React.FC = () => {
                   <Save className="w-4 h-4 mr-2" />
                   Uložit
                 </Button>
-                <Button onClick={handleSubmit} isLoading={submitMutation.isPending} disabled={isLocked} size="sm">
-                  <Send className="w-4 h-4 mr-2" />
-                  Odeslat k autorizaci
-                </Button>
+                {/* Hide submit button for end users on /my-flyers */}
+                {!(isMyFlyers && user?.role === 'end_user') && (
+                  <Button onClick={handleSubmit} isLoading={submitMutation.isPending} disabled={isLocked} size="sm">
+                    <Send className="w-4 h-4 mr-2" />
+                    Odeslat k autorizaci
+                  </Button>
+                )}
               </div>
             </div>
 

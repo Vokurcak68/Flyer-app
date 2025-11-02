@@ -355,6 +355,15 @@ export class ApprovalsService {
         },
       },
       include: {
+        approver: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+          },
+        },
         flyer: {
           include: {
             pages: {
@@ -431,6 +440,15 @@ export class ApprovalsService {
         },
       },
       include: {
+        approver: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+          },
+        },
         flyer: {
           include: {
             pages: {
@@ -487,11 +505,41 @@ export class ApprovalsService {
       },
     });
 
-    // Transform flyer pages to match frontend format
-    return approvals.map(approval => ({
-      ...approval,
-      flyer: (approval as any).flyer ? this.transformFlyerForFrontend((approval as any).flyer) : null,
-    }));
+    // For each approval, find if there's a pre-approval record
+    const approvalsWithPreApprovalInfo = await Promise.all(
+      approvals.map(async (approval) => {
+        // Find pre-approval record for this flyer
+        const preApprovalRecord = await this.prisma.approval.findFirst({
+          where: {
+            flyerId: approval.flyerId,
+            preApprovalStatus: PreApprovalStatus.pre_approved,
+          },
+          include: {
+            approver: {
+              select: {
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+                role: true,
+              },
+            },
+          },
+        });
+
+        // Merge pre-approval info into the approval
+        return {
+          ...approval,
+          preApprovalStatus: preApprovalRecord?.preApprovalStatus || approval.preApprovalStatus,
+          preApprovedAt: preApprovalRecord?.preApprovedAt || approval.preApprovedAt,
+          comment: preApprovalRecord?.comment || approval.comment,
+          approver: preApprovalRecord?.approver || approval.approver,
+          flyer: (approval as any).flyer ? this.transformFlyerForFrontend((approval as any).flyer) : null,
+        };
+      })
+    );
+
+    return approvalsWithPreApprovalInfo;
   }
 
   /**

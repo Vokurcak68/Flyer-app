@@ -408,8 +408,14 @@ export class FlyersService {
       throw new ForbiddenException('You do not have access to this flyer');
     }
 
-    if (userRole === UserRole.end_user && flyer.status !== FlyerStatus.active) {
-      throw new ForbiddenException('This flyer is not active');
+    if (userRole === UserRole.end_user) {
+      // End users can access their own flyers (any status) or active flyers from others
+      const isOwnFlyer = flyer.supplierId === userId;
+      const isActiveFlyer = flyer.status === FlyerStatus.approved || flyer.status === FlyerStatus.active;
+
+      if (!isOwnFlyer && !isActiveFlyer) {
+        throw new ForbiddenException('You do not have access to this flyer');
+      }
     }
 
     return this.transformFlyerForFrontend(flyer);
@@ -543,8 +549,8 @@ export class FlyersService {
       throw new NotFoundException('Flyer not found');
     }
 
-    // Only suppliers can update their own flyers
-    if (userRole !== UserRole.supplier || flyer.supplierId !== userId) {
+    // Only suppliers and end_users can update their own flyers
+    if ((userRole !== UserRole.supplier && userRole !== UserRole.end_user) || flyer.supplierId !== userId) {
       throw new ForbiddenException('You do not have permission to update this flyer');
     }
 
@@ -573,7 +579,7 @@ export class FlyersService {
 
     // Handle pages if provided
     if (updateFlyerDto.pages) {
-      await this.syncPages(id, updateFlyerDto.pages, userId);
+      await this.syncPages(id, updateFlyerDto.pages, userId, userRole);
     }
 
     const updated = await this.prisma.flyer.update({
@@ -629,8 +635,8 @@ export class FlyersService {
       throw new NotFoundException('Flyer not found');
     }
 
-    // Only suppliers can delete their own flyers
-    if (userRole !== UserRole.supplier || flyer.supplierId !== userId) {
+    // Only suppliers and end_users can delete their own flyers
+    if ((userRole !== UserRole.supplier && userRole !== UserRole.end_user) || flyer.supplierId !== userId) {
       throw new ForbiddenException('You do not have permission to delete this flyer');
     }
 
@@ -1382,8 +1388,8 @@ export class FlyersService {
     });
   }
 
-  private async syncPages(flyerId: string, pages: any[], userId: string) {
-    console.log(`[syncPages] Called with ${pages.length} pages`);
+  private async syncPages(flyerId: string, pages: any[], userId: string, userRole: UserRole) {
+    console.log(`[syncPages] Called with ${pages.length} pages for user role: ${userRole}`);
     console.log(`[syncPages] First page:`, JSON.stringify(pages[0], null, 2));
 
     // Delete all existing pages and their slots (cascade will handle slots)
@@ -1396,11 +1402,22 @@ export class FlyersService {
       // Validate footer promo image if provided
       let validFooterPromoImageId = null;
       if (page.footerPromoImageId) {
-        const dbPromoImage = await this.prisma.promoImage.findUnique({
-          where: { id: page.footerPromoImageId },
-        });
-        if (dbPromoImage && dbPromoImage.supplierId === userId) {
-          validFooterPromoImageId = page.footerPromoImageId;
+        if (userRole === UserRole.supplier) {
+          // Supplier: footer promo image must belong to them
+          const dbPromoImage = await this.prisma.promoImage.findUnique({
+            where: { id: page.footerPromoImageId },
+          });
+          if (dbPromoImage && dbPromoImage.supplierId === userId) {
+            validFooterPromoImageId = page.footerPromoImageId;
+          }
+        } else if (userRole === UserRole.end_user) {
+          // End user: footer promo image must exist (frontend already filters to show only promo images from active flyers)
+          const dbPromoImage = await this.prisma.promoImage.findUnique({
+            where: { id: page.footerPromoImageId },
+          });
+          if (dbPromoImage) {
+            validFooterPromoImageId = page.footerPromoImageId;
+          }
         }
       }
 
@@ -1430,12 +1447,24 @@ export class FlyersService {
           if (!slotData || slotData.type === 'empty') continue;
 
           if (slotData.type === 'product' && slotData.productId) {
-            // Verify product belongs to the supplier
-            const dbProduct = await this.prisma.product.findUnique({
-              where: { id: slotData.productId },
-            });
+            // Verify product access based on user role
+            let canUseProduct = false;
 
-            if (dbProduct && dbProduct.supplierId === userId) {
+            if (userRole === UserRole.supplier) {
+              // Supplier: product must belong to them
+              const dbProduct = await this.prisma.product.findUnique({
+                where: { id: slotData.productId },
+              });
+              canUseProduct = dbProduct && dbProduct.supplierId === userId;
+            } else if (userRole === UserRole.end_user) {
+              // End user: product must exist (frontend already filters to show only products from active flyers)
+              const dbProduct = await this.prisma.product.findUnique({
+                where: { id: slotData.productId },
+              });
+              canUseProduct = !!dbProduct;
+            }
+
+            if (canUseProduct) {
               await this.prisma.flyerPageSlot.updateMany({
                 where: {
                   pageId: createdPage.id,
@@ -1446,14 +1475,28 @@ export class FlyersService {
                   productId: slotData.productId,
                 },
               });
+            } else {
+              console.log(`[syncPages] Product ${slotData.productId} not accessible for user ${userId} (role: ${userRole})`);
             }
           } else if (slotData.type === 'promo' && slotData.promoImageId) {
-            // Verify promo image belongs to the supplier
-            const dbPromoImage = await this.prisma.promoImage.findUnique({
-              where: { id: slotData.promoImageId },
-            });
+            // Verify promo image access based on user role
+            let canUsePromoImage = false;
 
-            if (dbPromoImage && dbPromoImage.supplierId === userId) {
+            if (userRole === UserRole.supplier) {
+              // Supplier: promo image must belong to them
+              const dbPromoImage = await this.prisma.promoImage.findUnique({
+                where: { id: slotData.promoImageId },
+              });
+              canUsePromoImage = dbPromoImage && dbPromoImage.supplierId === userId;
+            } else if (userRole === UserRole.end_user) {
+              // End user: promo image must exist (frontend already filters to show only promo images from active flyers)
+              const dbPromoImage = await this.prisma.promoImage.findUnique({
+                where: { id: slotData.promoImageId },
+              });
+              canUsePromoImage = !!dbPromoImage;
+            }
+
+            if (canUsePromoImage) {
               await this.prisma.flyerPageSlot.updateMany({
                 where: {
                   pageId: createdPage.id,
@@ -1465,6 +1508,8 @@ export class FlyersService {
                   promoSize: slotData.promoSize || null,
                 },
               });
+            } else {
+              console.log(`[syncPages] Promo image ${slotData.promoImageId} not accessible for user ${userId} (role: ${userRole})`);
             }
           }
         }
