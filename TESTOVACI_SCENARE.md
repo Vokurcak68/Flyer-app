@@ -652,6 +652,160 @@
 - Obsahuje všechny stránky letáku
 - Produkty mají správné rozložení a formátování
 
+### TC-SUPP-FLYER-015A: Validace letáku - všechny produkty v pořádku
+**Předpoklady:** Leták obsahuje produkty s validními EAN kódy a cenami odpovídajícími ERP systému
+**Kroky:**
+1. Otevřít editor letáku s produkty
+2. Kliknout na "Odeslat k autorizaci"
+3. Počkat na validaci
+
+**Očekávaný výsledek:**
+- Zobrazí se stav "Validuji..."
+- Validace proběhne úspěšně
+- Leták je odeslán ke schválení
+- Stav se změní na "Čeká na předschválení"
+
+### TC-SUPP-FLYER-015B: Validace letáku - neplatný EAN kód
+**Předpoklady:** Leták obsahuje alespoň jeden produkt s EAN kódem, který neexistuje v ERP systému
+**Kroky:**
+1. Otevřít editor letáku
+2. Přidat produkt s neplatným EAN
+3. Uložit leták
+4. Kliknout na "Odeslat k autorizaci"
+5. Počkat na validaci
+
+**Očekávaný výsledek:**
+- Zobrazí se modální okno s validačními chybami
+- Pro produkt s neplatným EAN je zobrazena chyba: "EAN kód nebyl nalezen v ERP systému"
+- Je zobrazen název produktu a EAN kód
+- Odeslání letáku je přerušeno
+- Leták zůstane ve stavu "Koncept"
+
+### TC-SUPP-FLYER-015C: Validace letáku - nesouhlasí cena
+**Předpoklady:** Leták obsahuje produkt, jehož cena neodpovídá ceně v ERP systému
+**Kroky:**
+1. Otevřít editor letáku
+2. Přidat produkt s cenou odlišnou od ERP
+3. Uložit leták
+4. Kliknout na "Odeslat k autorizaci"
+
+**Očekávaný výsledek:**
+- Zobrazí se modální okno s chybami
+- Je zobrazena chyba: "Nesouhlasí akční cena (ERP: X Kč, Leták: Y Kč)"
+- V detailu cen je porovnání: akční cena v letáku vs akční cena v ERP
+- Odeslání je přerušeno
+
+### TC-SUPP-FLYER-015D: Validace letáku - nesouhlasí původní cena
+**Předpoklady:** Leták obsahuje produkt s odlišnou původní cenou
+**Kroky:**
+1. Otevřít editor letáku
+2. Přidat produkt s původní cenou odlišnou od ERP
+3. Uložit leták
+4. Kliknout na "Odeslat k autorizaci"
+
+**Očekávaný výsledek:**
+- Zobrazí se modální okno s chybami
+- Je zobrazena chyba: "Nesouhlasí původní cena (ERP: X Kč, Leták: Y Kč)"
+- V detailu je porovnání původních cen
+- Odeslání je přerušeno
+
+### TC-SUPP-FLYER-015E: Validace letáku - více chyb u jednoho produktu
+**Předpoklady:** Produkt má neplatný EAN i nesouhlasící ceny
+**Kroky:**
+1. Přidat produkt s neplatným EAN a špatnými cenami
+2. Kliknout na "Odeslat k autorizaci"
+
+**Očekávaný výsledek:**
+- V modálním okně je u produktu zobrazeno více chyb:
+  - "EAN kód nebyl nalezen v ERP systému"
+  - "Nesouhlasí akční cena..."
+  - "Nesouhlasí původní cena..."
+
+### TC-SUPP-FLYER-015F: Validace letáku - více produktů s chybami
+**Předpoklady:** Leták obsahuje 3 produkty s různými chybami
+**Kroky:**
+1. Vytvořit leták se 3 produkty s chybami
+2. Kliknout na "Odeslat k autorizaci"
+
+**Očekávaný výsledek:**
+- Modální okno zobrazuje všechny 3 produkty s chybami
+- Každý produkt má svou sekci s názvem, EAN a seznamem chyb
+- V hlavičce je správný počet chyb (např. "Nalezeno 3 chyby")
+
+### TC-SUPP-FLYER-015G: Export validačních chyb do TXT
+**Předpoklady:** Zobrazeno modální okno s validačními chybami
+**Kroky:**
+1. Kliknout na "Exportovat TXT"
+
+**Očekávaný výsledek:**
+- Stáhne se TXT soubor s názvem obsahujícím název letáku a timestamp
+- Soubor obsahuje:
+  - Název letáku
+  - Datum validace
+  - Počet chyb
+  - Pro každý produkt: název, EAN, seznam chyb, porovnání cen
+
+### TC-SUPP-FLYER-015H: Export validačních chyb do HTML/PDF
+**Předpoklady:** Zobrazeno modální okno s validačními chybami
+**Kroky:**
+1. Kliknout na "Exportovat HTML/PDF"
+
+**Očekávaný výsledek:**
+- Stáhne se HTML soubor
+- Zobrazí se info, jak vytvořit PDF (tisknout -> uložit jako PDF)
+- HTML je formátovaný s:
+  - Hlavičkou s metadaty
+  - Barevně odlišenými chybami
+  - Tabulkou s porovnáním cen
+
+### TC-SUPP-FLYER-015I: Přímá editace produktu z modálního okna chyb
+**Předpoklady:** Zobrazeno modální okno s validačními chybami
+**Kroky:**
+1. U produktu s chybou kliknout na "Editovat produkt"
+
+**Očekávaný výsledek:**
+- Modální okno se zavře
+- Uživatel je přesměrován na stránku editace produktu (/products/{id}/edit)
+- Otevře se formulář s detaily produktu
+- Lze opravit EAN, ceny atd.
+
+### TC-SUPP-FLYER-015J: Oprava chyb a nová validace
+**Předpoklady:** Leták měl validační chyby, chyby byly opraveny
+**Kroky:**
+1. Z modálního okna chyb kliknout na "Editovat produkt"
+2. Opravit EAN kód nebo ceny
+3. Uložit produkt
+4. Vrátit se na leták
+5. Kliknout znovu na "Odeslat k autorizaci"
+
+**Očekávaný výsledek:**
+- Nová validace proběhne
+- Pokud byly všechny chyby opraveny, leták je odeslán ke schválení
+- Pokud zůstaly nějaké chyby, opět se zobrazí modální okno
+
+### TC-SUPP-FLYER-015K: Zavření modálního okna chyb
+**Předpoklady:** Zobrazeno modální okno s validačními chybami
+**Kroky:**
+1. Kliknout na tlačítko "Zavřít" nebo na křížek
+
+**Očekávaný výsledek:**
+- Modální okno se zavře
+- Uživatel zůstane v editoru letáku
+- Leták zůstane ve stavu "Koncept"
+- Lze pokračovat v úpravách
+
+### TC-SUPP-FLYER-015L: Validace neuloženého letáku
+**Předpoklady:** Nový leták (id='new'), ještě neuložený
+**Kroky:**
+1. Vytvořit nový leták
+2. Přidat produkty, ale neuložit
+3. Kliknout na "Odeslat k autorizaci"
+
+**Očekávaný výsledek:**
+- Zobrazí se upozornění: "Nejprve uložte leták"
+- Validace se nespustí
+- Leták není odeslán
+
 ### TC-SUPP-FLYER-016: Odeslání letáku ke schválení
 **Předpoklady:** Leták je kompletní (má stránky s produkty)
 **Kroky:**
