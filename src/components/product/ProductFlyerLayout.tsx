@@ -52,7 +52,7 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
               }}
             />
 
-            {/* Icons overlaid on left side - vertically aligned and evenly distributed from top to bottom of image area */}
+            {/* Icons overlaid on left side - 4 fixed evenly distributed slots, icons fill from top */}
             {product.icons && product.icons.length > 0 && (
               <div
                 className="absolute left-0 flex flex-col justify-between"
@@ -61,15 +61,22 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
                   height: 'calc(100% - 16px)'
                 }}
               >
-                {product.icons.slice(0, 4).map((icon) => (
-                  <img
-                    key={icon.id}
-                    src={icon.imageUrl}
-                    alt={icon.name}
-                    className={`h-6 object-contain ${icon.isEnergyClass ? 'w-12' : 'w-6'}`}
-                    title={icon.name}
-                  />
-                ))}
+                {/* Create 4 fixed slots, fill with icons from top */}
+                {[0, 1, 2, 3].map((slotIndex) => {
+                  const icon = product.icons[slotIndex];
+                  return (
+                    <div key={slotIndex} className="h-6 flex items-center">
+                      {icon && (
+                        <img
+                          src={icon.imageUrl}
+                          alt={icon.name}
+                          className={`h-6 object-contain ${icon.isEnergyClass ? 'w-12' : 'w-6'}`}
+                          title={icon.name}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

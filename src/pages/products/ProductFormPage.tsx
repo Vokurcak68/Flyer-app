@@ -888,14 +888,24 @@ export const ProductFormPage: React.FC = () => {
                       key={icon.id}
                       onClick={() => {
                         if (isSelected) {
+                          // When removing, just filter out the icon - array stays compact
+                          const newIconIds = formData.iconIds.filter(id => id !== icon.id);
+                          console.log('Odebírám ikonu:', icon.id);
+                          console.log('Před:', formData.iconIds);
+                          console.log('Po:', newIconIds);
                           setFormData({
                             ...formData,
-                            iconIds: formData.iconIds.filter(id => id !== icon.id),
+                            iconIds: newIconIds,
                           });
                         } else if (canSelect) {
+                          // When adding, just append - array is always compact without gaps
+                          const newIconIds = [...formData.iconIds, icon.id];
+                          console.log('Přidávám ikonu:', icon.id);
+                          console.log('Před:', formData.iconIds);
+                          console.log('Po:', newIconIds);
                           setFormData({
                             ...formData,
-                            iconIds: [...formData.iconIds, icon.id],
+                            iconIds: newIconIds,
                           });
                         }
                       }}
