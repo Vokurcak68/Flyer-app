@@ -4,6 +4,7 @@ export declare class CreatePromoImageDto {
     imageMimeType: string;
     defaultSize: 'single' | 'horizontal' | 'square' | 'full_page' | 'footer';
     brandId: string;
+    isForEndUsers?: boolean;
 }
 export declare class PromoImageFilterDto {
     brandId?: string;

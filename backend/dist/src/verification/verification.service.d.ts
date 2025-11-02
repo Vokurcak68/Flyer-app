@@ -16,9 +16,9 @@ export declare class VerificationService {
     }>;
     getVerificationLogs(flyerId: string): Promise<{
         id: string;
+        status: import(".prisma/client").$Enums.VerificationStatus;
         createdAt: Date;
         flyerId: string;
-        status: import(".prisma/client").$Enums.VerificationStatus;
         verificationDate: Date;
         details: import("@prisma/client/runtime/library").JsonValue;
     }[]>;

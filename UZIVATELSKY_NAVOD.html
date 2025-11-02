@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uživatelský návod - Systém pro správu letáků</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        nav {
+            background: #2c3e50;
+            padding: 15px 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: #3498db;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .role-section {
+            margin-bottom: 60px;
+            padding: 30px;
+            border-left: 5px solid;
+            background: #f9f9f9;
+            page-break-inside: avoid;
+        }
+
+        .role-supplier { border-left-color: #3498db; }
+        .role-pre-approver { border-left-color: #f39c12; }
+        .role-approver { border-left-color: #27ae60; }
+        .role-end-user { border-left-color: #9b59b6; }
+
+        .role-section h2 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.6em;
+            font-weight: bold;
+            color: white;
+        }
+
+        .badge-supplier { background: #3498db; }
+        .badge-pre-approver { background: #f39c12; }
+        .badge-approver { background: #27ae60; }
+        .badge-end-user { background: #9b59b6; }
+
+        .feature {
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .feature h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .step {
+            margin: 15px 0;
+            padding: 15px;
+            background: #ecf0f1;
+            border-left: 3px solid #3498db;
+            border-radius: 4px;
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: #3498db;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .mockup {
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .mockup-header {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-bottom: 1px solid #ddd;
+            font-weight: bold;
+            color: #666;
+            margin: -20px -20px 20px -20px;
+            border-radius: 6px 6px 0 0;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-outline {
+            background: white;
+            color: #3498db;
+            border: 2px solid #3498db;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        .table th,
+        .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .table th {
+            background: #34495e;
+            color: white;
+            font-weight: bold;
+        }
+
+        .table tr:hover {
+            background: #f5f5f5;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .status-draft { background: #95a5a6; color: white; }
+        .status-pending { background: #f39c12; color: white; }
+        .status-approved { background: #27ae60; color: white; }
+        .status-rejected { background: #e74c3c; color: white; }
+
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+        }
+
+        .card-header {
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .alert {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border-left-color: #0c5460;
+            color: #0c5460;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border-left-color: #856404;
+            color: #856404;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border-left-color: #155724;
+            color: #155724;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            border-left-color: #721c24;
+            color: #721c24;
+        }
+
+        .screenshot {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f9f9f9;
+            margin: 20px 0;
+        }
+
+        .screenshot-label {
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .form-group {
+            margin: 15px 0;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .page-preview {
+            width: 200px;
+            height: 280px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            margin: 10px;
+            position: relative;
+        }
+
+        .page-number {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: #3498db;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8em;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            padding: 10px;
+        }
+
+        .product-slot {
+            aspect-ratio: 1;
+            border: 1px dashed #ccc;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+            background: #f9f9f9;
+        }
+
+        .toc {
+            background: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .toc h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .toc ul {
+            list-style: none;
+        }
+
+        .toc li {
+            padding: 8px 0;
+            border-bottom: 1px solid #bdc3c7;
+        }
+
+        .toc li:last-child {
+            border-bottom: none;
+        }
+
+        .toc a {
+            color: #3498db;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .toc a:hover {
+            color: #2980b9;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .container {
+                box-shadow: none;
+            }
+
+            nav {
+                display: none;
+            }
+
+            .role-section {
+                page-break-after: always;
+            }
+        }
+
+        .workflow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .workflow-step {
+            flex: 1;
+            text-align: center;
+            padding: 20px;
+            background: #ecf0f1;
+            border-radius: 8px;
+            margin: 0 5px;
+        }
+
+        .workflow-arrow {
+            font-size: 2em;
+            color: #3498db;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #e74c3c;
+        }
+
+        .icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Systém pro správu letáků</h1>
+            <p>Kompletní uživatelský návod pro všechny role</p>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="#uvod">Úvod</a></li>
+                <li><a href="#supplier">Supplier</a></li>
+                <li><a href="#pre-approver">Pre-approver</a></li>
+                <li><a href="#approver">Approver</a></li>
+                <li><a href="#end-user">End User</a></li>
+                <li><a href="#faq">FAQ</a></li>
+            </ul>
+        </nav>
+
+        <div class="content">
+            <!-- ÚVOD -->
+            <section id="uvod" class="role-section" style="border-left-color: #34495e;">
+                <h2>Úvod do systému</h2>
+
+                <div class="feature">
+                    <h3>O aplikaci</h3>
+                    <p>Systém pro správu letáků je webová aplikace určená pro tvorbu, správu a schvalování propagačních letáků. Aplikace podporuje kompletní workflow od vytvoření letáku, přes jeho schvalování až po finální distribuci.</p>
+                </div>
+
+                <div class="feature">
+                    <h3>Role v systému</h3>
+                    <div class="grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="role-badge badge-supplier">SUPPLIER</span>
+                            </div>
+                            <p>Vytváří a spravuje produkty, značky a promo obrázky. Vytváří letáky a odesílá je ke schválení.</p>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="role-badge badge-pre-approver">PRE-APPROVER</span>
+                            </div>
+                            <p>Provádí předběžné schválení letáků před finálním schválením.</p>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="role-badge badge-approver">APPROVER</span>
+                            </div>
+                            <p>Provádí finální schválení letáků a rozhoduje o jejich zveřejnění.</p>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="role-badge badge-end-user">END USER</span>
+                            </div>
+                            <p>Zobrazuje schválené aktivní letáky a pracuje s nimi.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>Workflow schvalování</h3>
+                    <div class="workflow-diagram">
+                        <div class="workflow-step">
+                            <div style="font-size: 2em; margin-bottom: 10px;">📝</div>
+                            <strong>Koncept</strong>
+                            <p>Supplier vytváří</p>
+                        </div>
+                        <div class="workflow-arrow">→</div>
+                        <div class="workflow-step">
+                            <div style="font-size: 2em; margin-bottom: 10px;">🔍</div>
+                            <strong>Validace</strong>
+                            <p>Kontrola ERP dat</p>
+                        </div>
+                        <div class="workflow-arrow">→</div>
+                        <div class="workflow-step">
+                            <div style="font-size: 2em; margin-bottom: 10px;">⚠️</div>
+                            <strong>Předschválení</strong>
+                            <p>Pre-approver</p>
+                        </div>
+                        <div class="workflow-arrow">→</div>
+                        <div class="workflow-step">
+                            <div style="font-size: 2em; margin-bottom: 10px;">✅</div>
+                            <strong>Schválení</strong>
+                            <p>Approver</p>
+                        </div>
+                        <div class="workflow-arrow">→</div>
+                        <div class="workflow-step">
+                            <div style="font-size: 2em; margin-bottom: 10px;">🚀</div>
+                            <strong>Aktivní</strong>
+                            <p>Zveřejněno</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <strong>💡 Tip:</strong> Pro navigaci mezi sekcemi použijte menu v horní části stránky nebo rolujte dolů.
+                </div>
+            </section>
+
+            <!-- SUPPLIER -->
+            <section id="supplier" class="role-section role-supplier">
+                <h2>
+                    <span class="role-badge badge-supplier">SUPPLIER</span>
+                    Návod pro Suppliery
+                </h2>
+
+                <div class="feature">
+                    <h3>1. Přihlášení do systému</h3>
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Otevřete aplikaci v prohlížeči
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Zadejte své přihlašovací údaje (email a heslo)
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Klikněte na tlačítko <span class="button btn-primary">Přihlásit se</span>
+                    </div>
+
+                    <div class="mockup">
+                        <div class="mockup-header">📱 Přihlašovací obrazovka</div>
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="text" class="form-input" placeholder="vas@email.cz" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Heslo</label>
+                            <input type="password" class="form-input" placeholder="••••••••" disabled>
+                        </div>
+                        <button class="button btn-primary">Přihlásit se</button>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>2. Správa produktů</h3>
+
+                    <h4 style="margin: 20px 0 10px 0;">2.1 Vytvoření nového produktu</h4>
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        V menu klikněte na <strong>Produkty</strong>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Klikněte na tlačítko <span class="button btn-primary">+ Nový produkt</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Vyplňte povinné údaje:
+                        <ul style="margin-top: 10px; margin-left: 30px;">
+                            <li>Název produktu</li>
+                            <li>EAN kód (13 číslic)</li>
+                            <li>Akční cena</li>
+                            <li>Původní cena (volitelné)</li>
+                            <li>Kategorie</li>
+                            <li>Značka</li>
+                        </ul>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        Nahrajte obrázek produktu (JPG, PNG, max 5MB)
+                    </div>
+                    <div class="step">
+                        <span class="step-number">5</span>
+                        Klikněte na <span class="button btn-success">Uložit</span>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Pozor:</strong> EAN kód musí existovat v ERP systému! Systém automaticky ověřuje platnost EAN při vytváření produktu.
+                    </div>
+
+                    <h4 style="margin: 20px 0 10px 0;">2.2 Import produktů z CSV</h4>
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Na stránce Produkty klikněte na <span class="button btn-outline">📥 Import CSV</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Vyberte CSV soubor s produkty
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Zkontrolujte náhled importovaných dat
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        Klikněte na <span class="button btn-primary">Importovat</span>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>💡 Formát CSV:</strong> Soubor musí obsahovat sloupce: <code>name</code>, <code>eanCode</code>, <code>price</code>, <code>originalPrice</code>, <code>categoryId</code>, <code>brandId</code>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>3. Správa značek (Brands)</h3>
+
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        V menu klikněte na <strong>Značky</strong>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Klikněte na <span class="button btn-primary">+ Nová značka</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Vyplňte název značky
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        Nahrajte logo značky (PNG s průhledným pozadím doporučeno)
+                    </div>
+                    <div class="step">
+                        <span class="step-number">5</span>
+                        Uložte změny
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>4. Správa promo obrázků</h3>
+
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        V menu klikněte na <strong>Promo obrázky</strong>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Klikněte na <span class="button btn-primary">+ Nový promo obrázek</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Zadejte název
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        Vyberte typ velikosti:
+                        <ul style="margin-top: 10px; margin-left: 30px;">
+                            <li><strong>HEADER</strong> - pro hlavičku letáku</li>
+                            <li><strong>FOOTER</strong> - pro patičku letáku</li>
+                            <li><strong>PRODUCT_SIZE</strong> - velikost produktu</li>
+                        </ul>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">5</span>
+                        Vyberte značky, ke kterým se promo obrázek vztahuje
+                    </div>
+                    <div class="step">
+                        <span class="step-number">6</span>
+                        Nahrajte obrázek
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>5. Vytvoření letáku</h3>
+
+                    <h4 style="margin: 20px 0 10px 0;">5.1 Nový leták</h4>
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        V menu klikněte na <strong>Letáky</strong>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Klikněte na <span class="button btn-primary">+ Nový leták</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Vyplňte základní informace:
+                        <ul style="margin-top: 10px; margin-left: 30px;">
+                            <li>Název letáku</li>
+                            <li>Platnost od</li>
+                            <li>Platnost do</li>
+                        </ul>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        Klikněte na <span class="button btn-success">Vytvořit</span>
+                    </div>
+
+                    <div class="mockup">
+                        <div class="mockup-header">📄 Editor letáku - přehled</div>
+                        <div style="display: flex; gap: 20px;">
+                            <div style="flex: 2;">
+                                <strong>Náhled stránky</strong>
+                                <div class="page-preview">
+                                    <div class="product-grid">
+                                        <div class="product-slot">🖼️</div>
+                                        <div class="product-slot">🖼️</div>
+                                        <div class="product-slot">🖼️</div>
+                                        <div class="product-slot">🖼️</div>
+                                        <div class="product-slot"></div>
+                                        <div class="product-slot"></div>
+                                        <div class="product-slot"></div>
+                                        <div class="product-slot"></div>
+                                    </div>
+                                    <div class="page-number">Strana 1</div>
+                                </div>
+                            </div>
+                            <div style="flex: 1;">
+                                <strong>Seznam produktů</strong>
+                                <div class="card">Produkt 1</div>
+                                <div class="card">Produkt 2</div>
+                                <div class="card">Produkt 3</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h4 style="margin: 20px 0 10px 0;">5.2 Přidání stránky</h4>
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        V editoru letáku klikněte na <span class="button btn-outline">+ Přidat stránku</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Nová stránka se automaticky vytvoří s 8 prázdnými sloty (2x4 grid)
+                    </div>
+
+                    <h4 style="margin: 20px 0 10px 0;">5.3 Přidání produktů na stránku</h4>
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        V pravém panelu vyhledejte produkt
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Přetáhněte produkt (drag & drop) na volný slot na stránce
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Nebo klikněte na produkt a potom na prázdný slot
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>💡 Tip:</strong> Každá stránka má 8 slotů v mřížce 2x4. Produkty lze přesouvat mezi sloty pomocí drag & drop.
+                    </div>
+
+                    <h4 style="margin: 20px 0 10px 0;">5.4 Přidání promo obrázku do patičky</h4>
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Přepněte na záložku <strong>Promos</strong> v pravém panelu
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Vyberte promo obrázek typu FOOTER
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Přetáhněte ho do oblasti patičky stránky
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>6. Validace a odeslání letáku</h3>
+
+                    <h4 style="margin: 20px 0 10px 0;">6.1 Uložení konceptu</h4>
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Klikněte na <span class="button btn-outline">💾 Uložit</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Leták se uloží jako koncept a můžete na něm dále pracovat
+                    </div>
+
+                    <h4 style="margin: 20px 0 10px 0;">6.2 Odeslání k autorizaci</h4>
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Zkontrolujte, že všechny produkty jsou správně umístěny
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Klikněte na <span class="button btn-primary">📤 Odeslat k autorizaci</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Systém automaticky validuje všechny produkty proti ERP systému
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Validace ERP dat:</strong> Před odesláním systém kontroluje:
+                        <ul style="margin-top: 10px; margin-left: 20px;">
+                            <li>Existenci EAN kódů v ERP</li>
+                            <li>Shodu akčních cen</li>
+                            <li>Shodu původních cen</li>
+                        </ul>
+                    </div>
+
+                    <h4 style="margin: 20px 0 10px 0;">6.3 Řešení validačních chyb</h4>
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Pokud validace najde chyby, zobrazí se modální okno se seznamem chyb
+                    </div>
+
+                    <div class="mockup">
+                        <div class="mockup-header">⚠️ Validační chyby letáku</div>
+                        <div class="alert alert-danger">
+                            <strong>Nalezeno 2 chyby</strong>
+                        </div>
+                        <div class="card" style="border-left: 4px solid #e74c3c;">
+                            <div class="card-header">
+                                1. iPhone 14 Pro
+                                <button class="button btn-outline" style="float: right;">✏️ Editovat produkt</button>
+                            </div>
+                            <p><strong>EAN:</strong> 1234567890123</p>
+                            <p><strong>Chyby:</strong></p>
+                            <ul>
+                                <li>EAN kód nebyl nalezen v ERP systému</li>
+                            </ul>
+                        </div>
+                        <div class="card" style="border-left: 4px solid #e74c3c;">
+                            <div class="card-header">
+                                2. Samsung Galaxy S23
+                                <button class="button btn-outline" style="float: right;">✏️ Editovat produkt</button>
+                            </div>
+                            <p><strong>EAN:</strong> 9876543210987</p>
+                            <p><strong>Chyby:</strong></p>
+                            <ul>
+                                <li>Nesouhlasí akční cena (ERP: 25990 Kč, Leták: 24990 Kč)</li>
+                            </ul>
+                            <p><strong>Detail cen:</strong></p>
+                            <table class="table">
+                                <tr>
+                                    <td>Akční cena v letáku:</td>
+                                    <td><strong>24990 Kč</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Akční cena v ERP:</td>
+                                    <td><strong style="color: #27ae60;">25990 Kč</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div style="margin-top: 20px;">
+                            <button class="button btn-outline">📄 Exportovat TXT</button>
+                            <button class="button btn-outline">📋 Exportovat HTML/PDF</button>
+                            <button class="button btn-danger" style="float: right;">Zavřít</button>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Klikněte na <span class="button btn-outline">✏️ Editovat produkt</span> u produktu s chybou
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Opravte EAN kód nebo ceny produktu
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        Uložte produkt a vraťte se zpět k letáku
+                    </div>
+                    <div class="step">
+                        <span class="step-number">5</span>
+                        Zkuste odeslat leták znovu
+                    </div>
+
+                    <div class="alert alert-success">
+                        <strong>✅ Export chyb:</strong> Chyby můžete exportovat do TXT nebo HTML/PDF formátu pro sdílení s kolegy nebo archivaci.
+                    </div>
+
+                    <h4 style="margin: 20px 0 10px 0;">6.4 Úspěšné odeslání</h4>
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Pokud všechny produkty projdou validací, leták se odešle ke schválení
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Stav letáku se změní na <span class="status-badge status-pending">Čeká na předschválení</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Leták je nyní zamčen pro úpravy
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>7. Generování PDF</h3>
+
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Otevřete detail letáku
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Klikněte na <span class="button btn-primary">📄 Generovat PDF</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Počkejte na vygenerování (může trvat několik sekund)
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        PDF se automaticky otevře v novém okně
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>💡 PDF náhled:</strong> PDF obsahuje všechny stránky letáku s produkty, cenami a promo obrázky v profesionálním layoutu.
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>8. Odmítnutý leták</h3>
+
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Pokud je leták odmítnut, zobrazí se stav <span class="status-badge status-rejected">Zamítnuto</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        V detailu letáku najdete důvod zamítnutí
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Klikněte na <span class="button btn-warning">✏️ Upravit</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        Proveďte požadované úpravy
+                    </div>
+                    <div class="step">
+                        <span class="step-number">5</span>
+                        Odešlete leták znovu k autorizaci
+                    </div>
+                </div>
+            </section>
+
+            <!-- PRE-APPROVER -->
+            <section id="pre-approver" class="role-section role-pre-approver">
+                <h2>
+                    <span class="role-badge badge-pre-approver">PRE-APPROVER</span>
+                    Návod pro Pre-approvery
+                </h2>
+
+                <div class="feature">
+                    <h3>1. Přehled čekajících letáků</h3>
+
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Po přihlášení klikněte na <strong>Schvalování</strong> v menu
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Zobrazí se seznam letáků čekajících na předschválení
+                    </div>
+
+                    <div class="mockup">
+                        <div class="mockup-header">📋 Letáky čekající na předschválení</div>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Název</th>
+                                    <th>Supplier</th>
+                                    <th>Platnost</th>
+                                    <th>Stav</th>
+                                    <th>Akce</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Letní akce 2025</td>
+                                    <td>Jan Novák</td>
+                                    <td>01.06.2025 - 30.06.2025</td>
+                                    <td><span class="status-badge status-pending">Čeká na předschválení</span></td>
+                                    <td><button class="button btn-primary btn-sm">Zobrazit</button></td>
+                                </tr>
+                                <tr>
+                                    <td>Black Friday 2025</td>
+                                    <td>Marie Svobodová</td>
+                                    <td>15.11.2025 - 30.11.2025</td>
+                                    <td><span class="status-badge status-pending">Čeká na předschválení</span></td>
+                                    <td><button class="button btn-primary btn-sm">Zobrazit</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>2. Kontrola letáku</h3>
+
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Klikněte na leták, který chcete zkontrolovat
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Zkontrolujte:
+                        <ul style="margin-top: 10px; margin-left: 30px;">
+                            <li>Správnost produktů na stránkách</li>
+                            <li>Ceny a slevy</li>
+                            <li>Rozložení produktů</li>
+                            <li>Promo obrázky</li>
+                            <li>Období platnosti</li>
+                        </ul>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Vygenerujte PDF náhled pomocí <span class="button btn-outline">📄 Náhled PDF</span>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>3. Předschválení letáku</h3>
+
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Pokud je vše v pořádku, klikněte na <span class="button btn-success">✅ Předschválit</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Potvrďte předschválení
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Leták se přesune do stavu <span class="status-badge status-pending">Čeká na schválení</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        Approver nyní může leták finálně schválit
+                    </div>
+
+                    <div class="alert alert-success">
+                        <strong>✅ Info:</strong> Po předschválení je leták automaticky předán Approverovi k finálnímu schválení.
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>4. Zamítnutí letáku</h3>
+
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Pokud najdete chybu nebo nesrovnalost, klikněte na <span class="button btn-danger">❌ Zamítnout</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        V dialogovém okně zadejte důvod zamítnutí
+                    </div>
+
+                    <div class="mockup">
+                        <div class="mockup-header">❌ Zamítnutí letáku</div>
+                        <div class="form-group">
+                            <label class="form-label">Důvod zamítnutí *</label>
+                            <textarea class="form-input" rows="4" placeholder="Prosím uveďte podrobný důvod zamítnutí...">Nesprávné ceny u produktů iPhone 14 a Samsung Galaxy S23. Zkontrolujte aktuální ceny v ERP systému.</textarea>
+                        </div>
+                        <div style="margin-top: 20px;">
+                            <button class="button btn-danger">Zamítnout leták</button>
+                            <button class="button btn-outline">Zrušit</button>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Klikněte na <span class="button btn-danger">Zamítnout leták</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        Leták se vrátí Supplierovi s vaší poznámkou
+                    </div>
+                    <div class="step">
+                        <span class="step-number">5</span>
+                        Supplier provede úpravy a odešle leták znovu
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Důležité:</strong> Vždy uveďte konkrétní a jasný důvod zamítnutí, aby Supplier věděl, co má opravit.
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>5. Historie schvalování</h3>
+
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        V detailu letáku najdete sekci <strong>Historie schvalování</strong>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Zde vidíte všechny předchozí akce:
+                        <ul style="margin-top: 10px; margin-left: 30px;">
+                            <li>Kdo a kdy leták předschválil/zamítl</li>
+                            <li>Důvody zamítnutí</li>
+                            <li>Poznámky</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- APPROVER -->
+            <section id="approver" class="role-section role-approver">
+                <h2>
+                    <span class="role-badge badge-approver">APPROVER</span>
+                    Návod pro Approvery
+                </h2>
+
+                <div class="feature">
+                    <h3>1. Přehled letáků ke schválení</h3>
+
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Klikněte na <strong>Schvalování</strong> v menu
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Zobrazí se letáky, které prošly předschválením
+                    </div>
+
+                    <div class="mockup">
+                        <div class="mockup-header">📋 Letáky čekající na finální schválení</div>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Název</th>
+                                    <th>Supplier</th>
+                                    <th>Pre-approver</th>
+                                    <th>Platnost</th>
+                                    <th>Stav</th>
+                                    <th>Akce</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Letní akce 2025</td>
+                                    <td>Jan Novák</td>
+                                    <td>Petra Dvořáková</td>
+                                    <td>01.06.2025 - 30.06.2025</td>
+                                    <td><span class="status-badge status-pending">Čeká na schválení</span></td>
+                                    <td><button class="button btn-primary btn-sm">Zobrazit</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>2. Finální kontrola letáku</h3>
+
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Otevřete leták ke kontrole
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Zkontrolujte všechny stránky a produkty
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Ověřte, že leták prošel předschválením
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        Vygenerujte PDF pro finální kontrolu
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>3. Schválení letáku</h3>
+
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Klikněte na <span class="button btn-success">✅ Schválit</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Potvrďte schválení
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Leták se změní na stav <span class="status-badge status-approved">Schváleno</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        Pokud je leták v období platnosti, stane se automaticky aktivním
+                    </div>
+
+                    <div class="alert alert-success">
+                        <strong>✅ Aktivní leták:</strong> Schválený leták v období platnosti se automaticky zobrazí End Userům jako aktivní.
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>4. Zamítnutí letáku</h3>
+
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Pokud najdete závažný problém, klikněte na <span class="button btn-danger">❌ Zamítnout</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Zadejte podrobný důvod zamítnutí
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Leták se vrátí Supplierovi k úpravám
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Zamítnutí po předschválení:</strong> Pokud zamítnete leták, který byl předschválen, uveďte jasný důvod, protože prošel již jedním kontrolním kolem.
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>5. Správa aktivních letáků</h3>
+
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        V menu klikněte na <strong>Aktivní letáky</strong>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Zobrazí se všechny aktuálně platné letáky
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        U každého letáku můžete:
+                        <ul style="margin-top: 10px; margin-left: 30px;">
+                            <li>Zobrazit PDF</li>
+                            <li>Předčasně ukončit platnost</li>
+                            <li>Zobrazit detail</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- END USER -->
+            <section id="end-user" class="role-section role-end-user">
+                <h2>
+                    <span class="role-badge badge-end-user">END USER</span>
+                    Návod pro End Usery
+                </h2>
+
+                <div class="feature">
+                    <h3>1. Zobrazení aktivních letáků</h3>
+
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Po přihlášení automaticky vidíte <strong>Aktivní letáky</strong>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Zobrazí se pouze letáky:
+                        <ul style="margin-top: 10px; margin-left: 30px;">
+                            <li>Které jsou schválené</li>
+                            <li>Které jsou v období platnosti</li>
+                            <li>Které patří k vašim značkám (pokud máte přiřazené)</li>
+                        </ul>
+                    </div>
+
+                    <div class="mockup">
+                        <div class="mockup-header">🚀 Aktivní letáky</div>
+                        <div class="grid">
+                            <div class="card">
+                                <div class="card-header">Letní akce 2025</div>
+                                <p><strong>Platnost:</strong> 01.06.2025 - 30.06.2025</p>
+                                <p><strong>Značky:</strong> Samsung, Apple</p>
+                                <div style="margin-top: 15px;">
+                                    <button class="button btn-primary btn-sm">📄 Zobrazit PDF</button>
+                                    <button class="button btn-outline btn-sm">👁️ Detail</button>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-header">Týdenní nabídka</div>
+                                <p><strong>Platnost:</strong> 10.06.2025 - 16.06.2025</p>
+                                <p><strong>Značky:</strong> Xiaomi, Huawei</p>
+                                <div style="margin-top: 15px;">
+                                    <button class="button btn-primary btn-sm">📄 Zobrazit PDF</button>
+                                    <button class="button btn-outline btn-sm">👁️ Detail</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>2. Zobrazení PDF letáku</h3>
+
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Klikněte na tlačítko <span class="button btn-primary btn-sm">📄 Zobrazit PDF</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        PDF se otevře v novém okně
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Můžete PDF:
+                        <ul style="margin-top: 10px; margin-left: 30px;">
+                            <li>Prohlížet online</li>
+                            <li>Stáhnout</li>
+                            <li>Vytisknout</li>
+                            <li>Sdílet</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>3. Detail letáku</h3>
+
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Klikněte na <span class="button btn-outline btn-sm">👁️ Detail</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Zobrazí se detailní informace o letáku:
+                        <ul style="margin-top: 10px; margin-left: 30px;">
+                            <li>Všechny stránky letáku</li>
+                            <li>Seznam všech produktů</li>
+                            <li>Ceny a slevy</li>
+                            <li>Období platnosti</li>
+                            <li>Promo obrázky</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>4. Filtrování letáků</h3>
+
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Použijte vyhledávací pole pro filtrování podle názvu
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Filtrujte podle značek (pokud máte přiřazené více značek)
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Řaďte podle:
+                        <ul style="margin-top: 10px; margin-left: 30px;">
+                            <li>Data vytvoření</li>
+                            <li>Platnosti</li>
+                            <li>Názvu</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>5. Moje letáky</h3>
+
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Klikněte na <strong>Moje letáky</strong> v menu
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Zobrazí se letáky, které jste vytvořili (pokud máte práva)
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Můžete vytvořit nový leták nebo upravit existující koncept
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>💡 Info:</strong> End User může vytvářet letáky, ale nemůže je odesílat ke schválení. To musí udělat Supplier.
+                    </div>
+                </div>
+            </section>
+
+            <!-- FAQ -->
+            <section id="faq" class="role-section" style="border-left-color: #95a5a6;">
+                <h2>Často kladené otázky (FAQ)</h2>
+
+                <div class="feature">
+                    <h3>Obecné otázky</h3>
+
+                    <div class="card">
+                        <div class="card-header">❓ Co dělat, když zapomenu heslo?</div>
+                        <p>Kontaktujte administrátora systému, který vám heslo resetuje.</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">❓ Mohu změnit své přihlašovací údaje?</div>
+                        <p>Ano, v pravém horním rohu klikněte na své jméno a vyberte "Profil" → "Změnit heslo".</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">❓ Kolik letáků mohu vytvořit?</div>
+                        <p>Počet letáků není omezen. Můžete vytvořit libovolný počet konceptů a aktivních letáků.</p>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>Produkty a EAN kódy</h3>
+
+                    <div class="card">
+                        <div class="card-header">❓ Proč systém odmítá můj EAN kód?</div>
+                        <p>EAN kód musí existovat v ERP systému. Zkontrolujte, zda je kód správný a zda produkt existuje v databázi ERP.</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">❓ Mohu změnit cenu produktu po vytvoření?</div>
+                        <p>Ano, můžete upravit produkt a změnit cenu. Po změně však musíte znovu validovat leták proti ERP.</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">❓ Co znamená chyba "Nesouhlasí akční cena"?</div>
+                        <p>Cena produktu v letáku se liší od ceny v ERP systému. Opravte cenu v produktu nebo v ERP systému.</p>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>Letáky a schvalování</h3>
+
+                    <div class="card">
+                        <div class="card-header">❓ Mohu upravit leták po odeslání ke schválení?</div>
+                        <p>Ne, leták je po odeslání zamčen. Pokud potřebujete změny, musí být leták zamítnut a vrácen k úpravám.</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">❓ Jak dlouho trvá schválení letáku?</div>
+                        <p>Záleží na dostupnosti Pre-approvera a Approvera. Obvykle do 48 hodin.</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">❓ Mohu smazat schválený leták?</div>
+                        <p>Ne, schválené letáky nelze smazat. Můžete je pouze předčasně ukončit (pokud máte práva Approvera).</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">❓ Co se stane po vypršení platnosti letáku?</div>
+                        <p>Leták se automaticky změní na "Vypršelo" a nebude se zobrazovat v aktivních letácích.</p>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>PDF a export</h3>
+
+                    <div class="card">
+                        <div class="card-header">❓ Proč trvá generování PDF dlouho?</div>
+                        <p>Generování PDF může trvat několik sekund v závislosti na počtu stránek a produktů. Buďte trpěliví.</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">❓ Mohu exportovat validační chyby?</div>
+                        <p>Ano, validační chyby můžete exportovat do TXT nebo HTML/PDF formátu pro sdílení nebo archivaci.</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">❓ V jakém formátu je PDF?</div>
+                        <p>PDF je generováno v A4 formátu s profesionálním layoutem připraveným k tisku.</p>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>Technické problémy</h3>
+
+                    <div class="card">
+                        <div class="card-header">❓ Aplikace se mi pomalu načítá</div>
+                        <p>Zkuste vymazat cache prohlížeče nebo použít jiný prohlížeč. Doporučujeme Chrome nebo Firefox.</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">❓ Nemohu nahrát obrázek</div>
+                        <p>Zkontrolujte, že obrázek je ve správném formátu (JPG, PNG) a nepřesahuje 5MB.</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">❓ Koho kontaktovat při problémech?</div>
+                        <p>Kontaktujte technickou podporu na email: podpora@example.com nebo telefonicky: +420 123 456 789</p>
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <strong>💡 Nenašli jste odpověď na vaši otázku?</strong><br>
+                    Kontaktujte technickou podporu nebo administrátora systému.
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer style="background: #2c3e50; color: white; padding: 30px 40px; margin-top: 40px;">
+                <div style="text-align: center;">
+                    <h3>Systém pro správu letáků</h3>
+                    <p style="margin-top: 10px; opacity: 0.8;">Verze 1.0 | Poslední aktualizace: 2. listopadu 2025</p>
+                    <p style="margin-top: 20px; font-size: 0.9em;">
+                        <strong>Technická podpora:</strong> podpora@example.com | +420 123 456 789
+                    </p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // Smooth scroll pro odkazy
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Print functionality
+        function printGuide() {
+            window.print();
+        }
+    </script>
+</body>
+</html>

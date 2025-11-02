@@ -9,5 +9,21 @@ export declare class MssqlService implements OnModuleInit {
         erpPrice?: number;
         erpOriginalPrice?: number;
     }>;
+    validateFlyerProducts(products: Array<{
+        id: string;
+        name: string;
+        eanCode: string;
+        price: number;
+        originalPrice?: number;
+    }>): Promise<Array<{
+        productId: string;
+        productName: string;
+        eanCode: string;
+        errors: string[];
+        erpPrice?: number;
+        erpOriginalPrice?: number;
+        currentPrice?: number;
+        currentOriginalPrice?: number;
+    }>>;
     onModuleDestroy(): Promise<void>;
 }

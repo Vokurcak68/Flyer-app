@@ -15,13 +15,14 @@ export declare class PromoImagesController {
         };
     } & {
         id: string;
+        supplierId: string;
         name: string;
         createdAt: Date;
-        supplierId: string;
         brandId: string | null;
         imageData: Buffer;
         imageMimeType: string;
         defaultSize: import(".prisma/client").$Enums.PromoSlotSize;
+        isForEndUsers: boolean;
     }>;
     findAll(req: any, filters: PromoImageFilterDto): Promise<{
         brand: {
@@ -33,11 +34,12 @@ export declare class PromoImagesController {
             logoMimeType: string | null;
         };
         id: string;
+        supplierId: string;
         name: string;
         createdAt: Date;
-        supplierId: string;
         brandId: string | null;
         defaultSize: import(".prisma/client").$Enums.PromoSlotSize;
+        isForEndUsers: boolean;
     }[]>;
     findBySizeType(sizeType: 'full' | 'half' | 'quarter' | 'eighth'): Promise<({
         brand: {
@@ -50,13 +52,14 @@ export declare class PromoImagesController {
         };
     } & {
         id: string;
+        supplierId: string;
         name: string;
         createdAt: Date;
-        supplierId: string;
         brandId: string | null;
         imageData: Buffer;
         imageMimeType: string;
         defaultSize: import(".prisma/client").$Enums.PromoSlotSize;
+        isForEndUsers: boolean;
     })[]>;
     getImage(id: string, res: Response): Promise<void>;
     findOne(id: string): Promise<{
@@ -70,22 +73,24 @@ export declare class PromoImagesController {
         };
     } & {
         id: string;
+        supplierId: string;
         name: string;
         createdAt: Date;
-        supplierId: string;
         brandId: string | null;
         imageData: Buffer;
         imageMimeType: string;
         defaultSize: import(".prisma/client").$Enums.PromoSlotSize;
+        isForEndUsers: boolean;
     }>;
     remove(id: string, req: any): Promise<{
         id: string;
+        supplierId: string;
         name: string;
         createdAt: Date;
-        supplierId: string;
         brandId: string | null;
         imageData: Buffer;
         imageMimeType: string;
         defaultSize: import(".prisma/client").$Enums.PromoSlotSize;
+        isForEndUsers: boolean;
     }>;
 }

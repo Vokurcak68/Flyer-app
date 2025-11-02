@@ -71,6 +71,41 @@ let MssqlService = MssqlService_1 = class MssqlService {
             return { found: false, pricesMatch: false };
         }
     }
+    async validateFlyerProducts(products) {
+        const validationErrors = [];
+        for (const product of products) {
+            const errors = [];
+            const validation = await this.validateEAN(product.eanCode, product.price, product.originalPrice);
+            if (!validation.found) {
+                errors.push('EAN kód nebyl nalezen v ERP systému');
+            }
+            else {
+                if (!validation.pricesMatch) {
+                    if (validation.erpPrice !== undefined && product.price !== validation.erpPrice) {
+                        errors.push(`Nesouhlasí akční cena (ERP: ${validation.erpPrice} Kč, Leták: ${product.price} Kč)`);
+                    }
+                    if (validation.erpOriginalPrice !== undefined &&
+                        product.originalPrice !== undefined &&
+                        product.originalPrice !== validation.erpOriginalPrice) {
+                        errors.push(`Nesouhlasí původní cena (ERP: ${validation.erpOriginalPrice} Kč, Leták: ${product.originalPrice} Kč)`);
+                    }
+                }
+            }
+            if (errors.length > 0) {
+                validationErrors.push({
+                    productId: product.id,
+                    productName: product.name,
+                    eanCode: product.eanCode,
+                    errors,
+                    erpPrice: validation.erpPrice,
+                    erpOriginalPrice: validation.erpOriginalPrice,
+                    currentPrice: product.price,
+                    currentOriginalPrice: product.originalPrice,
+                });
+            }
+        }
+        return validationErrors;
+    }
     async onModuleDestroy() {
         if (this.pool) {
             await this.pool.close();

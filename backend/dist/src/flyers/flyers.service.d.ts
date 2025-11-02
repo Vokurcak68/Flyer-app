@@ -44,12 +44,12 @@ export declare class FlyersService {
                 }[];
             } & {
                 id: string;
+                supplierId: string;
                 name: string;
                 createdAt: Date;
                 updatedAt: Date;
-                categoryId: string | null;
                 isActive: boolean;
-                supplierId: string;
+                categoryId: string | null;
                 brandId: string;
                 imageData: Buffer | null;
                 imageMimeType: string | null;
@@ -61,13 +61,14 @@ export declare class FlyersService {
             };
             promoImage: {
                 id: string;
+                supplierId: string;
                 name: string;
                 createdAt: Date;
-                supplierId: string;
                 brandId: string | null;
                 imageData: Buffer;
                 imageMimeType: string;
                 defaultSize: import(".prisma/client").$Enums.PromoSlotSize;
+                isForEndUsers: boolean;
             };
         } & {
             id: string;
@@ -107,12 +108,12 @@ export declare class FlyersService {
             }[];
         } & {
             id: string;
+            supplierId: string;
             name: string;
             createdAt: Date;
             updatedAt: Date;
-            categoryId: string | null;
             isActive: boolean;
-            supplierId: string;
+            categoryId: string | null;
             brandId: string;
             imageData: Buffer | null;
             imageMimeType: string | null;
@@ -154,12 +155,12 @@ export declare class FlyersService {
             }[];
         } & {
             id: string;
+            supplierId: string;
             name: string;
             createdAt: Date;
             updatedAt: Date;
-            categoryId: string | null;
             isActive: boolean;
-            supplierId: string;
+            categoryId: string | null;
             brandId: string;
             imageData: Buffer | null;
             imageMimeType: string | null;
@@ -171,13 +172,14 @@ export declare class FlyersService {
         };
         promoImage: {
             id: string;
+            supplierId: string;
             name: string;
             createdAt: Date;
-            supplierId: string;
             brandId: string | null;
             imageData: Buffer;
             imageMimeType: string;
             defaultSize: import(".prisma/client").$Enums.PromoSlotSize;
+            isForEndUsers: boolean;
         };
     } & {
         id: string;
@@ -220,12 +222,12 @@ export declare class FlyersService {
                     })[];
                 } & {
                     id: string;
+                    supplierId: string;
                     name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    categoryId: string | null;
                     isActive: boolean;
-                    supplierId: string;
+                    categoryId: string | null;
                     brandId: string;
                     imageData: Buffer | null;
                     imageMimeType: string | null;
@@ -237,13 +239,14 @@ export declare class FlyersService {
                 };
                 promoImage: {
                     id: string;
+                    supplierId: string;
                     name: string;
                     createdAt: Date;
-                    supplierId: string;
                     brandId: string | null;
                     imageData: Buffer;
                     imageMimeType: string;
                     defaultSize: import(".prisma/client").$Enums.PromoSlotSize;
+                    isForEndUsers: boolean;
                 };
             } & {
                 id: string;
@@ -264,13 +267,11 @@ export declare class FlyersService {
         })[];
     } & {
         id: string;
-        name: string;
-        createdAt: Date;
-        updatedAt: Date;
-        status: import(".prisma/client").$Enums.FlyerStatus;
         supplierId: string;
+        name: string;
         validFrom: Date | null;
         validTo: Date | null;
+        status: import(".prisma/client").$Enums.FlyerStatus;
         isDraft: boolean;
         rejectionReason: string | null;
         pdfData: Buffer | null;
@@ -278,6 +279,8 @@ export declare class FlyersService {
         lastEditedAt: Date;
         autoSaveVersion: number;
         completionPercentage: number;
+        createdAt: Date;
+        updatedAt: Date;
         publishedAt: Date | null;
     }>;
     getPreview(flyerId: string, userId: string, userRole: UserRole): Promise<{
@@ -295,6 +298,8 @@ export declare class FlyersService {
         autoSaveVersion: number;
         message: string;
     }>;
+    expireFlyer(flyerId: string, userId: string, userRole: UserRole): Promise<any>;
+    private updateExpiredFlyers;
     private updateCompletionPercentage;
     private syncPages;
     private transformFlyerForFrontend;

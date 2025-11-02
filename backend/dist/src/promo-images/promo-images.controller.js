@@ -45,7 +45,7 @@ let PromoImagesController = class PromoImagesController {
         return this.promoImagesService.findOne(id);
     }
     remove(id, req) {
-        return this.promoImagesService.remove(id, req.user.userId);
+        return this.promoImagesService.remove(id, req.user.userId, req.user.role);
     }
 };
 exports.PromoImagesController = PromoImagesController;
@@ -95,7 +95,7 @@ __decorate([
 __decorate([
     (0, common_1.Delete)(':id'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)('supplier'),
+    (0, roles_decorator_1.Roles)('supplier', 'admin'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),

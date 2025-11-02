@@ -36,6 +36,7 @@ let PromoImagesService = class PromoImagesService {
                 imageMimeType: dto.imageMimeType,
                 defaultSize: dto.defaultSize,
                 brandId: dto.brandId,
+                isForEndUsers: dto.isForEndUsers || false,
             },
             include: {
                 brand: true,
@@ -58,6 +59,9 @@ let PromoImagesService = class PromoImagesService {
             else {
                 return [];
             }
+        }
+        else if (role === 'end_user') {
+            where.isForEndUsers = true;
         }
         if (filters.brandId) {
             where.brandId = filters.brandId;
@@ -89,9 +93,9 @@ let PromoImagesService = class PromoImagesService {
         }
         return promoImage;
     }
-    async remove(id, userId) {
+    async remove(id, userId, userRole) {
         const promoImage = await this.findOne(id);
-        if (promoImage.supplierId !== userId) {
+        if (userRole !== 'admin' && promoImage.supplierId !== userId) {
             throw new common_1.ForbiddenException('You can only delete your own promo images');
         }
         return this.prisma.promoImage.delete({

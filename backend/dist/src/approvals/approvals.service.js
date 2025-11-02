@@ -39,11 +39,92 @@ let ApprovalsService = class ApprovalsService {
         if (existingApproval) {
             throw new common_1.BadRequestException('Approval request already exists for this approver');
         }
+        const approver = await this.prisma.user.findUnique({
+            where: { id: approverId },
+            select: { role: true },
+        });
+        if (!approver) {
+            throw new common_1.NotFoundException('Approver not found');
+        }
+        const data = {
+            flyerId,
+            approverId,
+            status: client_1.ApprovalStatus.pending,
+        };
+        if (approver.role === 'pre_approver') {
+            data.preApprovalStatus = client_1.PreApprovalStatus.pending;
+        }
         return this.prisma.approval.create({
+            data,
+        });
+    }
+    async processPreApproval(flyerId, approverId, status, comment) {
+        const approval = await this.prisma.approval.findUnique({
+            where: {
+                flyerId_approverId: {
+                    flyerId,
+                    approverId,
+                },
+            },
+        });
+        if (!approval) {
+            throw new common_1.NotFoundException('Approval request not found');
+        }
+        if (approval.preApprovalStatus && approval.preApprovalStatus !== client_1.PreApprovalStatus.pending) {
+            throw new common_1.BadRequestException('This pre-approval has already been processed');
+        }
+        if (status === client_1.PreApprovalStatus.pre_approved) {
+            const updated = await this.prisma.approval.update({
+                where: {
+                    flyerId_approverId: {
+                        flyerId,
+                        approverId,
+                    },
+                },
+                data: {
+                    preApprovalStatus: status,
+                    comment,
+                    preApprovedAt: new Date(),
+                },
+            });
+            await this.updatePreApprovalWorkflow(flyerId);
+            return updated;
+        }
+        else if (status === client_1.PreApprovalStatus.rejected) {
+            const updated = await this.prisma.approval.update({
+                where: {
+                    flyerId_approverId: {
+                        flyerId,
+                        approverId,
+                    },
+                },
+                data: {
+                    preApprovalStatus: status,
+                    comment,
+                    preApprovedAt: new Date(),
+                },
+            });
+            await this.prisma.flyer.update({
+                where: { id: flyerId },
+                data: {
+                    status: client_1.FlyerStatus.draft,
+                    isDraft: true,
+                    rejectionReason: comment || 'Rejected by pre-approver without comment',
+                },
+            });
+            return updated;
+        }
+        return this.prisma.approval.update({
+            where: {
+                flyerId_approverId: {
+                    flyerId,
+                    approverId,
+                },
+            },
             data: {
-                flyerId,
-                approverId,
-                status: client_1.ApprovalStatus.pending,
+                preApprovalStatus: status,
+                comment,
+                preApprovedAt: new Date(),
             },
         });
     }
@@ -118,6 +199,28 @@ let ApprovalsService = class ApprovalsService {
         });
         return updated;
     }
+    async updatePreApprovalWorkflow(flyerId) {
+        const workflow = await this.prisma.approvalWorkflow.findUnique({
+            where: { flyerId },
+        });
+        if (!workflow)
+            return;
+        const preApprovedCount = await this.prisma.approval.count({
+            where: {
+                flyerId,
+                preApprovalStatus: client_1.PreApprovalStatus.pre_approved,
+            },
+        });
+        const isPreApprovalComplete = preApprovedCount >= workflow.requiredPreApprovers;
+        await this.prisma.approvalWorkflow.update({
+            where: { flyerId },
+            data: {
+                currentPreApprovals: preApprovedCount,
+                isPreApprovalComplete,
+            },
+        });
+        console.log(`✅ Pre-approvals for flyer ${flyerId}: ${preApprovedCount}/${workflow.requiredPreApprovers}`);
+    }
     async updateApprovalWorkflow(flyerId) {
         const workflow = await this.prisma.approvalWorkflow.findUnique({
             where: { flyerId },
@@ -169,13 +272,25 @@ let ApprovalsService = class ApprovalsService {
             where: { flyerId },
         });
     }
-    async getPendingApprovals(approverId) {
+    async getPendingPreApprovals(approverId) {
         const approvals = await this.prisma.approval.findMany({
             where: {
                 approverId,
-                status: client_1.ApprovalStatus.pending,
+                preApprovalStatus: client_1.PreApprovalStatus.pending,
+                flyer: {
+                    status: client_1.FlyerStatus.pending_approval,
+                },
             },
             include: {
+                approver: {
+                    select: {
+                        id: true,
+                        email: true,
+                        firstName: true,
+                        lastName: true,
+                        role: true,
+                    },
+                },
                 flyer: {
                     include: {
                         pages: {
@@ -235,6 +350,109 @@ let ApprovalsService = class ApprovalsService {
             ...approval,
             flyer: approval.flyer ? this.transformFlyerForFrontend(approval.flyer) : null,
         }));
+    }
+    async getPendingApprovals(approverId) {
+        const approvals = await this.prisma.approval.findMany({
+            where: {
+                approverId,
+                status: client_1.ApprovalStatus.pending,
+                flyer: {
+                    status: client_1.FlyerStatus.pending_approval,
+                },
+            },
+            include: {
+                approver: {
+                    select: {
+                        id: true,
+                        email: true,
+                        firstName: true,
+                        lastName: true,
+                        role: true,
+                    },
+                },
+                flyer: {
+                    include: {
+                        pages: {
+                            include: {
+                                slots: {
+                                    include: {
+                                        product: {
+                                            include: {
+                                                brand: true,
+                                                icons: {
+                                                    include: {
+                                                        icon: true,
+                                                    },
+                                                    orderBy: {
+                                                        position: 'asc',
+                                                    },
+                                                },
+                                            },
+                                        },
+                                        promoImage: true,
+                                    },
+                                    orderBy: {
+                                        slotPosition: 'asc',
+                                    },
+                                },
+                                footerPromoImage: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        imageData: true,
+                                        imageMimeType: true,
+                                        supplierId: true,
+                                        createdAt: true,
+                                    },
+                                },
+                            },
+                            orderBy: {
+                                pageNumber: 'asc',
+                            },
+                        },
+                        supplier: {
+                            select: {
+                                id: true,
+                                email: true,
+                                firstName: true,
+                                lastName: true,
+                            },
+                        },
+                    },
+                },
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
+        const approvalsWithPreApprovalInfo = await Promise.all(approvals.map(async (approval) => {
+            const preApprovalRecord = await this.prisma.approval.findFirst({
+                where: {
+                    flyerId: approval.flyerId,
+                    preApprovalStatus: client_1.PreApprovalStatus.pre_approved,
+                },
+                include: {
+                    approver: {
+                        select: {
+                            id: true,
+                            email: true,
+                            firstName: true,
+                            lastName: true,
+                            role: true,
+                        },
+                    },
+                },
+            });
+            return {
+                ...approval,
+                preApprovalStatus: preApprovalRecord?.preApprovalStatus || approval.preApprovalStatus,
+                preApprovedAt: preApprovalRecord?.preApprovedAt || approval.preApprovedAt,
+                comment: preApprovalRecord?.comment || approval.comment,
+                approver: preApprovalRecord?.approver || approval.approver,
+                flyer: approval.flyer ? this.transformFlyerForFrontend(approval.flyer) : null,
+            };
+        }));
+        return approvalsWithPreApprovalInfo;
     }
     async getMyApprovals(approverId) {
         return this.prisma.approval.findMany({

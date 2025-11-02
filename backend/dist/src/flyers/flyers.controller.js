@@ -20,10 +20,12 @@ const dto_1 = require("./dto");
 const jwt_auth_guard_1 = require("../common/guards/jwt-auth.guard");
 const roles_guard_1 = require("../common/guards/roles.guard");
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
+const mssql_service_1 = require("../common/mssql.service");
 let FlyersController = class FlyersController {
-    constructor(flyersService, pdfService) {
+    constructor(flyersService, pdfService, mssqlService) {
         this.flyersService = flyersService;
         this.pdfService = pdfService;
+        this.mssqlService = mssqlService;
     }
     create(createFlyerDto, req) {
         console.log('🔍 Create flyer - req.user:', req.user);
@@ -61,6 +63,33 @@ let FlyersController = class FlyersController {
     updateProductPosition(productId, updatePositionDto, req) {
         return this.flyersService.updateProductPosition(productId, updatePositionDto, req.user.userId);
     }
+    async validateFlyer(flyerId, req) {
+        const flyer = await this.flyersService.findOne(flyerId, req.user.userId, req.user.role);
+        const productsMap = new Map();
+        for (const page of flyer.pages) {
+            for (const slot of page.slots) {
+                if (slot.product && !productsMap.has(slot.product.id)) {
+                    productsMap.set(slot.product.id, {
+                        id: slot.product.id,
+                        name: slot.product.name,
+                        eanCode: slot.product.eanCode,
+                        price: parseFloat(slot.product.price.toString()),
+                        originalPrice: slot.product.originalPrice
+                            ? parseFloat(slot.product.originalPrice.toString())
+                            : undefined,
+                    });
+                }
+            }
+        }
+        const products = Array.from(productsMap.values());
+        const validationErrors = await this.mssqlService.validateFlyerProducts(products);
+        return {
+            valid: validationErrors.length === 0,
+            errors: validationErrors,
+            productsChecked: products.length,
+            errorsFound: validationErrors.length,
+        };
+    }
     submitForVerification(flyerId, req) {
         return this.flyersService.submitForVerification(flyerId, req.user.userId);
     }
@@ -69,6 +98,9 @@ let FlyersController = class FlyersController {
     }
     autoSave(flyerId, req) {
         return this.flyersService.autoSave(flyerId, req.user.userId);
+    }
+    expireFlyer(flyerId, req) {
+        return this.flyersService.expireFlyer(flyerId, req.user.userId, req.user.role);
     }
     async getPdf(id, res, req) {
         const flyer = await this.flyersService.findOne(id, req.user.userId, req.user.role);
@@ -93,7 +125,7 @@ let FlyersController = class FlyersController {
 exports.FlyersController = FlyersController;
 __decorate([
     (0, common_1.Post)(),
-    (0, roles_decorator_1.Roles)('supplier'),
+    (0, roles_decorator_1.Roles)('supplier', 'end_user'),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -110,7 +142,7 @@ __decorate([
 ], FlyersController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)('active'),
-    (0, roles_decorator_1.Roles)('end_user'),
+    (0, roles_decorator_1.Roles)('end_user', 'approver', 'pre_approver'),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -126,7 +158,7 @@ __decorate([
 ], FlyersController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    (0, roles_decorator_1.Roles)('supplier'),
+    (0, roles_decorator_1.Roles)('supplier', 'end_user'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Request)()),
@@ -136,7 +168,7 @@ __decorate([
 ], FlyersController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    (0, roles_decorator_1.Roles)('supplier'),
+    (0, roles_decorator_1.Roles)('supplier', 'end_user'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -192,6 +224,15 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], FlyersController.prototype, "updateProductPosition", null);
 __decorate([
+    (0, common_1.Post)(':id/validate'),
+    (0, roles_decorator_1.Roles)('supplier', 'end_user'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], FlyersController.prototype, "validateFlyer", null);
+__decorate([
     (0, common_1.Post)(':id/submit-for-verification'),
     (0, roles_decorator_1.Roles)('supplier'),
     __param(0, (0, common_1.Param)('id')),
@@ -218,6 +259,15 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], FlyersController.prototype, "autoSave", null);
 __decorate([
+    (0, common_1.Post)(':id/expire'),
+    (0, roles_decorator_1.Roles)('supplier', 'admin'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], FlyersController.prototype, "expireFlyer", null);
+__decorate([
     (0, common_1.Get)(':id/pdf'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Res)()),
@@ -238,6 +288,7 @@ exports.FlyersController = FlyersController = __decorate([
     (0, common_1.Controller)('flyers'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     __metadata("design:paramtypes", [flyers_service_1.FlyersService,
-        pdf_service_1.PdfService])
+        pdf_service_1.PdfService,
+        mssql_service_1.MssqlService])
 ], FlyersController);
 //# sourceMappingURL=flyers.controller.js.map

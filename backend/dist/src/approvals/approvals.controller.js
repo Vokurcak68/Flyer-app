@@ -24,6 +24,9 @@ let ApprovalsController = class ApprovalsController {
         this.approvalsService = approvalsService;
     }
     getPendingApprovals(req) {
+        if (req.user.role === 'pre_approver') {
+            return this.approvalsService.getPendingPreApprovals(req.user.userId);
+        }
         return this.approvalsService.getPendingApprovals(req.user.userId);
     }
     getMyApprovals(req) {
@@ -51,11 +54,33 @@ let ApprovalsController = class ApprovalsController {
         }
         return this.approvalsService.processApproval(flyerId, approverId, client_1.ApprovalStatus.rejected, body.comment);
     }
+    async preApprove(approvalId, body, req) {
+        const parts = approvalId.split('_');
+        if (parts.length !== 2) {
+            throw new Error('Invalid approval ID format');
+        }
+        const [flyerId, approverId] = parts;
+        if (approverId !== req.user.userId) {
+            throw new Error('Unauthorized to pre-approve this flyer');
+        }
+        return this.approvalsService.processPreApproval(flyerId, approverId, client_1.PreApprovalStatus.pre_approved, body.comment);
+    }
+    async preReject(approvalId, body, req) {
+        const parts = approvalId.split('_');
+        if (parts.length !== 2) {
+            throw new Error('Invalid approval ID format');
+        }
+        const [flyerId, approverId] = parts;
+        if (approverId !== req.user.userId) {
+            throw new Error('Unauthorized to pre-reject this flyer');
+        }
+        return this.approvalsService.processPreApproval(flyerId, approverId, client_1.PreApprovalStatus.rejected, body.comment);
+    }
 };
 exports.ApprovalsController = ApprovalsController;
 __decorate([
     (0, common_1.Get)('pending'),
-    (0, roles_decorator_1.Roles)('approver'),
+    (0, roles_decorator_1.Roles)('approver', 'pre_approver'),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -63,7 +88,7 @@ __decorate([
 ], ApprovalsController.prototype, "getPendingApprovals", null);
 __decorate([
     (0, common_1.Get)('my'),
-    (0, roles_decorator_1.Roles)('approver'),
+    (0, roles_decorator_1.Roles)('approver', 'pre_approver'),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -89,6 +114,26 @@ __decorate([
     __metadata("design:paramtypes", [String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], ApprovalsController.prototype, "reject", null);
+__decorate([
+    (0, common_1.Post)(':id/pre-approve'),
+    (0, roles_decorator_1.Roles)('pre_approver'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], ApprovalsController.prototype, "preApprove", null);
+__decorate([
+    (0, common_1.Post)(':id/pre-reject'),
+    (0, roles_decorator_1.Roles)('pre_approver'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], ApprovalsController.prototype, "preReject", null);
 exports.ApprovalsController = ApprovalsController = __decorate([
     (0, common_1.Controller)('approvals'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

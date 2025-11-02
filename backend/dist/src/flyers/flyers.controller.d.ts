@@ -2,10 +2,12 @@ import { Response } from 'express';
 import { FlyersService } from './flyers.service';
 import { PdfService } from './pdf.service';
 import { CreateFlyerDto, UpdateFlyerDto, AddPageDto, AddProductToPageDto, FlyerFilterDto, UpdateProductPositionDto } from './dto';
+import { MssqlService } from '../common/mssql.service';
 export declare class FlyersController {
     private readonly flyersService;
     private readonly pdfService;
-    constructor(flyersService: FlyersService, pdfService: PdfService);
+    private readonly mssqlService;
+    constructor(flyersService: FlyersService, pdfService: PdfService, mssqlService: MssqlService);
     create(createFlyerDto: CreateFlyerDto, req: any): Promise<any>;
     findAll(filterDto: FlyerFilterDto, req: any): Promise<{
         data: any[];
@@ -41,12 +43,12 @@ export declare class FlyersController {
                 }[];
             } & {
                 id: string;
+                supplierId: string;
                 name: string;
                 createdAt: Date;
                 updatedAt: Date;
-                categoryId: string | null;
                 isActive: boolean;
-                supplierId: string;
+                categoryId: string | null;
                 brandId: string;
                 imageData: Buffer | null;
                 imageMimeType: string | null;
@@ -58,13 +60,14 @@ export declare class FlyersController {
             };
             promoImage: {
                 id: string;
+                supplierId: string;
                 name: string;
                 createdAt: Date;
-                supplierId: string;
                 brandId: string | null;
                 imageData: Buffer;
                 imageMimeType: string;
                 defaultSize: import(".prisma/client").$Enums.PromoSlotSize;
+                isForEndUsers: boolean;
             };
         } & {
             id: string;
@@ -104,12 +107,12 @@ export declare class FlyersController {
             }[];
         } & {
             id: string;
+            supplierId: string;
             name: string;
             createdAt: Date;
             updatedAt: Date;
-            categoryId: string | null;
             isActive: boolean;
-            supplierId: string;
+            categoryId: string | null;
             brandId: string;
             imageData: Buffer | null;
             imageMimeType: string | null;
@@ -151,12 +154,12 @@ export declare class FlyersController {
             }[];
         } & {
             id: string;
+            supplierId: string;
             name: string;
             createdAt: Date;
             updatedAt: Date;
-            categoryId: string | null;
             isActive: boolean;
-            supplierId: string;
+            categoryId: string | null;
             brandId: string;
             imageData: Buffer | null;
             imageMimeType: string | null;
@@ -168,13 +171,14 @@ export declare class FlyersController {
         };
         promoImage: {
             id: string;
+            supplierId: string;
             name: string;
             createdAt: Date;
-            supplierId: string;
             brandId: string | null;
             imageData: Buffer;
             imageMimeType: string;
             defaultSize: import(".prisma/client").$Enums.PromoSlotSize;
+            isForEndUsers: boolean;
         };
     } & {
         id: string;
@@ -186,6 +190,21 @@ export declare class FlyersController {
         promoSize: import(".prisma/client").$Enums.PromoSlotSize | null;
         isPromoAnchor: boolean;
         promoAnchorId: string | null;
+    }>;
+    validateFlyer(flyerId: string, req: any): Promise<{
+        valid: boolean;
+        errors: {
+            productId: string;
+            productName: string;
+            eanCode: string;
+            errors: string[];
+            erpPrice?: number;
+            erpOriginalPrice?: number;
+            currentPrice?: number;
+            currentOriginalPrice?: number;
+        }[];
+        productsChecked: number;
+        errorsFound: number;
     }>;
     submitForVerification(flyerId: string, req: any): Promise<{
         pages: ({
@@ -217,12 +236,12 @@ export declare class FlyersController {
                     })[];
                 } & {
                     id: string;
+                    supplierId: string;
                     name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    categoryId: string | null;
                     isActive: boolean;
-                    supplierId: string;
+                    categoryId: string | null;
                     brandId: string;
                     imageData: Buffer | null;
                     imageMimeType: string | null;
@@ -234,13 +253,14 @@ export declare class FlyersController {
                 };
                 promoImage: {
                     id: string;
+                    supplierId: string;
                     name: string;
                     createdAt: Date;
-                    supplierId: string;
                     brandId: string | null;
                     imageData: Buffer;
                     imageMimeType: string;
                     defaultSize: import(".prisma/client").$Enums.PromoSlotSize;
+                    isForEndUsers: boolean;
                 };
             } & {
                 id: string;
@@ -261,13 +281,11 @@ export declare class FlyersController {
         })[];
     } & {
         id: string;
-        name: string;
-        createdAt: Date;
-        updatedAt: Date;
-        status: import(".prisma/client").$Enums.FlyerStatus;
         supplierId: string;
+        name: string;
         validFrom: Date | null;
         validTo: Date | null;
+        status: import(".prisma/client").$Enums.FlyerStatus;
         isDraft: boolean;
         rejectionReason: string | null;
         pdfData: Buffer | null;
@@ -275,6 +293,8 @@ export declare class FlyersController {
         lastEditedAt: Date;
         autoSaveVersion: number;
         completionPercentage: number;
+        createdAt: Date;
+        updatedAt: Date;
         publishedAt: Date | null;
     }>;
     getPreview(flyerId: string, req: any): Promise<{
@@ -292,6 +312,7 @@ export declare class FlyersController {
         autoSaveVersion: number;
         message: string;
     }>;
+    expireFlyer(flyerId: string, req: any): Promise<any>;
     getPdf(id: string, res: Response, req: any): Promise<void>;
     generatePDF(flyerId: string, req: any): Promise<{
         success: boolean;

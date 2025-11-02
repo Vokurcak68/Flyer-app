@@ -74,9 +74,37 @@ let FlyersService = class FlyersService {
         return this.transformFlyerForFrontend(flyer);
     }
     async findAll(filterDto, userId, userRole) {
+        await this.updateExpiredFlyers();
         const where = {};
         if (userRole === client_1.UserRole.supplier) {
-            where.supplierId = userId;
+            const user = await this.prisma.user.findUnique({
+                where: { id: userId },
+                include: {
+                    brands: {
+                        include: {
+                            brand: {
+                                include: {
+                                    users: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+            if (user && user.brands.length > 0) {
+                const sharedBrandUserIds = new Set();
+                user.brands.forEach(userBrand => {
+                    userBrand.brand.users.forEach(brandUser => {
+                        sharedBrandUserIds.add(brandUser.userId);
+                    });
+                });
+                where.supplierId = {
+                    in: Array.from(sharedBrandUserIds),
+                };
+            }
+            else {
+                where.supplierId = userId;
+            }
         }
         else if (userRole === client_1.UserRole.approver) {
             where.status = {
@@ -84,7 +112,7 @@ let FlyersService = class FlyersService {
             };
         }
         else if (userRole === client_1.UserRole.end_user) {
-            where.status = client_1.FlyerStatus.active;
+            where.supplierId = userId;
         }
         if (filterDto.status) {
             where.status = filterDto.status;
@@ -176,6 +204,7 @@ let FlyersService = class FlyersService {
         };
     }
     async getActiveFlyers(userId, userRole) {
+        await this.updateExpiredFlyers();
         const flyers = await this.prisma.flyer.findMany({
             where: {
                 status: client_1.FlyerStatus.active,
@@ -329,12 +358,17 @@ let FlyersService = class FlyersService {
         if (userRole === client_1.UserRole.supplier && flyer.supplierId !== userId) {
             throw new common_1.ForbiddenException('You do not have access to this flyer');
         }
-        if (userRole === client_1.UserRole.end_user && flyer.status !== client_1.FlyerStatus.active) {
-            throw new common_1.ForbiddenException('This flyer is not active');
+        if (userRole === client_1.UserRole.end_user) {
+            const isOwnFlyer = flyer.supplierId === userId;
+            const isActiveFlyer = flyer.status === client_1.FlyerStatus.approved || flyer.status === client_1.FlyerStatus.active;
+            if (!isOwnFlyer && !isActiveFlyer) {
+                throw new common_1.ForbiddenException('You do not have access to this flyer');
+            }
         }
         return this.transformFlyerForFrontend(flyer);
     }
     async findOne(id, userId, userRole) {
+        await this.updateExpiredFlyers();
         const flyer = await this.prisma.flyer.findUnique({
             where: { id },
             include: {
@@ -430,7 +464,7 @@ let FlyersService = class FlyersService {
         if (!flyer) {
             throw new common_1.NotFoundException('Flyer not found');
         }
-        this.checkAccessPermission(flyer, userId, userRole);
+        await this.checkAccessPermission(flyer, userId, userRole);
         return this.transformFlyerForFrontend(flyer);
     }
     async update(id, updateFlyerDto, userId, userRole) {
@@ -438,7 +472,7 @@ let FlyersService = class FlyersService {
         if (!flyer) {
             throw new common_1.NotFoundException('Flyer not found');
         }
-        if (userRole !== client_1.UserRole.supplier || flyer.supplierId !== userId) {
+        if ((userRole !== client_1.UserRole.supplier && userRole !== client_1.UserRole.end_user) || flyer.supplierId !== userId) {
             throw new common_1.ForbiddenException('You do not have permission to update this flyer');
         }
         if (flyer.status !== client_1.FlyerStatus.draft) {
@@ -459,7 +493,7 @@ let FlyersService = class FlyersService {
             data.pdfMimeType = updateFlyerDto.pdfMimeType;
         }
         if (updateFlyerDto.pages) {
-            await this.syncPages(id, updateFlyerDto.pages, userId);
+            await this.syncPages(id, updateFlyerDto.pages, userId, userRole);
         }
         const updated = await this.prisma.flyer.update({
             where: { id },
@@ -506,7 +540,7 @@ let FlyersService = class FlyersService {
         if (!flyer) {
             throw new common_1.NotFoundException('Flyer not found');
         }
-        if (userRole !== client_1.UserRole.supplier || flyer.supplierId !== userId) {
+        if ((userRole !== client_1.UserRole.supplier && userRole !== client_1.UserRole.end_user) || flyer.supplierId !== userId) {
             throw new common_1.ForbiddenException('You do not have permission to delete this flyer');
         }
         if (flyer.status !== client_1.FlyerStatus.draft) {
@@ -880,9 +914,13 @@ let FlyersService = class FlyersService {
         });
         console.log(`✅ Deleted ${deletedCount.count} approval records for flyer ${flyerId}`);
         const approvers = await this.prisma.user.findMany({
-            where: { role: client_1.UserRole.approver },
+            where: {
+                role: {
+                    in: [client_1.UserRole.approver, client_1.UserRole.pre_approver]
+                }
+            },
         });
-        console.log(`👥 Found ${approvers.length} approvers`);
+        console.log(`👥 Found ${approvers.length} approvers and pre-approvers`);
         const workflow = await this.approvalsService.createApprovalWorkflow(flyerId, 1);
         console.log(`✅ Created approval workflow: ${workflow.id}`);
         for (const approver of approvers) {
@@ -935,6 +973,86 @@ let FlyersService = class FlyersService {
             ...updated,
         };
     }
+    async expireFlyer(flyerId, userId, userRole) {
+        const flyer = await this.prisma.flyer.findUnique({ where: { id: flyerId } });
+        if (!flyer) {
+            throw new common_1.NotFoundException('Flyer not found');
+        }
+        if (userRole !== client_1.UserRole.admin && flyer.supplierId !== userId) {
+            throw new common_1.ForbiddenException('You do not have permission to expire this flyer');
+        }
+        if (flyer.status !== client_1.FlyerStatus.active) {
+            throw new common_1.BadRequestException('Only active flyers can be expired');
+        }
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        yesterday.setHours(23, 59, 59, 999);
+        const updated = await this.prisma.flyer.update({
+            where: { id: flyerId },
+            data: {
+                validTo: yesterday,
+                status: client_1.FlyerStatus.expired,
+            },
+            include: {
+                pages: {
+                    include: {
+                        slots: {
+                            include: {
+                                product: {
+                                    include: {
+                                        brand: true,
+                                        icons: {
+                                            include: {
+                                                icon: true,
+                                            },
+                                            orderBy: {
+                                                position: 'asc',
+                                            },
+                                        },
+                                    },
+                                },
+                                promoImage: true,
+                            },
+                            orderBy: {
+                                slotPosition: 'asc',
+                            },
+                        },
+                    },
+                    orderBy: {
+                        pageNumber: 'asc',
+                    },
+                },
+            },
+        });
+        console.log(`✅ Flyer ${flyerId} expired by ${userRole} (${userId})`);
+        return this.transformFlyerForFrontend(updated);
+    }
+    async updateExpiredFlyers() {
+        const now = new Date();
+        const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+        const expiredFlyers = await this.prisma.flyer.findMany({
+            where: {
+                status: client_1.FlyerStatus.active,
+                validTo: {
+                    lt: todayStart,
+                },
+            },
+        });
+        if (expiredFlyers.length > 0) {
+            console.log(`🔄 Found ${expiredFlyers.length} flyers with expired validTo date, updating status to expired...`);
+            await this.prisma.flyer.updateMany({
+                where: {
+                    id: {
+                        in: expiredFlyers.map(f => f.id),
+                    },
+                },
+                data: {
+                    status: client_1.FlyerStatus.expired,
+                },
+            });
+            console.log(`✅ Updated ${expiredFlyers.length} flyers to expired status`);
+        }
+    }
     async updateCompletionPercentage(flyerId) {
         const flyer = await this.prisma.flyer.findUnique({
             where: { id: flyerId },
@@ -967,8 +1085,8 @@ let FlyersService = class FlyersService {
             data: { completionPercentage },
         });
     }
-    async syncPages(flyerId, pages, userId) {
-        console.log(`[syncPages] Called with ${pages.length} pages`);
+    async syncPages(flyerId, pages, userId, userRole) {
+        console.log(`[syncPages] Called with ${pages.length} pages for user role: ${userRole}`);
         console.log(`[syncPages] First page:`, JSON.stringify(pages[0], null, 2));
         await this.prisma.flyerPage.deleteMany({
             where: { flyerId },
@@ -976,11 +1094,21 @@ let FlyersService = class FlyersService {
         for (const page of pages) {
             let validFooterPromoImageId = null;
             if (page.footerPromoImageId) {
-                const dbPromoImage = await this.prisma.promoImage.findUnique({
-                    where: { id: page.footerPromoImageId },
-                });
-                if (dbPromoImage && dbPromoImage.supplierId === userId) {
-                    validFooterPromoImageId = page.footerPromoImageId;
+                if (userRole === client_1.UserRole.supplier) {
+                    const dbPromoImage = await this.prisma.promoImage.findUnique({
+                        where: { id: page.footerPromoImageId },
+                    });
+                    if (dbPromoImage && dbPromoImage.supplierId === userId) {
+                        validFooterPromoImageId = page.footerPromoImageId;
+                    }
+                }
+                else if (userRole === client_1.UserRole.end_user) {
+                    const dbPromoImage = await this.prisma.promoImage.findUnique({
+                        where: { id: page.footerPromoImageId },
+                    });
+                    if (dbPromoImage) {
+                        validFooterPromoImageId = page.footerPromoImageId;
+                    }
                 }
             }
             const createdPage = await this.prisma.flyerPage.create({
@@ -1005,10 +1133,20 @@ let FlyersService = class FlyersService {
                     if (!slotData || slotData.type === 'empty')
                         continue;
                     if (slotData.type === 'product' && slotData.productId) {
-                        const dbProduct = await this.prisma.product.findUnique({
-                            where: { id: slotData.productId },
-                        });
-                        if (dbProduct && dbProduct.supplierId === userId) {
+                        let canUseProduct = false;
+                        if (userRole === client_1.UserRole.supplier) {
+                            const dbProduct = await this.prisma.product.findUnique({
+                                where: { id: slotData.productId },
+                            });
+                            canUseProduct = dbProduct && dbProduct.supplierId === userId;
+                        }
+                        else if (userRole === client_1.UserRole.end_user) {
+                            const dbProduct = await this.prisma.product.findUnique({
+                                where: { id: slotData.productId },
+                            });
+                            canUseProduct = !!dbProduct;
+                        }
+                        if (canUseProduct) {
                             await this.prisma.flyerPageSlot.updateMany({
                                 where: {
                                     pageId: createdPage.id,
@@ -1020,12 +1158,25 @@ let FlyersService = class FlyersService {
                                 },
                             });
                         }
+                        else {
+                            console.log(`[syncPages] Product ${slotData.productId} not accessible for user ${userId} (role: ${userRole})`);
+                        }
                     }
                     else if (slotData.type === 'promo' && slotData.promoImageId) {
-                        const dbPromoImage = await this.prisma.promoImage.findUnique({
-                            where: { id: slotData.promoImageId },
-                        });
-                        if (dbPromoImage && dbPromoImage.supplierId === userId) {
+                        let canUsePromoImage = false;
+                        if (userRole === client_1.UserRole.supplier) {
+                            const dbPromoImage = await this.prisma.promoImage.findUnique({
+                                where: { id: slotData.promoImageId },
+                            });
+                            canUsePromoImage = dbPromoImage && dbPromoImage.supplierId === userId;
+                        }
+                        else if (userRole === client_1.UserRole.end_user) {
+                            const dbPromoImage = await this.prisma.promoImage.findUnique({
+                                where: { id: slotData.promoImageId },
+                            });
+                            canUsePromoImage = !!dbPromoImage;
+                        }
+                        if (canUsePromoImage) {
                             await this.prisma.flyerPageSlot.updateMany({
                                 where: {
                                     pageId: createdPage.id,
@@ -1037,6 +1188,9 @@ let FlyersService = class FlyersService {
                                     promoSize: slotData.promoSize || null,
                                 },
                             });
+                        }
+                        else {
+                            console.log(`[syncPages] Promo image ${slotData.promoImageId} not accessible for user ${userId} (role: ${userRole})`);
                         }
                     }
                 }
@@ -1089,14 +1243,41 @@ let FlyersService = class FlyersService {
             pages: transformedPages,
         };
     }
-    checkAccessPermission(flyer, userId, userRole) {
+    async checkAccessPermission(flyer, userId, userRole) {
         if (userRole === client_1.UserRole.supplier) {
             if (flyer.supplierId !== userId) {
-                throw new common_1.ForbiddenException('You do not have access to this flyer');
+                const user = await this.prisma.user.findUnique({
+                    where: { id: userId },
+                    include: {
+                        brands: {
+                            include: {
+                                brand: {
+                                    include: {
+                                        users: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                });
+                if (user && user.brands.length > 0) {
+                    const sharedBrandUserIds = new Set();
+                    user.brands.forEach(userBrand => {
+                        userBrand.brand.users.forEach(brandUser => {
+                            sharedBrandUserIds.add(brandUser.userId);
+                        });
+                    });
+                    if (!sharedBrandUserIds.has(flyer.supplierId)) {
+                        throw new common_1.ForbiddenException('You do not have access to this flyer');
+                    }
+                }
+                else {
+                    throw new common_1.ForbiddenException('You do not have access to this flyer');
+                }
             }
         }
         else if (userRole === client_1.UserRole.end_user) {
-            if (flyer.status !== client_1.FlyerStatus.active) {
+            if (flyer.supplierId !== userId) {
                 throw new common_1.ForbiddenException('This flyer is not available');
             }
         }

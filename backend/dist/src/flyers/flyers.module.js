@@ -14,6 +14,7 @@ const pdf_service_1 = require("./pdf.service");
 const prisma_module_1 = require("../prisma/prisma.module");
 const verification_module_1 = require("../verification/verification.module");
 const approvals_module_1 = require("../approvals/approvals.module");
+const mssql_service_1 = require("../common/mssql.service");
 let FlyersModule = class FlyersModule {
 };
 exports.FlyersModule = FlyersModule;
@@ -21,7 +22,7 @@ exports.FlyersModule = FlyersModule = __decorate([
     (0, common_1.Module)({
         imports: [prisma_module_1.PrismaModule, verification_module_1.VerificationModule, (0, common_1.forwardRef)(() => approvals_module_1.ApprovalsModule)],
         controllers: [flyers_controller_1.FlyersController],
-        providers: [flyers_service_1.FlyersService, pdf_service_1.PdfService],
+        providers: [flyers_service_1.FlyersService, pdf_service_1.PdfService, mssql_service_1.MssqlService],
         exports: [flyers_service_1.FlyersService],
     })
 ], FlyersModule);

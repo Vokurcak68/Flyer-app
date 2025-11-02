@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText } from 'lucide-react';
+import { ShoppingCart, Smartphone, Tv, Refrigerator } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
@@ -14,6 +14,14 @@ export const LoginPage: React.FC = () => {
   const { login } = useAuthStore();
   const navigate = useNavigate();
 
+  // Load saved credentials on mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('lastEmail');
+    const savedPassword = localStorage.getItem('lastPassword');
+    if (savedEmail) setEmail(savedEmail);
+    if (savedPassword) setPassword(savedPassword);
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -21,6 +29,9 @@ export const LoginPage: React.FC = () => {
 
     try {
       await login(email, password);
+      // Save credentials to localStorage on successful login
+      localStorage.setItem('lastEmail', email);
+      localStorage.setItem('lastPassword', password);
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Invalid email or password');
@@ -40,8 +51,17 @@ export const LoginPage: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-700 px-4">
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
-          <div className="bg-blue-100 p-3 rounded-full mb-4">
-            <FileText className="w-12 h-12 text-blue-600" />
+          <div className="relative mb-4">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-4 rounded-2xl shadow-lg">
+              <div className="flex items-center justify-center gap-3">
+                <Refrigerator className="w-8 h-8 text-white" strokeWidth={1.5} />
+                <Tv className="w-8 h-8 text-white" strokeWidth={1.5} />
+                <Smartphone className="w-7 h-7 text-white" strokeWidth={1.5} />
+              </div>
+              <div className="absolute -bottom-2 -right-2 bg-red-500 p-2 rounded-full shadow-md">
+                <ShoppingCart className="w-5 h-5 text-white" strokeWidth={2} />
+              </div>
+            </div>
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Správa letáků</h1>
           <p className="text-gray-600 mt-2">Přihlaste se ke svému účtu</p>
@@ -94,6 +114,34 @@ export const LoginPage: React.FC = () => {
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="mt-6 pt-6 border-t border-gray-200 text-center space-y-1">
+          <p className="text-xs text-gray-400 mb-2">
+            Verze 0.1.0
+          </p>
+          <p className="text-xs text-gray-500">
+            Designed by{' '}
+            <a
+              href="https://oresi.cz"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+            >
+              Oresi
+            </a>
+          </p>
+          <p className="text-xs text-gray-500">
+            Developed by{' '}
+            <a
+              href="https://netmate.cz"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+            >
+              NetMate CZ
+            </a>
+          </p>
         </div>
       </div>
     </div>

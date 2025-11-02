@@ -30,14 +30,18 @@ export declare class BrandsController {
     })[]>;
     getLogo(id: string, res: Response): Promise<void>;
     findOne(id: string): Promise<{
+        _count: {
+            products: number;
+            users: number;
+        };
         products: {
             id: string;
+            supplierId: string;
             name: string;
             createdAt: Date;
             updatedAt: Date;
-            categoryId: string | null;
             isActive: boolean;
-            supplierId: string;
+            categoryId: string | null;
             brandId: string;
             imageData: Buffer | null;
             imageMimeType: string | null;
@@ -47,10 +51,6 @@ export declare class BrandsController {
             price: import("@prisma/client/runtime/library").Decimal;
             originalPrice: import("@prisma/client/runtime/library").Decimal | null;
         }[];
-        _count: {
-            products: number;
-            users: number;
-        };
     } & {
         id: string;
         name: string;

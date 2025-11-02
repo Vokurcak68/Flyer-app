@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
-import { LogOut, Package, FileText, CheckCircle, Home, Grid, Tag, Users, Image, Star } from 'lucide-react';
+import { LogOut, Package, FileText, CheckCircle, Home, Grid, Tag, Users, Image, Star, HelpCircle } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
 // Main layout component
@@ -98,6 +98,15 @@ export const MainLayout: React.FC = () => {
             </div>
 
             <div className="flex items-center space-x-4">
+              <a
+                href="/UZIVATELSKY_NAVOD.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                title="Uživatelská nápověda"
+              >
+                <HelpCircle className="w-5 h-5" />
+              </a>
               <div className="flex flex-col items-end">
                 <span className="text-sm font-medium text-gray-900">
                   {user?.firstName} {user?.lastName}

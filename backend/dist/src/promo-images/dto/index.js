@@ -34,6 +34,11 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreatePromoImageDto.prototype, "brandId", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], CreatePromoImageDto.prototype, "isForEndUsers", void 0);
 class PromoImageFilterDto {
 }
 exports.PromoImageFilterDto = PromoImageFilterDto;
