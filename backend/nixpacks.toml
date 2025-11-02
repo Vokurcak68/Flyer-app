@@ -1,11 +1,15 @@
 [phases.setup]
-nixPkgs = ["...", "chromium"]
+nixPkgs = ["nodejs", "chromium"]
 
 [phases.install]
-cmds = ["npm ci"]
+cmds = ["npm ci --prefer-offline --no-audit"]
 
 [phases.build]
 cmds = ["npx prisma generate", "npm run build"]
 
 [start]
 cmd = "npx prisma migrate deploy && npm run start:prod"
+
+[variables]
+PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
+PUPPETEER_EXECUTABLE_PATH = "/nix/store/*-chromium-*/bin/chromium"
