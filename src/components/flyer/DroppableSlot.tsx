@@ -12,17 +12,18 @@ interface DroppableSlotProps {
 }
 
 export const DroppableSlot: React.FC<DroppableSlotProps> = ({ id, slot, onRemove, index }) => {
+  const isEmpty = !slot || slot.type === 'empty';
+
   const { isOver, setNodeRef } = useDroppable({
     id,
     data: { index },
+    disabled: !isEmpty, // Disable drop if slot is already occupied
   });
 
   const getPromoImageUrl = (promoId: string) => {
     const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
     return `${API_URL}/promo-images/${promoId}/image`;
   };
-
-  const isEmpty = !slot || slot.type === 'empty';
   const product = slot?.product;
   const promoImage = slot?.promoImage;
 

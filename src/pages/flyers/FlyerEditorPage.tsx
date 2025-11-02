@@ -387,6 +387,11 @@ export const FlyerEditorPage: React.FC = () => {
       alert('Nelze smazat poslední stránku');
       return;
     }
+    // Zakázat smazání první stránky (pageNumber === 1), protože je jiná (má footer)
+    if (flyerData.pages[index].pageNumber === 1) {
+      alert('Nelze smazat první stránku, protože má specifický layout s paticí');
+      return;
+    }
     const newPages = flyerData.pages.filter((_, i) => i !== index);
     setFlyerData({ ...flyerData, pages: newPages });
     if (currentPageIndex >= newPages.length) setCurrentPageIndex(newPages.length - 1);
@@ -731,7 +736,12 @@ export const FlyerEditorPage: React.FC = () => {
                 ))}
               </div>
               <div className="flex space-x-2">
-                <Button variant="outline" size="sm" onClick={() => handleRemovePage(currentPageIndex)} disabled={flyerData.pages.length === 1 || isLocked}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleRemovePage(currentPageIndex)}
+                  disabled={flyerData.pages.length === 1 || flyerData.pages[currentPageIndex]?.pageNumber === 1 || isLocked}
+                >
                   <Minus className="w-4 h-4 mr-1" />
                   Odebrat
                 </Button>
