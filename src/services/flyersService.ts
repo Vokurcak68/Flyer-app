@@ -84,4 +84,23 @@ export const flyersService = {
     const response = await api.post<Flyer>(`/flyers/${id}/expire`);
     return response.data;
   },
+
+  async validateFlyer(id: string): Promise<{
+    valid: boolean;
+    errors: Array<{
+      productId: string;
+      productName: string;
+      eanCode: string;
+      errors: string[];
+      erpPrice?: number;
+      erpOriginalPrice?: number;
+      currentPrice?: number;
+      currentOriginalPrice?: number;
+    }>;
+    productsChecked: number;
+    errorsFound: number;
+  }> {
+    const response = await api.post(`/flyers/${id}/validate`);
+    return response.data;
+  },
 };

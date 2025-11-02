@@ -81,6 +81,80 @@ export class MssqlService implements OnModuleInit {
     }
   }
 
+  /**
+   * Validate multiple products from flyer
+   * Returns array of validation errors for products that failed validation
+   */
+  async validateFlyerProducts(
+    products: Array<{
+      id: string;
+      name: string;
+      eanCode: string;
+      price: number;
+      originalPrice?: number;
+    }>,
+  ): Promise<
+    Array<{
+      productId: string;
+      productName: string;
+      eanCode: string;
+      errors: string[];
+      erpPrice?: number;
+      erpOriginalPrice?: number;
+      currentPrice?: number;
+      currentOriginalPrice?: number;
+    }>
+  > {
+    const validationErrors = [];
+
+    for (const product of products) {
+      const errors: string[] = [];
+
+      const validation = await this.validateEAN(
+        product.eanCode,
+        product.price,
+        product.originalPrice,
+      );
+
+      if (!validation.found) {
+        errors.push('EAN kód nebyl nalezen v ERP systému');
+      } else {
+        if (!validation.pricesMatch) {
+          // Check which prices don't match
+          if (validation.erpPrice !== undefined && product.price !== validation.erpPrice) {
+            errors.push(
+              `Nesouhlasí akční cena (ERP: ${validation.erpPrice} Kč, Leták: ${product.price} Kč)`,
+            );
+          }
+          if (
+            validation.erpOriginalPrice !== undefined &&
+            product.originalPrice !== undefined &&
+            product.originalPrice !== validation.erpOriginalPrice
+          ) {
+            errors.push(
+              `Nesouhlasí původní cena (ERP: ${validation.erpOriginalPrice} Kč, Leták: ${product.originalPrice} Kč)`,
+            );
+          }
+        }
+      }
+
+      if (errors.length > 0) {
+        validationErrors.push({
+          productId: product.id,
+          productName: product.name,
+          eanCode: product.eanCode,
+          errors,
+          erpPrice: validation.erpPrice,
+          erpOriginalPrice: validation.erpOriginalPrice,
+          currentPrice: product.price,
+          currentOriginalPrice: product.originalPrice,
+        });
+      }
+    }
+
+    return validationErrors;
+  }
+
   async onModuleDestroy() {
     if (this.pool) {
       await this.pool.close();

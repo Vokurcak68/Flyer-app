@@ -26,6 +26,7 @@ import {
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { MssqlService } from '../common/mssql.service';
 
 @Controller('flyers')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -33,6 +34,7 @@ export class FlyersController {
   constructor(
     private readonly flyersService: FlyersService,
     private readonly pdfService: PdfService,
+    private readonly mssqlService: MssqlService,
   ) {}
 
   // ========================================
@@ -141,6 +143,49 @@ export class FlyersController {
   // ========================================
   // WORKFLOW & ACTIONS
   // ========================================
+
+  @Post(':id/validate')
+  @Roles('supplier', 'end_user')
+  async validateFlyer(@Param('id') flyerId: string, @Request() req) {
+    // Get flyer with all products
+    const flyer = await this.flyersService.findOne(
+      flyerId,
+      req.user.userId,
+      req.user.role,
+    );
+
+    // Extract all unique products from flyer
+    const productsMap = new Map();
+    for (const page of flyer.pages) {
+      for (const slot of page.slots) {
+        if (slot.product && !productsMap.has(slot.product.id)) {
+          productsMap.set(slot.product.id, {
+            id: slot.product.id,
+            name: slot.product.name,
+            eanCode: slot.product.eanCode,
+            price: parseFloat(slot.product.price.toString()),
+            originalPrice: slot.product.originalPrice
+              ? parseFloat(slot.product.originalPrice.toString())
+              : undefined,
+          });
+        }
+      }
+    }
+
+    const products = Array.from(productsMap.values());
+
+    // Validate all products
+    const validationErrors = await this.mssqlService.validateFlyerProducts(
+      products,
+    );
+
+    return {
+      valid: validationErrors.length === 0,
+      errors: validationErrors,
+      productsChecked: products.length,
+      errorsFound: validationErrors.length,
+    };
+  }
 
   @Post(':id/submit-for-verification')
   @Roles('supplier')

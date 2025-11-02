@@ -12,6 +12,7 @@ import { FlyerPageView } from '../../components/flyer/FlyerPageView';
 import { DraggableProduct } from '../../components/flyer/DraggableProduct';
 import { DraggablePromoImage } from '../../components/flyer/DraggablePromoImage';
 import { RejectionHistory } from '../../components/flyer/RejectionHistory';
+import { ValidationErrorsModal } from '../../components/flyer/ValidationErrorsModal';
 import { Product, FlyerPage, FlyerSlot } from '../../types';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import { useAuthStore } from '../../store/authStore';
@@ -44,6 +45,9 @@ export const FlyerEditorPage: React.FC = () => {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const previousSearchRef = useRef(search);
   const [activeTab, setActiveTab] = useState<'products' | 'promos'>('products');
+  const [validationErrors, setValidationErrors] = useState<any[]>([]);
+  const [showValidationModal, setShowValidationModal] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
 
   const preparePagesForAPI = (pages: FlyerPage[]): any[] => {
     return pages.map(page => ({
@@ -393,7 +397,32 @@ export const FlyerEditorPage: React.FC = () => {
       alert('Nastavte období platnosti');
       return;
     }
-    await submitMutation.mutateAsync();
+
+    // Validate flyer before submitting
+    if (!id || id === 'new') {
+      alert('Nejprve uložte leták');
+      return;
+    }
+
+    try {
+      setIsValidating(true);
+      const validationResult = await flyersService.validateFlyer(id);
+      setIsValidating(false);
+
+      if (!validationResult.valid) {
+        // Show validation errors modal
+        setValidationErrors(validationResult.errors);
+        setShowValidationModal(true);
+        return; // Do not proceed with submission
+      }
+
+      // All validations passed, proceed with submission
+      await submitMutation.mutateAsync();
+    } catch (error) {
+      setIsValidating(false);
+      console.error('Chyba při validaci letáku:', error);
+      alert('Chyba při validaci letáku. Zkuste to znovu.');
+    }
   };
 
   const handleCreateCopy = async () => {
@@ -564,9 +593,9 @@ export const FlyerEditorPage: React.FC = () => {
                 </Button>
                 {/* Hide submit button for end users on /my-flyers */}
                 {!(isMyFlyers && user?.role === 'end_user') && (
-                  <Button onClick={handleSubmit} isLoading={submitMutation.isPending} disabled={isLocked} size="sm">
+                  <Button onClick={handleSubmit} isLoading={submitMutation.isPending || isValidating} disabled={isLocked} size="sm">
                     <Send className="w-4 h-4 mr-2" />
-                    Odeslat k autorizaci
+                    {isValidating ? 'Validuji...' : 'Odeslat k autorizaci'}
                   </Button>
                 )}
               </div>
@@ -719,6 +748,14 @@ export const FlyerEditorPage: React.FC = () => {
       <DragOverlay>
         {activeProduct && <DraggableProduct product={activeProduct} />}
       </DragOverlay>
+
+      {/* Validation Errors Modal */}
+      <ValidationErrorsModal
+        isOpen={showValidationModal}
+        onClose={() => setShowValidationModal(false)}
+        errors={validationErrors}
+        flyerName={flyerData.name}
+      />
     </DndContext>
   );
 };
