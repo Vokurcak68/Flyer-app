@@ -4,6 +4,7 @@ import { ShoppingCart, Smartphone, Tv, Refrigerator } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
+import { APP_VERSION } from '../config/version';
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -118,7 +119,7 @@ export const LoginPage: React.FC = () => {
 
         <div className="mt-6 pt-6 border-t border-gray-200 text-center space-y-1">
           <p className="text-xs text-gray-400 mb-2">
-            Verze 0.1.0
+            Verze {APP_VERSION}
           </p>
           <p className="text-xs text-gray-500">
             Designed by{' '}
