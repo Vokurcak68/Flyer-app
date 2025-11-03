@@ -114,6 +114,7 @@ export class ProductsService {
           OR: [
             { name: { contains: word, mode: 'insensitive' } },
             { eanCode: { contains: word } },
+            { supplierNote: { contains: word, mode: 'insensitive' } },
             { brand: { name: { contains: word, mode: 'insensitive' } } },
             { category: { name: { contains: word, mode: 'insensitive' } } },
             { subcategory: { name: { contains: word, mode: 'insensitive' } } },
@@ -461,6 +462,7 @@ export class ProductsService {
       eanCode: product.eanCode,
       name: product.name,
       description: product.description,
+      supplierNote: product.supplierNote,
       price: parseFloat(product.price.toString()),
       originalPrice: product.originalPrice ? parseFloat(product.originalPrice.toString()) : null,
       isActive: product.isActive,

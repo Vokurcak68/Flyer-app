@@ -430,11 +430,11 @@ export const FlyerEditorPage: React.FC = () => {
     }
   };
 
-  const handleCreateCopy = async () => {
-    if (!flyer) return;
+  const createCopyMutation = useMutation({
+    mutationFn: async () => {
+      if (!flyer) throw new Error('No flyer data');
 
-    // Create new flyer with copied data
-    try {
+      // Create new flyer with copied data
       const newFlyer = await flyersService.createFlyer({
         name: `${flyer.name} (kopie)`,
         validFrom: flyer.validFrom || '',
@@ -448,13 +448,21 @@ export const FlyerEditorPage: React.FC = () => {
         });
       }
 
+      return newFlyer;
+    },
+    onSuccess: (newFlyer) => {
       // Navigate to the new flyer
       queryClient.invalidateQueries({ queryKey: ['flyers'] });
       navigate(`${basePath}/${newFlyer.id}`);
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error creating flyer copy:', error);
       alert('Chyba při vytváření kopie letáku');
-    }
+    },
+  });
+
+  const handleCreateCopy = () => {
+    createCopyMutation.mutate();
   };
 
   const expireMutation = useMutation({
@@ -575,7 +583,13 @@ export const FlyerEditorPage: React.FC = () => {
                   {(isMyFlyers && user?.role === 'end_user') ? 'Generuj PDF' : (flyer?.status === 'draft' ? 'Generuj PDF' : 'Zobrazit PDF')}
                 </Button>
                 {!isNew && (
-                  <Button variant="outline" onClick={handleCreateCopy} size="sm">
+                  <Button
+                    variant="outline"
+                    onClick={handleCreateCopy}
+                    isLoading={createCopyMutation.isPending}
+                    disabled={createCopyMutation.isPending}
+                    size="sm"
+                  >
                     <Copy className="w-4 h-4 mr-2" />
                     Vytvořit kopii
                   </Button>

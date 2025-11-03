@@ -17,6 +17,10 @@ export class CreateProductDto {
 
   @IsString()
   @IsOptional()
+  supplierNote?: string;
+
+  @IsString()
+  @IsOptional()
   imageData?: string; // Base64 encoded product image
 
   @IsString()

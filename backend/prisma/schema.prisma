@@ -108,6 +108,7 @@ model Product {
   eanCode       String   @map("ean_code")
   name          String
   description   String?
+  supplierNote  String?  @map("supplier_note") @db.VarChar(100)
   imageData     Bytes?   @map("image_data")
   imageMimeType String?  @map("image_mime_type")
   price         Decimal  @db.Decimal(10, 2)

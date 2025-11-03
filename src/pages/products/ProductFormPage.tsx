@@ -23,6 +23,7 @@ export const ProductFormPage: React.FC = () => {
     ean: '',
     name: '',
     description: '',
+    supplierNote: '',
     brandId: '',
     categoryId: '',
     subcategoryId: '',
@@ -81,6 +82,7 @@ export const ProductFormPage: React.FC = () => {
         ean: product.eanCode,
         name: product.name,
         description: product.description || '',
+        supplierNote: (product as any).supplierNote || '',
         brandId: product.brandId,
         categoryId: (product as any).categoryId || '',
         subcategoryId: (product as any).subcategoryId || '',
@@ -159,6 +161,7 @@ export const ProductFormPage: React.FC = () => {
         ean: searchParams.get('ean') || '',
         name: searchParams.get('name') || '',
         description: searchParams.get('description') || '',
+        supplierNote: searchParams.get('supplierNote') || '',
         brandId: searchParams.get('brandId') || '',
         categoryId: searchParams.get('categoryId') || '',
         subcategoryId: searchParams.get('subcategoryId') || '',
@@ -177,6 +180,9 @@ export const ProductFormPage: React.FC = () => {
         setImagePreview(imageUrl);
         console.log('Preview nastaven na:', imageUrl);
       }
+
+      // DŮLEŽITÉ: Resetujeme isInActiveFlyer na false, protože kopie je nový produkt
+      setIsInActiveFlyer(false);
 
       // Vymažeme data ze sessionStorage po použití
       sessionStorage.removeItem('copyProductImage');
@@ -277,6 +283,7 @@ export const ProductFormPage: React.FC = () => {
       const payload: any = {
         name: data.name,
         description: data.description,
+        supplierNote: data.supplierNote || undefined,
         price: data.price,
         originalPrice: data.originalPrice,
         iconIds: data.iconIds,
@@ -419,6 +426,7 @@ export const ProductFormPage: React.FC = () => {
           ean: formData.ean,
           name: formData.name,
           description: formData.description,
+          supplierNote: formData.supplierNote,
           brandId: formData.brandId,
           categoryId: formData.categoryId,
           subcategoryId: formData.subcategoryId,
@@ -444,6 +452,7 @@ export const ProductFormPage: React.FC = () => {
         ean: formData.ean,
         name: formData.name,
         description: formData.description,
+        supplierNote: formData.supplierNote,
         brandId: formData.brandId,
         categoryId: formData.categoryId,
         subcategoryId: formData.subcategoryId,
@@ -536,20 +545,31 @@ export const ProductFormPage: React.FC = () => {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Značka *</label>
-              <select
-                value={formData.brandId}
-                onChange={(e) => setFormData({ ...formData, brandId: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                required
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Značka *</label>
+                <select
+                  value={formData.brandId}
+                  onChange={(e) => setFormData({ ...formData, brandId: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  required
+                  disabled={isInActiveFlyer}
+                >
+                  <option value="">Vyberte značku</option>
+                  {brands.map((brand) => (
+                    <option key={brand.id} value={brand.id}>{brand.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <Input
+                label="Poznámka dodavatele"
+                value={formData.supplierNote}
+                onChange={(e) => setFormData({ ...formData, supplierNote: e.target.value })}
+                maxLength={100}
+                placeholder="Interní poznámka (max. 100 znaků)"
                 disabled={isInActiveFlyer}
-              >
-                <option value="">Vyberte značku</option>
-                {brands.map((brand) => (
-                  <option key={brand.id} value={brand.id}>{brand.name}</option>
-                ))}
-              </select>
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
