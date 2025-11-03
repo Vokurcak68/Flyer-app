@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Edit2, Trash2, Eye, AlertCircle, Search } from 'lucide-react';
@@ -17,9 +17,12 @@ export const FlyersListPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabType>('active');
   const [searchQuery, setSearchQuery] = useState('');
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const flyerRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
-  // Get status filter from URL query params
+  // Get status filter and highlighted flyer from URL query params
   const statusFilter = searchParams.get('status');
+  const highlightFlyerId = searchParams.get('highlight');
 
   // Determine base path based on current location
   const isMyFlyers = location.pathname.startsWith('/my-flyers');
@@ -70,6 +73,25 @@ export const FlyersListPage: React.FC = () => {
       formatDate(f.validTo).toLowerCase().includes(query)
     );
   }, [filteredByTab, searchQuery]);
+
+  // Scroll to and highlight flyer when returning from edit
+  useEffect(() => {
+    if (highlightFlyerId && !isLoading && filteredFlyers.length > 0) {
+      const flyerElement = flyerRefs.current[highlightFlyerId];
+      if (flyerElement) {
+        // Wait a bit for rendering to complete
+        setTimeout(() => {
+          flyerElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setHighlightedId(highlightFlyerId);
+
+          // Remove highlight after 3 seconds
+          setTimeout(() => {
+            setHighlightedId(null);
+          }, 3000);
+        }, 100);
+      }
+    }
+  }, [highlightFlyerId, isLoading, filteredFlyers]);
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => flyersService.deleteFlyer(id),
@@ -216,7 +238,17 @@ export const FlyersListPage: React.FC = () => {
       ) : (
         <div className="bg-white rounded-lg shadow divide-y">
           {filteredFlyers.map(flyer => (
-            <div key={flyer.id} className="p-6 hover:bg-gray-50">
+            <div
+              key={flyer.id}
+              ref={(el) => {
+                flyerRefs.current[flyer.id] = el;
+              }}
+              className={`p-6 transition-all duration-300 ${
+                highlightedId === flyer.id
+                  ? 'bg-blue-50 border-2 border-blue-500'
+                  : 'hover:bg-gray-50'
+              }`}
+            >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">

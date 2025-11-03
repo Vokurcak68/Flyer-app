@@ -544,7 +544,20 @@ export const FlyerEditorPage: React.FC = () => {
             {/* Header Panel */}
             <div className="bg-white rounded-lg shadow p-4 flex-shrink-0">
               <div className="mb-4">
-                <Button variant="outline" onClick={() => navigate(basePath)} size="sm" className="mb-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    // Add highlight parameter to scroll back to this flyer
+                    const flyerId = params.id;
+                    if (flyerId && flyerId !== 'new') {
+                      navigate(`${basePath}?highlight=${flyerId}`);
+                    } else {
+                      navigate(basePath);
+                    }
+                  }}
+                  size="sm"
+                  className="mb-3"
+                >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Zpět
                 </Button>
