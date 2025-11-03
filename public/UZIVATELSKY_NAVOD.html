@@ -792,6 +792,42 @@
                         <strong>⚠️ Pozor:</strong> EAN kód musí existovat v ERP systému! Systém automaticky ověřuje platnost EAN při vytváření produktu.
                     </div>
 
+                    <h4 style="margin: 20px 0 10px 0;">2.1.1 Poznámka dodavatele</h4>
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Při vytváření nebo úpravě produktu můžete zadat <strong>Poznámku dodavatele</strong>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Poznámka má limit 100 znaků a zobrazuje se nad cenou produktu v letáku
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Poznámka se zobrazí tučným písmem na oranžovém pozadí pro lepší viditelnost
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>💡 Příklad poznámky:</strong> "NOVINKA 2024", "POSLEDNÍ KUSY", "VÝPRODEJ" atd.
+                    </div>
+
+                    <h4 style="margin: 20px 0 10px 0;">2.1.2 Kopírování produktu</h4>
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Na detailu produktu klikněte na <span class="button btn-outline">Vytvořit kopii</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Otevře se formulář s předvyplněnými daty z originálu včetně obrázku
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Upravte potřebné údaje (zejména EAN kód) a uložte
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Ochrana produktů:</strong> Produkty používané v aktivních nebo schválených letácích nelze upravovat ani mazat. Po uplynutí platnosti letáku se tato ochrana automaticky zruší.
+                    </div>
+
                     <h4 style="margin: 20px 0 10px 0;">2.2 Import produktů z CSV</h4>
                     <div class="step">
                         <span class="step-number">1</span>
@@ -857,20 +893,30 @@
                     </div>
                     <div class="step">
                         <span class="step-number">4</span>
-                        Vyberte typ velikosti:
-                        <ul style="margin-top: 10px; margin-left: 30px;">
-                            <li><strong>HEADER</strong> - pro hlavičku letáku</li>
-                            <li><strong>FOOTER</strong> - pro patičku letáku</li>
-                            <li><strong>PRODUCT_SIZE</strong> - velikost produktu</li>
-                        </ul>
+                        Vyberte značku, ke které se promo obrázek vztahuje
                     </div>
                     <div class="step">
                         <span class="step-number">5</span>
-                        Vyberte značky, ke kterým se promo obrázek vztahuje
+                        Vyberte typ velikosti:
+                        <ul style="margin-top: 10px; margin-left: 30px;">
+                            <li><strong>Single (1 slot)</strong> - zabírá 1 pozici v gridu</li>
+                            <li><strong>Horizontal (2 sloty)</strong> - zabírá 2 pozice vodorovně</li>
+                            <li><strong>Square (4 sloty)</strong> - zabírá 4 pozice (čtverec 2x2)</li>
+                            <li><strong>Full Page (8 slotů)</strong> - zabírá celou stránku</li>
+                            <li><strong>Footer (patička)</strong> - patička s výškou 2cm na první stránce letáku</li>
+                        </ul>
                     </div>
                     <div class="step">
                         <span class="step-number">6</span>
-                        Nahrajte obrázek
+                        <strong>Pouze pro typ Footer:</strong> Zaškrtněte "Vyplnit datum platnosti", pokud chcete automaticky zobrazit datum platnosti letáku
+                    </div>
+                    <div class="step">
+                        <span class="step-number">7</span>
+                        Nahrajte obrázek (PNG, JPG, max 5MB)
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>💡 Automatické vyplnění data:</strong> Když zaškrtnete "Vyplnit datum platnosti" u typu Footer, systém automaticky vypíše datum z pole "Platnost do" bílým tučným písmem vpravo v patičce. To je užitečné pro patičky s informacemi o platnosti akce.
                     </div>
                 </div>
 
@@ -928,7 +974,29 @@
                         </div>
                     </div>
 
-                    <h4 style="margin: 20px 0 10px 0;">5.2 Přidání stránky</h4>
+                    <h4 style="margin: 20px 0 10px 0;">5.2 Kopírování existujícího letáku</h4>
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Otevřete leták, který chcete zkopírovat
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        V horním panelu klikněte na <span class="button btn-outline">Vytvořit kopii</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Systém vytvoří nový leták s názvem "[původní název] (kopie)" a zkopíruje všechny stránky a produkty
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        Po dokončení kopírování budete automaticky přesměrováni na editor nového letáku
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>💡 Tip:</strong> Během vytváření kopie je tlačítko "Vytvořit kopii" deaktivované, aby se zabránilo vytvoření více kopií najednou.
+                    </div>
+
+                    <h4 style="margin: 20px 0 10px 0;">5.3 Přidání stránky</h4>
                     <div class="step">
                         <span class="step-number">1</span>
                         V editoru letáku klikněte na <span class="button btn-outline">+ Přidat stránku</span>
@@ -938,7 +1006,7 @@
                         Nová stránka se automaticky vytvoří s 8 prázdnými sloty (2x4 grid)
                     </div>
 
-                    <h4 style="margin: 20px 0 10px 0;">5.3 Přidání produktů na stránku</h4>
+                    <h4 style="margin: 20px 0 10px 0;">5.4 Přidání produktů na stránku</h4>
                     <div class="step">
                         <span class="step-number">1</span>
                         V pravém panelu vyhledejte produkt
@@ -956,7 +1024,7 @@
                         <strong>💡 Tip:</strong> Každá stránka má 8 slotů v mřížce 2x4. Produkty lze přesouvat mezi sloty pomocí drag & drop.
                     </div>
 
-                    <h4 style="margin: 20px 0 10px 0;">5.4 Přidání promo obrázku do patičky</h4>
+                    <h4 style="margin: 20px 0 10px 0;">5.5 Přidání promo obrázku do patičky</h4>
                     <div class="step">
                         <span class="step-number">1</span>
                         Přepněte na záložku <strong>Promos</strong> v pravém panelu
@@ -967,7 +1035,15 @@
                     </div>
                     <div class="step">
                         <span class="step-number">3</span>
-                        Přetáhněte ho do oblasti patičky stránky
+                        Přetáhněte ho do oblasti patičky stránky (pouze na první stránce)
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        Pokud má patička zapnutou funkci "Vyplnit datum platnosti", zobrazí se automaticky datum z pole "Platnost do" bílým písmem vpravo
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>💡 Automatické datum:</strong> Datum se zobrazuje ve formátu DD.MM.RRRR (např. 31.12.2024) a je umístěno vpravo s odsazením od kraje patičky.
                     </div>
                 </div>
 
