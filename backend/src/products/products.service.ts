@@ -313,6 +313,12 @@ export class ProductsService {
     // Verify user owns this product
     await this.validateUserBrandAccess(userId, product.brandId);
 
+    // Check if product is in an active/approved flyer
+    const isInActiveFlyer = await this.isProductInActiveApprovedFlyer(id);
+    if (isInActiveFlyer) {
+      throw new BadRequestException('Produkt nelze smazat, protože je použitý v aktivním nebo schváleném letáku');
+    }
+
     // Soft delete
     const deletedProduct = await this.prisma.product.update({
       where: { id },

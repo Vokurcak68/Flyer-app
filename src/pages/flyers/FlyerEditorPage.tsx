@@ -727,6 +727,8 @@ export const FlyerEditorPage: React.FC = () => {
               onRemoveProduct={handleRemoveProduct}
               onRemoveFooter={handleRemoveFooter}
               isEditable={!isLocked}
+              validFrom={flyerData.validFrom}
+              validTo={flyerData.validTo}
             />
           </div>
         </div>

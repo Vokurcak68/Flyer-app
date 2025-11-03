@@ -387,6 +387,7 @@ export class FlyersService {
                 name: true,
                 imageData: true, // INCLUDED for PDF generation
                 imageMimeType: true, // INCLUDED for PDF generation
+                fillDate: true, // INCLUDED for PDF generation
                 supplierId: true,
                 createdAt: true,
               },
@@ -495,6 +496,7 @@ export class FlyersService {
                 name: true,
                 // imageData: excluded for performance - frontend uses URL
                 // imageMimeType: excluded for performance
+                fillDate: true,
                 supplierId: true,
                 createdAt: true,
               },

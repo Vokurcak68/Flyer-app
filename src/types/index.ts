@@ -82,6 +82,7 @@ export interface PromoImage {
   brandId?: string | null;
   brand?: any;
   isForEndUsers?: boolean;
+  fillDate?: boolean;
   createdAt: string;
 }
 

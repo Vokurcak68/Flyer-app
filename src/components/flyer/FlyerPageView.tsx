@@ -10,6 +10,8 @@ interface FlyerPageViewProps {
   onRemoveProduct?: (slotIndex: number) => void;
   onRemoveFooter?: () => void;
   isEditable?: boolean;
+  validFrom?: string | null;
+  validTo?: string | null;
 }
 
 export const FlyerPageView: React.FC<FlyerPageViewProps> = ({
@@ -18,6 +20,8 @@ export const FlyerPageView: React.FC<FlyerPageViewProps> = ({
   onRemoveProduct,
   onRemoveFooter,
   isEditable = true,
+  validFrom,
+  validTo,
 }) => {
   const isFirstPage = page.pageNumber === 1;
 
@@ -146,6 +150,15 @@ export const FlyerPageView: React.FC<FlyerPageViewProps> = ({
                     alt={page.footerPromoImage.name}
                     className="w-full h-full object-cover"
                   />
+                  {/* Render date if fillDate is true */}
+                  {page.footerPromoImage.fillDate && validTo && (
+                    <div
+                      className="absolute right-6 top-1/2 -translate-y-1/2 text-white font-bold text-sm"
+                      style={{ fontFamily: 'Vodafone Rg, Arial, sans-serif' }}
+                    >
+                      {new Date(validTo).toLocaleDateString('cs-CZ', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\s/g, '')}
+                    </div>
+                  )}
                   {isEditable && onRemoveFooter && (
                     <button
                       onClick={onRemoveFooter}

@@ -176,6 +176,7 @@ model PromoImage {
   imageMimeType String         @map("image_mime_type")
   defaultSize   PromoSlotSize  @default(single) @map("default_size")
   isForEndUsers Boolean        @default(false) @map("is_for_end_users")
+  fillDate      Boolean        @default(false) @map("fill_date") // For footer: auto-fill validity date
   createdAt     DateTime       @default(now()) @map("created_at")
 
   brand          Brand?         @relation(fields: [brandId], references: [id])

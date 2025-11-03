@@ -125,7 +125,7 @@ export class PdfService {
           doc.addPage();
 
           // Render 2x4 slot grid (full bleed, no header)
-          await this.renderSlotGrid(doc, page);
+          await this.renderSlotGrid(doc, page, flyer);
         }
 
         // Finalize PDF
@@ -144,7 +144,7 @@ export class PdfService {
    * Layout with small gaps between slots (3 points ≈ 1mm)
    * Page 1: Has 2cm footer for promo image - only first row (2 slots) is smaller
    */
-  private async renderSlotGrid(doc: any, page: any) {
+  private async renderSlotGrid(doc: any, page: any, flyer: any) {
     const startX = 0;
     const startY = 0;
     const pageWidth = 595; // A4 width in points (210mm)
@@ -246,7 +246,7 @@ export class PdfService {
     // Render footer promo on page 1 if present
     if (isFirstPage && page.footerPromoImage) {
       const footerY = pageHeight - footerHeight;
-      await this.renderPromoSlot(doc, 0, footerY, pageWidth, footerHeight, page.footerPromoImage);
+      await this.renderPromoSlot(doc, 0, footerY, pageWidth, footerHeight, page.footerPromoImage, flyer.validFrom, flyer.validTo);
       this.logger.log(`Rendered footer promo on page 1: ${page.footerPromoImage.name}`);
     }
   }
@@ -558,7 +558,7 @@ export class PdfService {
    * Render promo image slot (can span multiple slots)
    * Full bleed - no borders, no padding
    */
-  private async renderPromoSlot(doc: any, x: number, y: number, width: number, height: number, promoImage: any) {
+  private async renderPromoSlot(doc: any, x: number, y: number, width: number, height: number, promoImage: any, validFrom?: string, validTo?: string) {
     // Add promo image (full bleed, no padding)
     if (promoImage.imageData) {
       try {
@@ -584,6 +584,36 @@ export class PdfService {
           width: width,
           height: height,
         });
+
+        // If fillDate is true and this is a footer, render the validity date (validTo only)
+        if (promoImage.fillDate && validTo) {
+          const formatDate = (dateStr: string) => {
+            const date = new Date(dateStr);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}.${month}.${year}`;
+          };
+
+          const dateText = formatDate(validTo);
+
+          // Position text on the right side of footer, vertically centered
+          doc.save();
+          doc.font('Vodafone-Rg-Bold').fontSize(10).fillColor('white');
+
+          // Calculate text width and position it on the right with some padding
+          const textWidth = doc.widthOfString(dateText);
+          const textX = x + width - textWidth - 25; // 25 points padding from right
+          const textY = y + (height / 2) - 5; // Center vertically (5 is half of font size)
+
+          doc.text(dateText, textX, textY, {
+            width: textWidth,
+            align: 'right',
+          });
+          doc.restore();
+
+          this.logger.log(`Rendered date on footer: ${dateText}`);
+        }
       } catch (error) {
         this.logger.error(`Failed to add promo image: ${error.message}`);
       }

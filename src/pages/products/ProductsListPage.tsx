@@ -43,7 +43,12 @@ export const ProductsListPage: React.FC = () => {
 
   const handleDelete = async (id: string, name: string) => {
     if (window.confirm(`Opravdu chcete smazat produkt "${name}"?`)) {
-      await deleteMutation.mutateAsync(id);
+      try {
+        await deleteMutation.mutateAsync(id);
+      } catch (error: any) {
+        const message = error.response?.data?.message || 'Chyba při mazání produktu';
+        alert(message);
+      }
     }
   };
 

@@ -30,6 +30,7 @@ export class PromoImagesService {
         defaultSize: dto.defaultSize,
         brandId: dto.brandId,
         isForEndUsers: dto.isForEndUsers || false,
+        fillDate: dto.fillDate || false,
       },
       include: {
         brand: true,

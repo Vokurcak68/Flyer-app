@@ -19,6 +19,10 @@ export class CreatePromoImageDto {
   @IsBoolean()
   @IsOptional()
   isForEndUsers?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  fillDate?: boolean;
 }
 
 export class PromoImageFilterDto {
