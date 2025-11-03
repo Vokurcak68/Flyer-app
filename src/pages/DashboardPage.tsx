@@ -60,7 +60,10 @@ const SupplierDashboard: React.FC = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div
+          onClick={() => navigate('/products')}
+          className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Celkem produktů</p>
@@ -72,7 +75,10 @@ const SupplierDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div
+          onClick={() => navigate('/flyers?status=active')}
+          className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Aktivní letáky</p>
@@ -84,7 +90,10 @@ const SupplierDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div
+          onClick={() => navigate('/flyers?status=pending_approval')}
+          className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Čekají na schválení</p>
@@ -96,7 +105,10 @@ const SupplierDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div
+          onClick={() => navigate('/flyers?status=rejected')}
+          className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Zamítnuté letáky</p>
@@ -108,7 +120,10 @@ const SupplierDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div
+          onClick={() => navigate('/flyers?status=draft')}
+          className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Koncepty letáků</p>

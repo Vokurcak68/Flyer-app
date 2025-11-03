@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Edit2, Trash2, Eye, AlertCircle, Search } from 'lucide-react';
 import { flyersService } from '../../services/flyersService';
@@ -13,9 +13,13 @@ type TabType = 'active' | 'archive';
 export const FlyersListPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabType>('active');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Get status filter from URL query params
+  const statusFilter = searchParams.get('status');
 
   // Determine base path based on current location
   const isMyFlyers = location.pathname.startsWith('/my-flyers');
@@ -26,8 +30,25 @@ export const FlyersListPage: React.FC = () => {
     queryFn: () => flyersService.getMyFlyers(),
   });
 
-  // Filter flyers by tab (active vs archive)
+  // Filter flyers by tab (active vs archive) and status filter
   const filteredByTab = useMemo(() => {
+    let filtered = flyers;
+
+    // First apply status filter from URL if present
+    if (statusFilter) {
+      if (statusFilter === 'rejected') {
+        // Rejected flyers are drafts with rejection reason
+        filtered = flyers.filter(f => f.status === 'draft' && f.rejectionReason);
+      } else if (statusFilter === 'draft') {
+        // Draft flyers without rejection reason
+        filtered = flyers.filter(f => f.status === 'draft' && !f.rejectionReason);
+      } else {
+        filtered = flyers.filter(f => f.status === statusFilter);
+      }
+      return filtered;
+    }
+
+    // Otherwise apply tab filter
     if (activeTab === 'active') {
       // Active tab: all flyers except expired
       return flyers.filter(f => f.status !== 'expired');
@@ -35,7 +56,7 @@ export const FlyersListPage: React.FC = () => {
       // Archive tab: only expired flyers
       return flyers.filter(f => f.status === 'expired');
     }
-  }, [flyers, activeTab]);
+  }, [flyers, activeTab, statusFilter]);
 
   // Filter by search query
   const filteredFlyers = useMemo(() => {
@@ -73,12 +94,37 @@ export const FlyersListPage: React.FC = () => {
     );
   }
 
+  // Get title based on status filter
+  const getTitle = () => {
+    if (statusFilter === 'active') return 'Aktivní letáky';
+    if (statusFilter === 'pending_approval') return 'Letáky čekající na schválení';
+    if (statusFilter === 'rejected') return 'Zamítnuté letáky';
+    if (statusFilter === 'draft') return 'Koncepty letáků';
+    return isMyFlyers ? 'Moje letáky' : 'Letáky';
+  };
+
+  const getSubtitle = () => {
+    if (statusFilter === 'active') return 'Schválené a aktivní letáky';
+    if (statusFilter === 'pending_approval') return 'Letáky čekající na schválení';
+    if (statusFilter === 'rejected') return 'Zamítnuté letáky, které je potřeba opravit';
+    if (statusFilter === 'draft') return 'Rozpracované koncepty letáků';
+    return 'Spravujte své propagační letáky';
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">{isMyFlyers ? 'Moje letáky' : 'Letáky'}</h1>
-          <p className="mt-2 text-gray-600">Spravujte své propagační letáky</p>
+          <h1 className="text-3xl font-bold text-gray-900">{getTitle()}</h1>
+          <p className="mt-2 text-gray-600">{getSubtitle()}</p>
+          {statusFilter && (
+            <button
+              onClick={() => navigate(basePath)}
+              className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              ← Zobrazit všechny letáky
+            </button>
+          )}
         </div>
         <Button onClick={() => navigate(`${basePath}/new`)}>
           <Plus className="w-4 h-4 mr-2" />
@@ -86,37 +132,39 @@ export const FlyersListPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Tabs */}
-      <div className="mb-6 border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('active')}
-            className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'active'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Aktivní letáky
-            <span className="ml-2 py-0.5 px-2 rounded-full text-xs bg-gray-100">
-              {flyers.filter(f => f.status !== 'expired').length}
-            </span>
-          </button>
-          <button
-            onClick={() => setActiveTab('archive')}
-            className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'archive'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Archiv
-            <span className="ml-2 py-0.5 px-2 rounded-full text-xs bg-gray-100">
-              {flyers.filter(f => f.status === 'expired').length}
-            </span>
-          </button>
-        </nav>
-      </div>
+      {/* Tabs - only show when not filtered by status */}
+      {!statusFilter && (
+        <div className="mb-6 border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('active')}
+              className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'active'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Aktivní letáky
+              <span className="ml-2 py-0.5 px-2 rounded-full text-xs bg-gray-100">
+                {flyers.filter(f => f.status !== 'expired').length}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('archive')}
+              className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'archive'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Archiv
+              <span className="ml-2 py-0.5 px-2 rounded-full text-xs bg-gray-100">
+                {flyers.filter(f => f.status === 'expired').length}
+              </span>
+            </button>
+          </nav>
+        </div>
+      )}
 
       {/* Search bar */}
       <div className="mb-6">
