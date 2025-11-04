@@ -11,7 +11,7 @@ Kompletní návod pro nasazení aplikace na Windows Server s IIS a existující 
   - Application Request Routing (ARR)
 - **Node.js 18+** (LTS verze)
 - **PostgreSQL 12+** (již nainstalovaný)
-- **PM2** nebo **NSSM** (pro běh backendu jako služba)
+- **NSSM** (Non-Sucking Service Manager - pro běh backendu jako Windows služba)
 
 ### Doporučené nástroje
 - Git for Windows
@@ -31,13 +31,19 @@ node --version
 npm --version
 ```
 
-### 1.2 Instalace PM2 (doporučeno)
+### 1.2 Instalace NSSM (Non-Sucking Service Manager)
 ```powershell
-npm install -g pm2
-npm install -g pm2-windows-startup
+# Stáhnout NSSM z https://nssm.cc/download
+# Nebo pomocí Chocolatey:
+choco install nssm
 
-# Nastavit PM2 pro automatický start
-pm2-startup install
+# Ověřit instalaci
+nssm --version
+
+# Nebo manuálně:
+# 1. Stáhnout ZIP z https://nssm.cc/release/nssm-2.24.zip
+# 2. Rozbalit do C:\Tools\nssm
+# 3. Přidat C:\Tools\nssm\win64 do PATH
 ```
 
 ### 1.3 Instalace IIS modulů
@@ -168,22 +174,61 @@ npm run seed
 npm ci --production
 ```
 
-### 4.4 Nastavení PM2
+### 4.4 Nastavení Windows služby pomocí NSSM
 ```powershell
 cd C:\inetpub\flyer-app\backend
 
-# Spustit aplikaci přes PM2
-pm2 start dist/main.js --name flyer-backend --time
+# Instalace služby pomocí NSSM
+nssm install FlyerBackend "C:\Program Files\nodejs\node.exe" "C:\inetpub\flyer-app\backend\dist\main.js"
 
-# Nastavit proměnné prostředí
-pm2 set pm2:log-date-format "YYYY-MM-DD HH:mm:ss Z"
+# Nastavení pracovního adresáře
+nssm set FlyerBackend AppDirectory "C:\inetpub\flyer-app\backend"
 
-# Uložit konfiguraci
-pm2 save
+# Nastavení stdout a stderr logů
+nssm set FlyerBackend AppStdout "C:\inetpub\flyer-app\logs\backend-stdout.log"
+nssm set FlyerBackend AppStderr "C:\inetpub\flyer-app\logs\backend-stderr.log"
 
-# Ověřit, že běží
-pm2 status
-pm2 logs flyer-backend --lines 50
+# Rotace logů (10MB limit, rotate)
+nssm set FlyerBackend AppStdoutCreationDisposition 4
+nssm set FlyerBackend AppStderrCreationDisposition 4
+nssm set FlyerBackend AppRotateFiles 1
+nssm set FlyerBackend AppRotateOnline 1
+nssm set FlyerBackend AppRotateSeconds 86400
+nssm set FlyerBackend AppRotateBytes 10485760
+
+# Nastavení automatického restartu při pádu
+nssm set FlyerBackend AppExit Default Restart
+nssm set FlyerBackend AppRestartDelay 5000
+
+# Nastavení závislostí (spustit až po PostgreSQL)
+nssm set FlyerBackend DependOnService postgresql-x64-14
+
+# Popis služby
+nssm set FlyerBackend Description "Flyer Management System - Backend API"
+nssm set FlyerBackend DisplayName "Flyer Backend"
+
+# Spustit službu
+nssm start FlyerBackend
+
+# Ověřit stav
+nssm status FlyerBackend
+Get-Service FlyerBackend
+
+# Zobrazit logy v reálném čase
+Get-Content "C:\inetpub\flyer-app\logs\backend-stdout.log" -Wait -Tail 50
+```
+
+**Alternativa: Instalace pomocí GUI**
+```powershell
+# Otevře grafické rozhraní pro konfiguraci
+nssm install FlyerBackend
+
+# V GUI vyplnit:
+# - Path: C:\Program Files\nodejs\node.exe
+# - Startup directory: C:\inetpub\flyer-app\backend
+# - Arguments: C:\inetpub\flyer-app\backend\dist\main.js
+# - I/O tab: nastavit log soubory
+# - File rotation tab: zapnout rotaci
 ```
 
 ### 4.5 Test backendu
@@ -378,7 +423,7 @@ curl http://localhost:4000/api/health
 curl http://vase-domena.cz/api/health
 
 # Zkontrolovat logy
-pm2 logs flyer-backend
+Get-Content "C:\inetpub\flyer-app\logs\backend-stdout.log" -Tail 50
 ```
 
 ### 8.2 Test frontendu
@@ -443,47 +488,102 @@ CORS_ORIGIN=https://vase-domena.cz
 
 ## Krok 10: Monitoring a údržba
 
-### 10.1 PM2 monitoring
+### 10.1 Monitoring Windows služby
 ```powershell
-# Status
-pm2 status
+# Zjistit stav služby
+Get-Service FlyerBackend
+nssm status FlyerBackend
 
-# Detailní info
-pm2 info flyer-backend
+# Detailní informace o službě
+sc.exe query FlyerBackend
+sc.exe queryex FlyerBackend
 
-# Real-time monitoring
-pm2 monit
+# Restart služby
+Restart-Service FlyerBackend
+# nebo
+nssm restart FlyerBackend
 
-# Restart po změnách
-pm2 restart flyer-backend
+# Zastavit službu
+Stop-Service FlyerBackend
+# nebo
+nssm stop FlyerBackend
 
-# Zobrazit logy
-pm2 logs flyer-backend --lines 100
+# Spustit službu
+Start-Service FlyerBackend
+# nebo
+nssm start FlyerBackend
+
+# Zobrazit logy v reálném čase
+Get-Content "C:\inetpub\flyer-app\logs\backend-stdout.log" -Wait -Tail 50
+Get-Content "C:\inetpub\flyer-app\logs\backend-stderr.log" -Wait -Tail 50
+
+# Zobrazit poslední chyby
+Get-Content "C:\inetpub\flyer-app\logs\backend-stderr.log" -Tail 100
 ```
 
 ### 10.2 Automatické restarty
-PM2 automaticky restartuje aplikaci při pádu. Pro pravidelné restarty:
+NSSM automaticky restartuje aplikaci při pádu (již nakonfigurováno). Pro pravidelné restarty:
 ```powershell
 # Restart každý den ve 3:00
 # Použít Windows Task Scheduler:
-schtasks /create /tn "PM2 Restart Flyer Backend" `
-  /tr "pm2 restart flyer-backend" `
+schtasks /create /tn "Restart Flyer Backend" `
+  /tr "nssm restart FlyerBackend" `
+  /sc daily /st 03:00 `
+  /ru "SYSTEM"
+
+# Nebo pomocí PowerShell
+schtasks /create /tn "Restart Flyer Backend" `
+  /tr "powershell.exe -Command Restart-Service FlyerBackend" `
   /sc daily /st 03:00 `
   /ru "SYSTEM"
 ```
 
 ### 10.3 Rotace logů
-PM2 má vestavěnou rotaci logů:
+NSSM má vestavěnou rotaci logů (již nakonfigurovaná v kroku 4.4). Ruční čištění starých logů:
 ```powershell
-pm2 install pm2-logrotate
+# Vytvořit cleanup script
+$cleanupScript = @"
+`$logDir = "C:\inetpub\flyer-app\logs"
+`$daysToKeep = 30
 
-# Konfigurace
-pm2 set pm2-logrotate:max_size 10M
-pm2 set pm2-logrotate:retain 30
-pm2 set pm2-logrotate:compress true
+Get-ChildItem `$logDir -Filter *.log.* |
+  Where-Object { `$_.LastWriteTime -lt (Get-Date).AddDays(-`$daysToKeep) } |
+  Remove-Item -Force
+
+Write-Output "Log cleanup completed at `$(Get-Date)"
+"@
+
+$cleanupScript | Out-File "C:\scripts\cleanup-flyer-logs.ps1"
+
+# Naplánovat týdenní úklid
+schtasks /create /tn "Cleanup Flyer Logs" `
+  /tr "powershell.exe -File C:\scripts\cleanup-flyer-logs.ps1" `
+  /sc weekly /d SUN /st 01:00 `
+  /ru "SYSTEM"
 ```
 
-### 10.4 Backup databáze
+### 10.4 Správa NSSM služby
+```powershell
+# Zobrazit konfiguraci služby
+nssm dump FlyerBackend
+
+# Upravit konfiguraci služby (otevře GUI)
+nssm edit FlyerBackend
+
+# Změnit parametr služby
+nssm set FlyerBackend AppDirectory "C:\inetpub\flyer-app\backend"
+
+# Odstranit službu (pokud je potřeba přeinstalovat)
+nssm remove FlyerBackend confirm
+
+# Export konfigurace do souboru
+nssm dump FlyerBackend > C:\backups\FlyerBackend-config.txt
+
+# Zobrazit všechny NSSM služby
+Get-Service | Where-Object {$_.DisplayName -like "*Flyer*"}
+```
+
+### 10.5 Backup databáze
 ```powershell
 # Vytvořit Windows Task pro denní backup
 $backupScript = @"
@@ -514,8 +614,10 @@ schtasks /create /tn "Backup Flyer Database" `
 # 1. Zazálohovat databázi
 pg_dump -U flyer_app_user -d flyer_app_production -f backup_pred_update.sql
 
-# 2. Zastavit backend
-pm2 stop flyer-backend
+# 2. Zastavit backend službu
+Stop-Service FlyerBackend
+# nebo
+nssm stop FlyerBackend
 
 # 3. Stáhnout novou verzi
 cd C:\inetpub\flyer-app
@@ -536,14 +638,20 @@ npm ci
 npm run build
 Copy-Item -Path .\build\* -Destination C:\inetpub\flyer-app\frontend\ -Recurse -Force
 
-# 6. Restartovat backend
-pm2 restart flyer-backend
+# 6. Spustit backend službu
+Start-Service FlyerBackend
+# nebo
+nssm start FlyerBackend
 
 # 7. Recyklovat IIS App Pool
 Restart-WebAppPool -Name "FlyerApp"
 
-# 8. Ověřit funkčnost
-pm2 logs flyer-backend --lines 50
+# 8. Ověřit funkčnost služby
+Get-Service FlyerBackend
+nssm status FlyerBackend
+
+# 9. Zkontrolovat logy
+Get-Content "C:\inetpub\flyer-app\logs\backend-stdout.log" -Tail 50
 ```
 
 ---
@@ -552,17 +660,27 @@ pm2 logs flyer-backend --lines 50
 
 ### Backend nefunguje
 ```powershell
-# Zkontrolovat, zda PM2 běží
-pm2 status
+# Zkontrolovat, zda služba běží
+Get-Service FlyerBackend
+nssm status FlyerBackend
 
 # Zkontrolovat logy
-pm2 logs flyer-backend --err
+Get-Content "C:\inetpub\flyer-app\logs\backend-stderr.log" -Tail 50
 
 # Zkontrolovat port
 netstat -ano | findstr :4000
 
-# Restart backendu
-pm2 restart flyer-backend
+# Zjistit, proč služba selhala
+Get-EventLog -LogName Application -Source FlyerBackend -Newest 10
+
+# Restart služby
+Restart-Service FlyerBackend
+# nebo
+nssm restart FlyerBackend
+
+# Pokud služba nejde spustit, zkusit ruční start pro diagnostiku
+cd C:\inetpub\flyer-app\backend
+node dist/main.js
 ```
 
 ### Frontend vrací 500 Error
