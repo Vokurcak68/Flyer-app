@@ -69,18 +69,21 @@ model Brand {
   users        UserBrand[]
   products     Product[]
   promoImages  PromoImage[]
+  icons        IconBrand[]
 
   @@map("brands")
 }
 
 model Category {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id          String   @id @default(uuid())
+  name        String   @unique
+  mssqlCode   String?  @map("mssql_code") // Mapping code for MSSQL integration
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   subcategories Subcategory[]
   products      Product[]
+  icons         IconCategory[]
 
   @@map("categories")
 }
@@ -144,9 +147,39 @@ model Icon {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  productIcons ProductIcon[]
+  productIcons  ProductIcon[]
+  categories    IconCategory[]
+  brands        IconBrand[]
 
   @@map("icons")
+}
+
+// Junction table for icons and categories (many-to-many)
+model IconCategory {
+  id         String   @id @default(uuid())
+  iconId     String   @map("icon_id")
+  categoryId String   @map("category_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  icon     Icon     @relation(fields: [iconId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([iconId, categoryId])
+  @@map("icon_categories")
+}
+
+// Junction table for icons and brands (many-to-many)
+model IconBrand {
+  id        String   @id @default(uuid())
+  iconId    String   @map("icon_id")
+  brandId   String   @map("brand_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  icon  Icon  @relation(fields: [iconId], references: [id], onDelete: Cascade)
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([iconId, brandId])
+  @@map("icon_brands")
 }
 
 // Junction table for products and icons (up to 4 icons per product)

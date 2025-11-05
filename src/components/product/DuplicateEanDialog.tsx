@@ -31,8 +31,8 @@ const DuplicateEanDialog: React.FC<DuplicateEanDialogProps> = ({
     // Close the dialog first
     onCancel();
 
-    // Navigate to the product detail page
-    navigate(`/products/${productId}`, { replace: true });
+    // Navigate to the product edit page
+    navigate(`/products/${productId}/edit`, { replace: true });
   };
 
   return (

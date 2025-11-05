@@ -9,6 +9,8 @@ import { ProductsListPage } from './pages/products/ProductsListPage';
 import { ProductFormPage } from './pages/products/ProductFormPage';
 import { BrandsListPage } from './pages/brands/BrandsListPage';
 import { BrandFormPage } from './pages/brands/BrandFormPage';
+import { CategoriesListPage } from './pages/categories/CategoriesListPage';
+import { CategoryFormPage } from './pages/categories/CategoryFormPage';
 import { PromoImagesPage } from './pages/promo-images/PromoImagesPage';
 import { FlyersListPage } from './pages/flyers/FlyersListPage';
 import { FlyerEditorPage } from './pages/flyers/FlyerEditorPage';
@@ -105,6 +107,32 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <BrandFormPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Categories Routes (Admin only) */}
+          <Route
+            path="categories"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <CategoriesListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="categories/new"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <CategoryFormPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="categories/:id/edit"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <CategoryFormPage />
               </ProtectedRoute>
             }
           />

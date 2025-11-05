@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsBoolean, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, IsBoolean, IsOptional, IsArray } from 'class-validator';
 
 export class CreateIconDto {
   @IsNotEmpty()
@@ -16,4 +16,14 @@ export class CreateIconDto {
   @IsOptional()
   @IsBoolean()
   isEnergyClass?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  categoryIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  brandIds?: string[];
 }

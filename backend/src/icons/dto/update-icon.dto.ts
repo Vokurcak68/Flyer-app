@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsBoolean } from 'class-validator';
+import { IsOptional, IsString, IsBoolean, IsArray } from 'class-validator';
 
 export class UpdateIconDto {
   @IsOptional()
@@ -16,4 +16,14 @@ export class UpdateIconDto {
   @IsOptional()
   @IsBoolean()
   isEnergyClass?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  categoryIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  brandIds?: string[];
 }

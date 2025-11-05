@@ -8,13 +8,27 @@ export class IconsService {
   constructor(private prisma: PrismaService) {}
 
   async create(createIconDto: CreateIconDto) {
-    const { imageData, ...rest } = createIconDto;
+    const { imageData, categoryIds, brandIds, ...rest } = createIconDto;
     const imageBuffer = Buffer.from(imageData, 'base64');
 
     return this.prisma.icon.create({
       data: {
         ...rest,
         imageData: imageBuffer,
+        categories: categoryIds ? {
+          create: categoryIds.map(categoryId => ({ categoryId })),
+        } : undefined,
+        brands: brandIds ? {
+          create: brandIds.map(brandId => ({ brandId })),
+        } : undefined,
+      },
+      include: {
+        categories: {
+          include: { category: true },
+        },
+        brands: {
+          include: { brand: true },
+        },
       },
     });
   }
@@ -22,6 +36,19 @@ export class IconsService {
   async findAll() {
     const icons = await this.prisma.icon.findMany({
       orderBy: { name: 'asc' },
+      include: {
+        categories: {
+          include: { category: true },
+        },
+        brands: {
+          include: { brand: true },
+        },
+        _count: {
+          select: {
+            productIcons: true,
+          },
+        },
+      },
     });
 
     const baseUrl = process.env.API_URL || 'http://localhost:4000';
@@ -36,6 +63,14 @@ export class IconsService {
   async findOne(id: string) {
     const icon = await this.prisma.icon.findUnique({
       where: { id },
+      include: {
+        categories: {
+          include: { category: true },
+        },
+        brands: {
+          include: { brand: true },
+        },
+      },
     });
 
     if (!icon) {
@@ -74,16 +109,52 @@ export class IconsService {
       throw new NotFoundException(`Icon with ID ${id} not found`);
     }
 
-    const { imageData, ...rest } = updateIconDto;
+    const { imageData, categoryIds, brandIds, ...rest } = updateIconDto;
     const data: any = { ...rest };
 
     if (imageData) {
       data.imageData = Buffer.from(imageData, 'base64');
     }
 
+    // Update categories if provided
+    if (categoryIds !== undefined) {
+      // Delete existing categories and create new ones
+      await this.prisma.iconCategory.deleteMany({
+        where: { iconId: id },
+      });
+
+      if (categoryIds.length > 0) {
+        await this.prisma.iconCategory.createMany({
+          data: categoryIds.map(categoryId => ({ iconId: id, categoryId })),
+        });
+      }
+    }
+
+    // Update brands if provided
+    if (brandIds !== undefined) {
+      // Delete existing brands and create new ones
+      await this.prisma.iconBrand.deleteMany({
+        where: { iconId: id },
+      });
+
+      if (brandIds.length > 0) {
+        await this.prisma.iconBrand.createMany({
+          data: brandIds.map(brandId => ({ iconId: id, brandId })),
+        });
+      }
+    }
+
     return this.prisma.icon.update({
       where: { id },
       data,
+      include: {
+        categories: {
+          include: { category: true },
+        },
+        brands: {
+          include: { brand: true },
+        },
+      },
     });
   }
 

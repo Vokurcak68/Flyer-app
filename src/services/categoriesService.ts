@@ -1,12 +1,15 @@
-import axios from 'axios';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
+import { api } from './api';
 
 export interface Category {
   id: string;
   name: string;
+  mssqlCode?: string;
   createdAt: string;
   updatedAt: string;
+  _count?: {
+    products: number;
+    subcategories: number;
+  };
 }
 
 export interface Subcategory {
@@ -17,16 +20,33 @@ export interface Subcategory {
   updatedAt: string;
 }
 
-class CategoriesService {
+export const categoriesService = {
   async getAllCategories(): Promise<Category[]> {
-    const response = await axios.get(`${API_URL}/categories`);
+    const response = await api.get<Category[]>('/categories');
     return response.data;
-  }
+  },
+
+  async getCategory(id: string): Promise<Category> {
+    const response = await api.get<Category>(`/categories/${id}`);
+    return response.data;
+  },
+
+  async createCategory(data: { name: string; mssqlCode?: string }): Promise<Category> {
+    const response = await api.post<Category>('/categories', data);
+    return response.data;
+  },
+
+  async updateCategory(id: string, data: { name?: string; mssqlCode?: string }): Promise<Category> {
+    const response = await api.put<Category>(`/categories/${id}`, data);
+    return response.data;
+  },
+
+  async deleteCategory(id: string): Promise<void> {
+    await api.delete(`/categories/${id}`);
+  },
 
   async getSubcategories(categoryId: string): Promise<Subcategory[]> {
-    const response = await axios.get(`${API_URL}/categories/${categoryId}/subcategories`);
+    const response = await api.get<Subcategory[]>(`/categories/${categoryId}/subcategories`);
     return response.data;
-  }
-}
-
-export const categoriesService = new CategoriesService();
+  },
+};

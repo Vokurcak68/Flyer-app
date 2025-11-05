@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
+  Put,
   Param,
   Delete,
   Res,
@@ -49,7 +49,7 @@ export class IconsController {
     res.send(data);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.admin)
   update(@Param('id') id: string, @Body() updateIconDto: UpdateIconDto) {
