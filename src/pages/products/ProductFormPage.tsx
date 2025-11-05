@@ -11,6 +11,7 @@ import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { ProductFlyerLayout } from '../../components/product/ProductFlyerLayout';
 import { Product } from '../../types';
+import DuplicateEanDialog from '../../components/product/DuplicateEanDialog';
 
 export const ProductFormPage: React.FC = () => {
   const { id } = useParams();
@@ -48,6 +49,16 @@ export const ProductFormPage: React.FC = () => {
     originalPriceMatch: null,
     isLoading: false,
   });
+  const [duplicateEanDialog, setDuplicateEanDialog] = useState<{
+    isOpen: boolean;
+    existingProduct: Product | null;
+    count: number;
+  }>({
+    isOpen: false,
+    existingProduct: null,
+    count: 0,
+  });
+  const [pendingFormData, setPendingFormData] = useState<any>(null);
 
   const { data: brands = [] } = useQuery({
     queryKey: ['brands', 'my'],
@@ -379,10 +390,54 @@ export const ProductFormPage: React.FC = () => {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Form submitted', formData);
+
+    // If editing, skip duplicate check
+    if (isEdit) {
+      saveMutation.mutate(formData);
+      return;
+    }
+
+    // Check for duplicate EAN only when creating new product
+    if (formData.ean && formData.ean.trim() !== '') {
+      try {
+        const duplicateCheck = await productsService.checkDuplicateEan(formData.ean);
+
+        if (duplicateCheck.exists && duplicateCheck.latestProduct) {
+          // Show confirmation dialog
+          setDuplicateEanDialog({
+            isOpen: true,
+            existingProduct: duplicateCheck.latestProduct,
+            count: duplicateCheck.count,
+          });
+          setPendingFormData(formData);
+          return; // Don't submit yet
+        }
+      } catch (error) {
+        console.error('Error checking duplicate EAN:', error);
+        // Continue with submission even if check fails
+      }
+    }
+
+    // No duplicates found or EAN is empty, proceed with submission
     saveMutation.mutate(formData);
+  };
+
+  const handleDuplicateEanContinue = () => {
+    // User confirmed to continue despite duplicate
+    setDuplicateEanDialog({ isOpen: false, existingProduct: null, count: 0 });
+    if (pendingFormData) {
+      saveMutation.mutate(pendingFormData);
+      setPendingFormData(null);
+    }
+  };
+
+  const handleDuplicateEanCancel = () => {
+    // User cancelled, close dialog
+    setDuplicateEanDialog({ isOpen: false, existingProduct: null, count: 0 });
+    setPendingFormData(null);
   };
 
   const handleCreateCopy = async () => {
@@ -970,6 +1025,17 @@ export const ProductFormPage: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Duplicate EAN Dialog */}
+      {duplicateEanDialog.isOpen && duplicateEanDialog.existingProduct && (
+        <DuplicateEanDialog
+          ean={formData.ean}
+          existingProduct={duplicateEanDialog.existingProduct}
+          productCount={duplicateEanDialog.count}
+          onContinue={handleDuplicateEanContinue}
+          onCancel={handleDuplicateEanCancel}
+        />
+      )}
     </div>
   );
 };

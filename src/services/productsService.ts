@@ -111,4 +111,19 @@ export const productsService = {
     }>(`/products/${ean}/validate-ean`, { params });
     return response.data;
   },
+
+  async checkDuplicateEan(ean: string): Promise<{
+    exists: boolean;
+    count: number;
+    latestProduct: Product | null;
+    allProducts: Product[];
+  }> {
+    const response = await api.get<{
+      exists: boolean;
+      count: number;
+      latestProduct: Product | null;
+      allProducts: Product[];
+    }>(`/products/check-duplicate-ean/${ean}`);
+    return response.data;
+  },
 };

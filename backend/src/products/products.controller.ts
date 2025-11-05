@@ -119,6 +119,13 @@ export class ProductsController {
     return this.productsService.importProductsFromZip(file.buffer, req.user.userId);
   }
 
+  @Get('check-duplicate-ean/:ean')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('supplier')
+  async checkDuplicateEan(@Param('ean') ean: string, @Request() req: any) {
+    return this.productsService.findProductsByEan(ean, req.user.userId);
+  }
+
   @Get(':ean/validate-ean')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('supplier')

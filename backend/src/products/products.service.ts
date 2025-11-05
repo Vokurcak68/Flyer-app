@@ -230,6 +230,42 @@ export class ProductsService {
     };
   }
 
+  async findProductsByEan(eanCode: string, userId: string) {
+    // Find all products with this EAN that belong to user's brands
+    const userBrands = await this.prisma.userBrand.findMany({
+      where: { userId },
+      select: { brandId: true },
+    });
+
+    const brandIds = userBrands.map(ub => ub.brandId);
+
+    const products = await this.prisma.product.findMany({
+      where: {
+        eanCode,
+        brandId: { in: brandIds },
+      },
+      include: {
+        brand: true,
+        icons: {
+          include: {
+            icon: true,
+          },
+          orderBy: { position: 'asc' },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc', // Latest first
+      },
+    });
+
+    return {
+      exists: products.length > 0,
+      count: products.length,
+      latestProduct: products.length > 0 ? this.formatProductResponse(products[0]) : null,
+      allProducts: products.map(p => this.formatProductResponse(p)),
+    };
+  }
+
   async update(id: string, updateProductDto: UpdateProductDto, userId: string) {
     console.log('🔍 Update product DTO:', JSON.stringify(updateProductDto, null, 2));
 
