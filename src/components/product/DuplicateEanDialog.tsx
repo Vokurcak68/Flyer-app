@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
 import { Product } from '../../types';
-import Button from '../ui/Button';
+import { Button } from '../ui/Button';
 import { useNavigate } from 'react-router-dom';
 
 interface DuplicateEanDialogProps {
@@ -46,7 +46,7 @@ const DuplicateEanDialog: React.FC<DuplicateEanDialogProps> = ({
                   <p className="font-medium text-gray-700">Poslední vytvořený produkt:</p>
                   <p className="mt-1"><strong>{existingProduct.name}</strong></p>
                   <p className="text-xs text-gray-600">
-                    Značka: {existingProduct.brand?.name || 'N/A'}
+                    Značka: {existingProduct.brandName || 'N/A'}
                   </p>
                   <p className="text-xs text-gray-600">
                     Cena: {existingProduct.price} Kč
