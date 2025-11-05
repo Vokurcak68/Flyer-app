@@ -24,9 +24,9 @@ $ServiceName = "FlyerBackend"
 
 # Colors for output
 function Write-Step { param($Message) Write-Host "`n>>> $Message" -ForegroundColor Cyan }
-function Write-Success { param($Message) Write-Host "✓ $Message" -ForegroundColor Green }
-function Write-Error { param($Message) Write-Host "✗ $Message" -ForegroundColor Red }
-function Write-Warning { param($Message) Write-Host "⚠ $Message" -ForegroundColor Yellow }
+function Write-Success { param($Message) Write-Host "[OK] $Message" -ForegroundColor Green }
+function Write-Error { param($Message) Write-Host "[ERROR] $Message" -ForegroundColor Red }
+function Write-Warning { param($Message) Write-Host "[WARNING] $Message" -ForegroundColor Yellow }
 
 # ============================================
 # PRE-DEPLOYMENT CHECKS
