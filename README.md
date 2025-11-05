@@ -50,26 +50,39 @@ src/
 
 ### Prerequisites
 
-- Node.js 16+
-- npm or yarn
-- Backend API running on http://localhost:4000/api
+- Node.js 18+
+- npm
+- Backend API running on http://localhost:4000/api (development)
 
-### Installation
+### Development Setup
 
-1. Install dependencies (already done):
+1. Install dependencies:
 ```bash
 npm install
 ```
 
-2. Create `.env` file:
+2. Environment Configuration
+
+The project uses environment-specific configuration:
+
+- **Development**: `.env.development` (already configured, points to localhost:4000)
+- **Production**: `.env.production` (configured for https://eflyer.kuchyneoresi.eu)
+
+No manual `.env` file needed for development!
+
+3. Start the backend (in separate terminal):
 ```bash
-cp .env.example .env
+cd backend
+npm install
+npm run start:dev
 ```
 
-3. Configure API URL in `.env`:
+4. Start the frontend:
+```bash
+npm start
 ```
-REACT_APP_API_URL=http://localhost:4000/api
-```
+
+Open [http://localhost:3000](http://localhost:3000) to view the app.
 
 ## Demo Accounts
 
@@ -115,8 +128,64 @@ Instead, it will copy all the configuration files and the transitive dependencie
 
 You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
 
+## Deployment
+
+### Production Deployment
+
+This application is designed for easy deployment to Windows Server with IIS.
+
+**Quick Deployment:**
+```powershell
+# As Administrator on your local PC
+cd C:\Projekty\flyer-app
+.\.deploy.ps1
+```
+
+**Deployment Documentation:**
+- 📘 **Quick Start**: `DEPLOYMENT_QUICK_START.md` - 3-step deployment guide
+- 📗 **Full Guide**: `DEPLOYMENT_GUIDE.md` - Complete deployment documentation
+- 📕 **Server Setup**: `DEPLOYMENT_WINDOWS_IIS.md` - Initial server configuration
+- ✅ **Setup Checklist**: `SERVER_SETUP_CHECKLIST.md` - Pre-deployment checklist
+
+**Environment Configuration:**
+- Development automatically uses `http://localhost:4000/api`
+- Production automatically uses `https://eflyer.kuchyneoresi.eu/api`
+- No hardcoded URLs - everything is environment-based!
+
+### Deployment Options
+
+```powershell
+.\.deploy.ps1                 # Full deployment (build + deploy)
+.\.deploy.ps1 -FrontendOnly   # Deploy only frontend changes
+.\.deploy.ps1 -BackendOnly    # Deploy only backend changes
+.\.deploy.ps1 -SkipBuild      # Deploy existing build (faster)
+```
+
+## Documentation
+
+- 📚 **User Manual**: `USER_MANUAL.md` - Complete user guide
+- 🚀 **Deployment Guide**: `DEPLOYMENT_GUIDE.md` - Production deployment
+- 🔧 **Server Setup**: `DEPLOYMENT_WINDOWS_IIS.md` - Windows IIS configuration
+- ✅ **Setup Checklist**: `SERVER_SETUP_CHECKLIST.md` - Server preparation
+
+## Architecture
+
+**Frontend:**
+- React 19 + TypeScript
+- TailwindCSS for styling
+- React Query for API state
+- Deployed on IIS as static files
+
+**Backend:**
+- NestJS (Node.js) running as Windows Service (NSSM)
+- PostgreSQL database
+- JWT authentication
+- REST API on port 4000
+
+**Production URL**: https://eflyer.kuchyneoresi.eu
+
 ## Learn More
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+- [React Documentation](https://reactjs.org/)
+- [NestJS Documentation](https://docs.nestjs.com/)
+- [Prisma Documentation](https://www.prisma.io/docs)

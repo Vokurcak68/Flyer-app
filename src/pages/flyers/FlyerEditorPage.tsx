@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { DndContext, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core';
-import { ArrowLeft, Save, Send, Plus, Minus, Search, FileText, AlertCircle, Copy, XCircle } from 'lucide-react';
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, arrayMove, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { ArrowLeft, Save, Send, Plus, Minus, Search, FileText, AlertCircle, Copy, XCircle, GripVertical } from 'lucide-react';
 import { flyersService } from '../../services/flyersService';
 import { productsService } from '../../services/productsService';
 import { promoImagesService } from '../../services/promoImagesService';
@@ -16,6 +18,49 @@ import { ValidationErrorsModal } from '../../components/flyer/ValidationErrorsMo
 import { Product, FlyerPage, FlyerSlot } from '../../types';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import { useAuthStore } from '../../store/authStore';
+
+// Sortable Page Button Component
+const SortablePageButton: React.FC<{
+  id: string;
+  index: number;
+  isActive: boolean;
+  isFirst: boolean;
+  isLocked: boolean;
+  onClick: () => void;
+}> = ({ id, index, isActive, isFirst, isLocked, onClick }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id, disabled: isFirst || isLocked });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center">
+      {!isFirst && !isLocked && (
+        <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing mr-1">
+          <GripVertical className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+        </div>
+      )}
+      <button
+        onClick={onClick}
+        className={`w-10 h-10 rounded ${
+          isActive ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'
+        } ${isFirst ? 'ml-5' : ''}`}
+      >
+        {index + 1}
+      </button>
+    </div>
+  );
+};
 
 export const FlyerEditorPage: React.FC = () => {
   const params = useParams<{ id?: string }>();
@@ -48,6 +93,15 @@ export const FlyerEditorPage: React.FC = () => {
   const [validationErrors, setValidationErrors] = useState<any[]>([]);
   const [showValidationModal, setShowValidationModal] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
+
+  // Sensors for drag and drop - use PointerSensor with distance to prevent conflicts
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px movement required before drag starts
+      },
+    })
+  );
 
   const preparePagesForAPI = (pages: FlyerPage[]): any[] => {
     return pages.map(page => ({
@@ -311,7 +365,41 @@ export const FlyerEditorPage: React.FC = () => {
     setActiveProduct(null);
     if (!over || isLocked) return; // Prevent drag & drop when locked
 
-    const dropId = over.id as string;
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    // Check if this is a page reordering event
+    if (activeId.startsWith('page-button-') && overId.startsWith('page-button-')) {
+      const oldIndex = parseInt(activeId.replace('page-button-', ''));
+      const newIndex = parseInt(overId.replace('page-button-', ''));
+
+      // Don't allow moving to/from first position (page 0)
+      if (oldIndex === 0 || newIndex === 0 || oldIndex === newIndex) return;
+
+      const newPages = arrayMove(flyerData.pages, oldIndex, newIndex);
+      // Update page numbers to match new order
+      const updatedPages = newPages.map((page, index) => ({
+        ...page,
+        pageNumber: index + 1,
+      }));
+
+      setFlyerData({ ...flyerData, pages: updatedPages });
+
+      // Update current page index if needed
+      if (currentPageIndex === oldIndex) {
+        setCurrentPageIndex(newIndex);
+      } else if (currentPageIndex === newIndex) {
+        setCurrentPageIndex(oldIndex < newIndex ? currentPageIndex - 1 : currentPageIndex + 1);
+      } else if (oldIndex < currentPageIndex && newIndex >= currentPageIndex) {
+        setCurrentPageIndex(currentPageIndex - 1);
+      } else if (oldIndex > currentPageIndex && newIndex <= currentPageIndex) {
+        setCurrentPageIndex(currentPageIndex + 1);
+      }
+
+      return;
+    }
+
+    const dropId = overId;
 
     // Footer drop
     const footerMatch = dropId.match(/page-(\d+)-footer/);
@@ -512,7 +600,12 @@ export const FlyerEditorPage: React.FC = () => {
   }
 
   return (
-    <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
       <div className="max-w-7xl mx-auto px-4 py-3">
         {/* Rejection History - Full Width Top */}
         <RejectionHistory approvals={flyer?.approvals} rejectionReason={flyer?.rejectionReason} />
@@ -751,19 +844,24 @@ export const FlyerEditorPage: React.FC = () => {
           <div className="flex justify-between items-center">
             <h3 className="font-bold">Stránka {currentPageIndex + 1} / {flyerData.pages.length}</h3>
             <div className="flex items-center space-x-4">
-              <div className="flex space-x-2">
-                {flyerData.pages.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentPageIndex(index)}
-                    className={`w-10 h-10 rounded ${
-                      currentPageIndex === index ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'
-                    }`}
-                  >
-                    {index + 1}
-                  </button>
-                ))}
-              </div>
+              <SortableContext
+                items={flyerData.pages.map((_, index) => `page-button-${index}`)}
+                strategy={horizontalListSortingStrategy}
+              >
+                <div className="flex space-x-2">
+                  {flyerData.pages.map((_, index) => (
+                    <SortablePageButton
+                      key={`page-button-${index}`}
+                      id={`page-button-${index}`}
+                      index={index}
+                      isActive={currentPageIndex === index}
+                      isFirst={index === 0}
+                      isLocked={isLocked}
+                      onClick={() => setCurrentPageIndex(index)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
               <div className="flex space-x-2">
                 <Button
                   variant="outline"

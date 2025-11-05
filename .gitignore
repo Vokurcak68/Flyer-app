@@ -13,14 +13,16 @@
 /build
 /backend/dist
 
-# env files
-.env
+# env files - keep .env.development and .env.production for reference
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Backend environment files - NEVER commit these!
 backend/.env
 backend/.env.local
+backend/.env.production
 
 # uploads
 backend/uploads/
