@@ -5,12 +5,18 @@ export interface CreateIconData {
   name: string;
   imageData: string; // Base64
   imageMimeType: string;
+  isEnergyClass?: boolean;
+  categoryIds?: string[];
+  brandIds?: string[];
 }
 
 export interface UpdateIconData {
   name?: string;
   imageData?: string; // Base64
   imageMimeType?: string;
+  isEnergyClass?: boolean;
+  categoryIds?: string[];
+  brandIds?: string[];
 }
 
 class IconsService {
@@ -30,7 +36,7 @@ class IconsService {
   }
 
   async updateIcon(id: string, data: UpdateIconData): Promise<Icon> {
-    const response = await api.patch<Icon>(`/icons/${id}`, data);
+    const response = await api.put<Icon>(`/icons/${id}`, data);
     return response.data;
   }
 

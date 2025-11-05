@@ -41,6 +41,18 @@ export interface Icon {
   imageUrl: string;
   imageMimeType?: string;
   isEnergyClass?: boolean; // Energy class icons are displayed 2x wider
+  categories?: Array<{
+    category: {
+      id: string;
+      name: string;
+    };
+  }>;
+  brands?: Array<{
+    brand: {
+      id: string;
+      name: string;
+    };
+  }>;
   createdAt: string;
   updatedAt: string;
 }

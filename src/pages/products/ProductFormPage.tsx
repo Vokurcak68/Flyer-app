@@ -37,6 +37,7 @@ export const ProductFormPage: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
   const [iconSearch, setIconSearch] = useState('');
+  const [activeIconTab, setActiveIconTab] = useState<'energy' | 'other'>('other');
   const [isInActiveFlyer, setIsInActiveFlyer] = useState(false);
   const [eanValidation, setEanValidation] = useState<{
     eanFound: boolean | null;
@@ -962,10 +963,41 @@ export const ProductFormPage: React.FC = () => {
         onClose={() => {
           setIsIconModalOpen(false);
           setIconSearch('');
+          setActiveIconTab('other');
         }}
         title="Vybrat ikony produktu"
       >
         <div className="space-y-4">
+          {/* Tabs */}
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveIconTab('other')}
+                className={`
+                  whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm
+                  ${activeIconTab === 'other'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }
+                `}
+              >
+                Ostatní ikony
+              </button>
+              <button
+                onClick={() => setActiveIconTab('energy')}
+                className={`
+                  whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm
+                  ${activeIconTab === 'energy'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }
+                `}
+              >
+                Energetické štítky
+              </button>
+            </nav>
+          </div>
+
           <Input
             label="Vyhledat ikony"
             value={iconSearch}
@@ -980,10 +1012,47 @@ export const ProductFormPage: React.FC = () => {
           ) : (
             <div className="grid grid-cols-4 gap-3 max-h-96 overflow-y-auto">
               {icons
-                .filter(icon =>
-                  iconSearch === '' ||
-                  icon.name.toLowerCase().includes(iconSearch.toLowerCase())
-                )
+                .filter(icon => {
+                  // Text search filter
+                  const matchesSearch = iconSearch === '' ||
+                    icon.name.toLowerCase().includes(iconSearch.toLowerCase());
+
+                  if (!matchesSearch) return false;
+
+                  // Filter by active tab
+                  if (activeIconTab === 'energy') {
+                    // Energy tab: show only energy class icons
+                    return icon.isEnergyClass === true;
+                  } else {
+                    // Other tab: show non-energy icons that match brand/category
+                    if (icon.isEnergyClass) return false;
+
+                    // Check if icon matches product's brand
+                    const matchesBrand = formData.brandId && icon.brands?.some(
+                      ib => ib.brand.id === formData.brandId
+                    );
+
+                    // Check if icon matches product's category
+                    const matchesCategory = formData.categoryId && icon.categories?.some(
+                      ic => ic.category.id === formData.categoryId
+                    );
+
+                    // Show icon ONLY if it matches BOTH brand AND category
+                    // If product has both brandId and categoryId, icon must have both
+                    // If product has only brandId, icon must have that brand
+                    // If product has only categoryId, icon must have that category
+                    if (formData.brandId && formData.categoryId) {
+                      return matchesBrand && matchesCategory;
+                    } else if (formData.brandId) {
+                      return matchesBrand;
+                    } else if (formData.categoryId) {
+                      return matchesCategory;
+                    }
+
+                    // If product has neither brand nor category, don't show regular icons
+                    return false;
+                  }
+                })
                 .map((icon) => {
                   const isSelected = formData.iconIds.includes(icon.id);
                   const canSelect = formData.iconIds.length < 4 || isSelected;
