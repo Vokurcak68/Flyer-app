@@ -8,8 +8,9 @@ interface DuplicateEanDialogProps {
   ean: string;
   existingProduct: Product;
   productCount: number;
-  onContinue: () => void;
+  onContinue?: () => void;
   onCancel: () => void;
+  mode?: 'blocking' | 'informational'; // blocking = during submit, informational = on blur
 }
 
 const DuplicateEanDialog: React.FC<DuplicateEanDialogProps> = ({
@@ -18,6 +19,7 @@ const DuplicateEanDialog: React.FC<DuplicateEanDialogProps> = ({
   productCount,
   onContinue,
   onCancel,
+  mode = 'blocking',
 }) => {
   const navigate = useNavigate();
 
@@ -75,20 +77,29 @@ const DuplicateEanDialog: React.FC<DuplicateEanDialogProps> = ({
             Otevřít existující produkt
           </Button>
 
-          <div className="flex space-x-3">
-            <Button
-              variant="secondary"
-              onClick={onCancel}
-            >
-              Zrušit
-            </Button>
+          {mode === 'blocking' ? (
+            <div className="flex space-x-3">
+              <Button
+                variant="secondary"
+                onClick={onCancel}
+              >
+                Zrušit
+              </Button>
+              <Button
+                variant="primary"
+                onClick={onContinue}
+              >
+                Pokračovat
+              </Button>
+            </div>
+          ) : (
             <Button
               variant="primary"
-              onClick={onContinue}
+              onClick={onCancel}
             >
-              Pokračovat
+              Zavřít
             </Button>
-          </div>
+          )}
         </div>
       </div>
     </div>

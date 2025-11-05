@@ -53,10 +53,12 @@ export const ProductFormPage: React.FC = () => {
     isOpen: boolean;
     existingProduct: Product | null;
     count: number;
+    mode: 'blocking' | 'informational';
   }>({
     isOpen: false,
     existingProduct: null,
     count: 0,
+    mode: 'blocking',
   });
   const [pendingFormData, setPendingFormData] = useState<any>(null);
 
@@ -406,11 +408,12 @@ export const ProductFormPage: React.FC = () => {
         const duplicateCheck = await productsService.checkDuplicateEan(formData.ean);
 
         if (duplicateCheck.exists && duplicateCheck.latestProduct) {
-          // Show confirmation dialog
+          // Show confirmation dialog (blocking mode)
           setDuplicateEanDialog({
             isOpen: true,
             existingProduct: duplicateCheck.latestProduct,
             count: duplicateCheck.count,
+            mode: 'blocking',
           });
           setPendingFormData(formData);
           return; // Don't submit yet
@@ -427,7 +430,7 @@ export const ProductFormPage: React.FC = () => {
 
   const handleDuplicateEanContinue = () => {
     // User confirmed to continue despite duplicate
-    setDuplicateEanDialog({ isOpen: false, existingProduct: null, count: 0 });
+    setDuplicateEanDialog({ isOpen: false, existingProduct: null, count: 0, mode: 'blocking' });
     if (pendingFormData) {
       saveMutation.mutate(pendingFormData);
       setPendingFormData(null);
@@ -436,8 +439,34 @@ export const ProductFormPage: React.FC = () => {
 
   const handleDuplicateEanCancel = () => {
     // User cancelled, close dialog
-    setDuplicateEanDialog({ isOpen: false, existingProduct: null, count: 0 });
+    setDuplicateEanDialog({ isOpen: false, existingProduct: null, count: 0, mode: 'blocking' });
     setPendingFormData(null);
+  };
+
+  const handleEanBlur = async () => {
+    // Skip check if editing existing product or EAN is empty
+    if (isEdit || !formData.ean || formData.ean.trim() === '') {
+      return;
+    }
+
+    // Check for duplicate EAN on blur
+    try {
+      const duplicateCheck = await productsService.checkDuplicateEan(formData.ean);
+
+      if (duplicateCheck.exists && duplicateCheck.latestProduct) {
+        // Show info dialog (informational mode)
+        setDuplicateEanDialog({
+          isOpen: true,
+          existingProduct: duplicateCheck.latestProduct,
+          count: duplicateCheck.count,
+          mode: 'informational',
+        });
+        // Don't set pendingFormData - this is just informational, not blocking submit
+      }
+    } catch (error) {
+      console.error('Error checking duplicate EAN on blur:', error);
+      // Silently fail - don't block user
+    }
   };
 
   const handleCreateCopy = async () => {
@@ -558,6 +587,7 @@ export const ProductFormPage: React.FC = () => {
                     <Input
                       value={formData.ean}
                       onChange={(e) => setFormData({ ...formData, ean: e.target.value })}
+                      onBlur={handleEanBlur}
                       required
                       pattern="[0-9]{8,13}"
                       title="EAN kód musí mít 8-13 číslic"
@@ -1032,6 +1062,7 @@ export const ProductFormPage: React.FC = () => {
           ean={formData.ean}
           existingProduct={duplicateEanDialog.existingProduct}
           productCount={duplicateEanDialog.count}
+          mode={duplicateEanDialog.mode}
           onContinue={handleDuplicateEanContinue}
           onCancel={handleDuplicateEanCancel}
         />
