@@ -24,7 +24,15 @@ const DuplicateEanDialog: React.FC<DuplicateEanDialogProps> = ({
   const navigate = useNavigate();
 
   const handleOpenExistingProduct = () => {
-    navigate(`/products/${existingProduct.id}`);
+    const productId = existingProduct.id;
+    console.log('Opening existing product:', productId);
+    console.log('Full product:', existingProduct);
+
+    // Close the dialog first
+    onCancel();
+
+    // Navigate to the product detail page
+    navigate(`/products/${productId}`, { replace: true });
   };
 
   return (
