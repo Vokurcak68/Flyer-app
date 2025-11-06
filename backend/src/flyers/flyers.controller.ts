@@ -222,7 +222,8 @@ export class FlyersController {
 
   @Get(':id/pdf')
   async getPdf(@Param('id') id: string, @Res() res: Response, @Request() req) {
-    const flyer = await this.flyersService.findOne(id, req.user.userId, req.user.role);
+    // Use findOneForPdf which has less restrictive permissions for active flyers
+    const flyer = await this.flyersService.findOneForPdf(id, req.user.userId, req.user.role);
 
     if (!flyer.pdfData || !flyer.pdfMimeType) {
       throw new NotFoundException('Flyer PDF not found');
@@ -234,14 +235,8 @@ export class FlyersController {
 
     if (req.user.role === 'end_user') {
       console.log('🔵 Generating PDF for end_user with black headers');
-      // Get full flyer data for PDF generation
-      const flyerForPdf = await this.flyersService.findOneForPdf(
-        id,
-        req.user.userId,
-        req.user.role,
-      );
       // Generate PDF with end_user role (black headers)
-      pdfData = await this.pdfService.generateFlyerPDF(flyerForPdf, 'end_user');
+      pdfData = await this.pdfService.generateFlyerPDF(flyer, 'end_user');
     }
 
     res.set('Content-Type', flyer.pdfMimeType);

@@ -459,6 +459,15 @@ export class FlyersService {
       const isOwnFlyer = flyer.supplierId === userId;
       const isActiveFlyer = flyer.status === FlyerStatus.approved || flyer.status === FlyerStatus.active;
 
+      console.log('🔍 End user PDF access check:', {
+        flyerId: flyer.id,
+        flyerStatus: flyer.status,
+        userId,
+        supplierId: flyer.supplierId,
+        isOwnFlyer,
+        isActiveFlyer,
+      });
+
       if (!isOwnFlyer && !isActiveFlyer) {
         throw new ForbiddenException('You do not have access to this flyer');
       }
