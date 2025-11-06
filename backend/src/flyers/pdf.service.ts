@@ -649,6 +649,18 @@ export class PdfService {
         // All 8 slots
         return [0, 1, 2, 3, 4, 5, 6, 7];
 
+      case 'header_2x1':
+        // 2 slots horizontal (2x1) - same as horizontal
+        slots.push(anchorPosition + 1);
+        return slots;
+
+      case 'header_2x2':
+        // 4 slots (2x2) - same as square
+        slots.push(anchorPosition + 1);
+        slots.push(anchorPosition + 2);
+        slots.push(anchorPosition + 3);
+        return slots;
+
       default:
         return slots;
     }
@@ -665,6 +677,8 @@ export class PdfService {
       case 'horizontal':
       case 'square':
       case 'full_page':
+      case 'header_2x1':
+      case 'header_2x2':
         return slotWidth * 2 + gap; // 2 columns + 1 gap between them
       default:
         return slotWidth;
@@ -686,10 +700,12 @@ export class PdfService {
     switch (promoSize) {
       case 'single':
       case 'horizontal':
+      case 'header_2x1':
         // Only spans 1 row - use appropriate height
         return startRow === 0 ? firstRowHeight : normalRowHeight;
 
       case 'square':
+      case 'header_2x2':
         // Spans 2 rows
         if (startRow === 0) {
           // Starts at row 0: firstRowHeight + gap + normalRowHeight

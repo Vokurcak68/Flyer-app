@@ -38,8 +38,10 @@ export const FlyerPageView: React.FC<FlyerPageViewProps> = ({
     if (slot?.type === 'promo' && slot.promoSize) {
       switch (slot.promoSize) {
         case 'horizontal':
+        case 'header_2x1':
           return { gridColumn: `${col} / span 2`, gridRow: `${row} / span 1` };
         case 'square':
+        case 'header_2x2':
           return { gridColumn: `${col} / span 2`, gridRow: `${row} / span 2` };
         case 'full_page':
           return { gridColumn: '1 / span 2', gridRow: '1 / span 4' };
@@ -64,9 +66,11 @@ export const FlyerPageView: React.FC<FlyerPageViewProps> = ({
 
         switch (slot.promoSize) {
           case 'horizontal':
+          case 'header_2x1':
             if (row === promoRow && col > promoCol && col <= promoCol + 1) return true;
             break;
           case 'square':
+          case 'header_2x2':
             if (row >= promoRow && row < promoRow + 2 && col >= promoCol && col < promoCol + 2) return true;
             break;
           case 'full_page':

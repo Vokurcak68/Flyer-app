@@ -31,6 +31,10 @@ export const DraggablePromoImage: React.FC<DraggablePromoImageProps> = ({ promoI
         return '8 slotů';
       case 'footer':
         return 'Patička';
+      case 'header_2x1':
+        return 'Hlavička 2×1';
+      case 'header_2x2':
+        return 'Hlavička 2×2';
       default:
         return size;
     }
@@ -48,6 +52,10 @@ export const DraggablePromoImage: React.FC<DraggablePromoImageProps> = ({ promoI
         return 'bg-orange-100 text-orange-800';
       case 'footer':
         return 'bg-pink-100 text-pink-800';
+      case 'header_2x1':
+        return 'bg-cyan-100 text-cyan-800';
+      case 'header_2x2':
+        return 'bg-teal-100 text-teal-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -71,6 +79,12 @@ export const DraggablePromoImage: React.FC<DraggablePromoImageProps> = ({ promoI
       case 'footer':
         // Footer: very wide (full width, 60px height) - roughly 12:1 ratio
         return 'aspect-[12/1]';
+      case 'header_2x1':
+        // 2×1 slots: wide rectangle (2:1 ratio) - same as horizontal
+        return 'aspect-[2/1]';
+      case 'header_2x2':
+        // 2×2 slots: square aspect ratio - same as square
+        return 'aspect-square';
       default:
         return 'aspect-square';
     }
