@@ -97,6 +97,9 @@ export const productsService = {
     pricesMatch: boolean;
     erpPrice?: number;
     erpOriginalPrice?: number;
+    erpProductName?: string;
+    erpBrand?: string;
+    erpCategoryCode?: string;
   }> {
     const params: any = {};
     if (price !== undefined) params.price = price.toString();
@@ -108,6 +111,9 @@ export const productsService = {
       pricesMatch: boolean;
       erpPrice?: number;
       erpOriginalPrice?: number;
+      erpProductName?: string;
+      erpBrand?: string;
+      erpCategoryCode?: string;
     }>(`/products/${ean}/validate-ean`, { params });
     return response.data;
   },

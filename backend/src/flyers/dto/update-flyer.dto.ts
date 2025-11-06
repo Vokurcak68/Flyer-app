@@ -1,9 +1,17 @@
-import { IsString, IsOptional, IsDateString, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsDateString, IsArray, IsInt } from 'class-validator';
 
 export class UpdateFlyerDto {
   @IsOptional()
   @IsString()
   name?: string;
+
+  @IsOptional()
+  @IsInt()
+  actionId?: number;
+
+  @IsOptional()
+  @IsString()
+  actionName?: string;
 
   @IsOptional()
   @IsDateString()

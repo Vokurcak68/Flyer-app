@@ -41,6 +41,12 @@ export class FlyersController {
   // FLYER MANAGEMENT
   // ========================================
 
+  @Get('actions')
+  @Roles('supplier', 'end_user', 'approver', 'pre_approver')
+  async getActions(@Request() req) {
+    return this.flyersService.getFilteredActions(req.user.userId, req.user.role);
+  }
+
   @Post()
   @Roles('supplier', 'end_user')
   create(@Body() createFlyerDto: CreateFlyerDto, @Request() req) {

@@ -270,6 +270,44 @@ export const ProductFormPage: React.FC = () => {
         originalPriceMatch,
         isLoading: false,
       });
+
+      // Auto-fill fields ONLY when creating new product and ERP found data
+      if (!isEdit && result.found) {
+        const newFormData = { ...formData };
+
+        // Auto-fill product name if empty
+        if (!newFormData.name && result.erpProductName) {
+          newFormData.name = result.erpProductName;
+        }
+
+        // Auto-fill brand if empty - find brand by name match
+        if (!newFormData.brandId && result.erpBrand) {
+          const matchingBrand = brands.find(b => b.name === result.erpBrand);
+          if (matchingBrand) {
+            newFormData.brandId = matchingBrand.id;
+          }
+        }
+
+        // Auto-fill price if zero
+        if (newFormData.price === 0 && result.erpPrice !== undefined) {
+          newFormData.price = result.erpPrice;
+        }
+
+        // Auto-fill original price if zero
+        if (newFormData.originalPrice === 0 && result.erpOriginalPrice !== undefined) {
+          newFormData.originalPrice = result.erpOriginalPrice;
+        }
+
+        // Auto-fill category if empty - find category by mssqlCode match
+        if (!newFormData.categoryId && result.erpCategoryCode) {
+          const matchingCategory = categories.find(c => (c as any).mssqlCode === result.erpCategoryCode);
+          if (matchingCategory) {
+            newFormData.categoryId = matchingCategory.id;
+          }
+        }
+
+        setFormData(newFormData);
+      }
     } catch (error) {
       console.error('Error validating EAN:', error);
       setEanValidation({

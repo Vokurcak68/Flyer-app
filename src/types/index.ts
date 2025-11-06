@@ -118,6 +118,8 @@ export interface Flyer {
   supplierId: string;
   supplier?: User;
   name: string;
+  actionId?: number;
+  actionName?: string;
   validFrom: string;
   validTo: string;
   status: FlyerStatus;

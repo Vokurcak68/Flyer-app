@@ -3,12 +3,16 @@ import { Flyer, FlyerPage, PaginatedResponse } from '../types';
 
 export interface CreateFlyerDTO {
   name: string;
+  actionId?: number;
+  actionName?: string;
   validFrom: string;
   validTo: string;
 }
 
 export interface UpdateFlyerDTO {
   name?: string;
+  actionId?: number;
+  actionName?: string;
   validFrom?: string;
   validTo?: string;
   pages?: FlyerPage[];
@@ -20,7 +24,19 @@ export interface FlyerFilters {
   limit?: number;
 }
 
+export interface Action {
+  id: number;
+  name: string;
+  validFrom?: string;
+  validTo?: string;
+}
+
 export const flyersService = {
+  async getActions(): Promise<Action[]> {
+    const response = await api.get<Action[]>('/flyers/actions');
+    return response.data;
+  },
+
   async getFlyers(filters?: FlyerFilters): Promise<PaginatedResponse<Flyer>> {
     const response = await api.get<PaginatedResponse<Flyer>>('/flyers', { params: filters });
     return response.data;

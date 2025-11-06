@@ -256,6 +256,9 @@ export const FlyersListPage: React.FC = () => {
                     <StatusBadge status={flyer.status} />
                   </div>
                   <div className="text-sm text-gray-600 space-y-1">
+                    {flyer.actionName && (
+                      <div className="font-medium text-blue-700">Akce: {flyer.actionName}</div>
+                    )}
                     <div>Platnost: {formatDate(flyer.validFrom)} - {formatDate(flyer.validTo)}</div>
                     <div>Stránky: {flyer.pages?.length || 0} | Produkty: {flyer.pages?.reduce((s, p) => s + (p.slots?.filter(slot => slot && slot.type === 'product').length || 0), 0) || 0}</div>
                     <div>Vytvořeno: {formatDate(flyer.createdAt)}</div>

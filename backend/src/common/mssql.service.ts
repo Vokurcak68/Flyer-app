@@ -41,6 +41,9 @@ export class MssqlService implements OnModuleInit {
     pricesMatch: boolean;
     erpPrice?: number;
     erpOriginalPrice?: number;
+    erpProductName?: string;
+    erpBrand?: string;
+    erpCategoryCode?: string;
   }> {
     try {
       if (!this.pool || !this.pool.connected) {
@@ -52,7 +55,7 @@ export class MssqlService implements OnModuleInit {
         .request()
         .input('ean', sql.VarChar(50), ean)
         .query(
-          'SELECT TOP 1 BarCode, AkcniCena, CenaMO FROM hvw_vok_Oresi_EletakNew WHERE BarCode = @ean',
+          'SELECT TOP 1 BarCode, AkcniCena, CenaMO, KodDodavatele, Znacka, Kategorie FROM hvw_vok_Oresi_EletakNew WHERE BarCode = @ean',
         );
 
       if (result.recordset.length === 0) {
@@ -74,6 +77,9 @@ export class MssqlService implements OnModuleInit {
         pricesMatch,
         erpPrice,
         erpOriginalPrice,
+        erpProductName: record.KodDodavatele,
+        erpBrand: record.Znacka,
+        erpCategoryCode: record.Kategorie,
       };
     } catch (error) {
       this.logger.error(`Error validating EAN ${ean}:`, error);
@@ -153,6 +159,34 @@ export class MssqlService implements OnModuleInit {
     }
 
     return validationErrors;
+  }
+
+  /**
+   * Get all available actions from ERP
+   */
+  async getActions(): Promise<Array<{ id: number; name: string; validFrom?: string; validTo?: string }>> {
+    try {
+      if (!this.pool || !this.pool.connected) {
+        this.logger.warn('MSSQL connection not established, reconnecting...');
+        await this.onModuleInit();
+      }
+
+      const result = await this.pool
+        .request()
+        .query(
+          'SELECT ID, PopisDodavky, PlatnostOd, PlatnostDo FROM hvw_vok_Oresi_EletakNew_Akce ORDER BY PopisDodavky',
+        );
+
+      return result.recordset.map(record => ({
+        id: record.ID,
+        name: record.PopisDodavky,
+        validFrom: record.PlatnostOd ? new Date(record.PlatnostOd).toISOString().split('T')[0] : undefined,
+        validTo: record.PlatnostDo ? new Date(record.PlatnostDo).toISOString().split('T')[0] : undefined,
+      }));
+    } catch (error) {
+      this.logger.error('Error fetching actions from ERP:', error);
+      return [];
+    }
   }
 
   async onModuleDestroy() {

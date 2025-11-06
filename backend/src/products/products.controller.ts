@@ -144,6 +144,9 @@ export class ProductsController {
       pricesMatch: result.pricesMatch,
       erpPrice: result.erpPrice,
       erpOriginalPrice: result.erpOriginalPrice,
+      erpProductName: result.erpProductName,
+      erpBrand: result.erpBrand,
+      erpCategoryCode: result.erpCategoryCode,
     };
   }
 }

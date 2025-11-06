@@ -227,6 +227,8 @@ model Flyer {
   id             String       @id @default(uuid())
   supplierId     String       @map("supplier_id")
   name           String
+  actionId       Int?         @map("action_id") // ID from ERP hvw_vok_Oresi_EletakNew_Akce
+  actionName     String?      @map("action_name") // PopisDodavky from ERP
   validFrom      DateTime?    @map("valid_from") @db.Date
   validTo        DateTime?    @map("valid_to") @db.Date
   status         FlyerStatus

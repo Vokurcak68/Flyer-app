@@ -118,6 +118,8 @@ export const FlyerEditorPage: React.FC = () => {
 
   const [flyerData, setFlyerData] = useState({
     name: 'Nový leták',
+    actionId: undefined as number | undefined,
+    actionName: undefined as string | undefined,
     validFrom: '',
     validTo: '',
     pages: [{
@@ -131,6 +133,12 @@ export const FlyerEditorPage: React.FC = () => {
     queryKey: ['flyers', id],
     queryFn: () => flyersService.getFlyer(id!),
     enabled: !isNew,
+  });
+
+  // Load actions from ERP
+  const { data: actions = [] } = useQuery({
+    queryKey: ['flyers', 'actions'],
+    queryFn: () => flyersService.getActions(),
   });
 
   // Check if flyer is locked for editing
@@ -222,6 +230,8 @@ export const FlyerEditorPage: React.FC = () => {
     if (flyer) {
       setFlyerData({
         name: flyer.name,
+        actionId: flyer.actionId,
+        actionName: flyer.actionName,
         validFrom: flyer.validFrom ? new Date(flyer.validFrom).toISOString().split('T')[0] : '',
         validTo: flyer.validTo ? new Date(flyer.validTo).toISOString().split('T')[0] : '',
         pages: flyer.pages.length > 0 ? flyer.pages : [{
@@ -242,6 +252,8 @@ export const FlyerEditorPage: React.FC = () => {
         console.log('🔍 Creating new flyer...');
         const created = await flyersService.createFlyer({
           name: data.name,
+          actionId: data.actionId,
+          actionName: data.actionName,
           validFrom: data.validFrom,
           validTo: data.validTo,
         });
@@ -249,6 +261,8 @@ export const FlyerEditorPage: React.FC = () => {
 
         const updated = await flyersService.updateFlyer(created.id, {
           name: data.name,
+          actionId: data.actionId,
+          actionName: data.actionName,
           validFrom: data.validFrom,
           validTo: data.validTo,
           pages: preparePagesForAPI(data.pages)
@@ -264,6 +278,8 @@ export const FlyerEditorPage: React.FC = () => {
       console.log('🔍 Updating existing flyer with ID:', id);
       return flyersService.updateFlyer(id, {
         name: data.name,
+        actionId: data.actionId,
+        actionName: data.actionName,
         validFrom: data.validFrom,
         validTo: data.validTo,
         pages: preparePagesForAPI(data.pages),
@@ -284,6 +300,8 @@ export const FlyerEditorPage: React.FC = () => {
       if (isNew) {
         const created = await flyersService.createFlyer({
           name: flyerData.name,
+          actionId: flyerData.actionId,
+          actionName: flyerData.actionName,
           validFrom: flyerData.validFrom,
           validTo: flyerData.validTo,
         });
@@ -295,6 +313,8 @@ export const FlyerEditorPage: React.FC = () => {
       }
       await flyersService.updateFlyer(id!, {
         name: flyerData.name,
+        actionId: flyerData.actionId,
+        actionName: flyerData.actionName,
         validFrom: flyerData.validFrom,
         validTo: flyerData.validTo,
       });
@@ -637,23 +657,54 @@ export const FlyerEditorPage: React.FC = () => {
             {/* Header Panel */}
             <div className="bg-white rounded-lg shadow p-4 flex-shrink-0">
               <div className="mb-4">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    // Add highlight parameter to scroll back to this flyer
-                    const flyerId = params.id;
-                    if (flyerId && flyerId !== 'new') {
-                      navigate(`${basePath}?highlight=${flyerId}`);
-                    } else {
-                      navigate(basePath);
-                    }
-                  }}
-                  size="sm"
-                  className="mb-3"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Zpět
-                </Button>
+                <div className="flex gap-2 items-end mb-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      // Add highlight parameter to scroll back to this flyer
+                      const flyerId = params.id;
+                      if (flyerId && flyerId !== 'new') {
+                        navigate(`${basePath}?highlight=${flyerId}`);
+                      } else {
+                        navigate(basePath);
+                      }
+                    }}
+                    size="sm"
+                    className="flex-shrink-0"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Zpět
+                  </Button>
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Název akce
+                    </label>
+                    <select
+                      value={flyerData.actionId || ''}
+                      onChange={(e) => {
+                        const selectedActionId = e.target.value ? parseInt(e.target.value) : undefined;
+                        const selectedAction = actions.find(a => a.id === selectedActionId);
+                        setFlyerData({
+                          ...flyerData,
+                          actionId: selectedActionId,
+                          actionName: selectedAction?.name,
+                          // Auto-fill validity dates from selected action
+                          validFrom: selectedAction?.validFrom || flyerData.validFrom,
+                          validTo: selectedAction?.validTo || flyerData.validTo,
+                        });
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      disabled={isLocked}
+                    >
+                      <option value="">Vyberte akci</option>
+                      {actions.map((action) => (
+                        <option key={action.id} value={action.id}>
+                          {action.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
                 <Input
                   value={flyerData.name}
                   onChange={(e) => setFlyerData({ ...flyerData, name: e.target.value })}

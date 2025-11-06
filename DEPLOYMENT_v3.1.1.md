@@ -22,7 +22,7 @@
 pg_dump $DATABASE_URL > backup_before_v3.1.1_$(date +%Y%m%d_%H%M%S).sql
 ```
 
-### Krok 2: Stáhni nejnovější verzi z Gitu
+### Krok 2: Stáhni nejnovější verzi z Gitu https://github.com/Vokurcak68/Flyer-app.git
 ```bash
 cd /path/to/flyer-app
 git fetch origin

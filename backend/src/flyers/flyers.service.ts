@@ -21,6 +21,7 @@ import {
   UpdateProductPositionDto,
 } from './dto';
 import { FlyerStatus, UserRole, FlyerActionType, SlotType } from '@prisma/client';
+import { MssqlService } from '../common/mssql.service';
 
 @Injectable()
 export class FlyersService {
@@ -29,6 +30,7 @@ export class FlyersService {
     @Inject(forwardRef(() => ApprovalsService))
     private approvalsService: ApprovalsService,
     private pdfService: PdfService,
+    private mssqlService: MssqlService,
   ) {}
 
   // ========================================
@@ -39,6 +41,8 @@ export class FlyersService {
     const flyer = await this.prisma.flyer.create({
       data: {
         name: createFlyerDto.name,
+        actionId: createFlyerDto.actionId,
+        actionName: createFlyerDto.actionName,
         validFrom: createFlyerDto.validFrom
           ? new Date(createFlyerDto.validFrom)
           : null,
@@ -170,6 +174,8 @@ export class FlyersService {
       select: {
         id: true,
         name: true,
+        actionId: true,
+        actionName: true,
         validFrom: true,
         validTo: true,
         status: true,
@@ -240,6 +246,45 @@ export class FlyersService {
         totalPages: 1,
       },
     };
+  }
+
+  async getFilteredActions(userId: string, userRole: UserRole) {
+    // Get all actions from MSSQL
+    const allActions = await this.mssqlService.getActions();
+
+    // For suppliers, filter actions by their assigned brands
+    if (userRole === UserRole.supplier) {
+      // Get user's brands
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          brands: {
+            include: {
+              brand: true,
+            },
+          },
+        },
+      });
+
+      if (!user || user.brands.length === 0) {
+        // If supplier has no brands, return empty array
+        return [];
+      }
+
+      // Get brand names
+      const brandNames = user.brands.map(ub => ub.brand.name.toLowerCase());
+
+      // Filter actions - action name must contain at least one of the brand names
+      const filteredActions = allActions.filter(action => {
+        const actionNameLower = action.name.toLowerCase();
+        return brandNames.some(brandName => actionNameLower.includes(brandName));
+      });
+
+      return filteredActions;
+    }
+
+    // For other roles, return all actions
+    return allActions;
   }
 
   async getActiveFlyers(userId: string, userRole: UserRole) {
@@ -564,6 +609,8 @@ export class FlyersService {
     // Prepare data object
     const data: any = {
       name: updateFlyerDto.name,
+      actionId: updateFlyerDto.actionId,
+      actionName: updateFlyerDto.actionName,
       validFrom: updateFlyerDto.validFrom
         ? new Date(updateFlyerDto.validFrom)
         : undefined,
