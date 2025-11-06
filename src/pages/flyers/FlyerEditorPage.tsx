@@ -517,6 +517,12 @@ export const FlyerEditorPage: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    // Check if action is selected
+    if (!flyerData.actionId || !flyerData.actionName) {
+      alert('Není vybrána žádná akce');
+      return;
+    }
+
     if (!flyerData.validFrom || !flyerData.validTo) {
       alert('Nastavte období platnosti');
       return;
@@ -529,23 +535,19 @@ export const FlyerEditorPage: React.FC = () => {
     }
 
     try {
-      setIsValidating(true);
-      const validationResult = await flyersService.validateFlyer(id);
-      setIsValidating(false);
-
-      if (!validationResult.valid) {
-        // Show validation errors modal
-        setValidationErrors(validationResult.errors);
-        setShowValidationModal(true);
-        return; // Do not proceed with submission
-      }
-
-      // All validations passed, proceed with submission
+      // Submit directly - backend will perform all validations
       await submitMutation.mutateAsync();
-    } catch (error) {
-      setIsValidating(false);
-      console.error('Chyba při validaci letáku:', error);
-      alert('Chyba při validaci letáku. Zkuste to znovu.');
+    } catch (error: any) {
+      console.error('Chyba při odesílání letáku:', error);
+
+      // Check if error response contains validation errors
+      if (error?.response?.data?.errors) {
+        setValidationErrors(error.response.data.errors);
+        setShowValidationModal(true);
+      } else {
+        const errorMessage = error?.response?.data?.message || 'Chyba při odesílání letáku. Zkuste to znovu.';
+        alert(errorMessage);
+      }
     }
   };
 
@@ -903,14 +905,14 @@ export const FlyerEditorPage: React.FC = () => {
 
         {/* Page Navigation - Full Width Bottom */}
         <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex justify-between items-center">
-            <h3 className="font-bold">Stránka {currentPageIndex + 1} / {flyerData.pages.length}</h3>
-            <div className="flex items-center space-x-4">
+          <div className="flex justify-between items-center gap-4">
+            <h3 className="font-bold flex-shrink-0">Stránka {currentPageIndex + 1} / {flyerData.pages.length}</h3>
+            <div className="flex items-center space-x-4 flex-1 min-w-0">
               <SortableContext
                 items={flyerData.pages.map((_, index) => `page-button-${index}`)}
                 strategy={horizontalListSortingStrategy}
               >
-                <div className="flex space-x-2">
+                <div className="flex space-x-2 overflow-x-auto flex-1 min-w-0 pb-1">
                   {flyerData.pages.map((_, index) => (
                     <SortablePageButton
                       key={`page-button-${index}`}
@@ -924,7 +926,7 @@ export const FlyerEditorPage: React.FC = () => {
                   ))}
                 </div>
               </SortableContext>
-              <div className="flex space-x-2">
+              <div className="flex space-x-2 flex-shrink-0">
                 <Button
                   variant="outline"
                   size="sm"

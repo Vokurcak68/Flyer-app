@@ -1133,7 +1133,11 @@ export class FlyersService {
       include: {
         pages: {
           include: {
-            slots: true,
+            slots: {
+              include: {
+                product: true,
+              },
+            },
           },
         },
       },
@@ -1151,6 +1155,11 @@ export class FlyersService {
       throw new BadRequestException('Only draft flyers can be submitted');
     }
 
+    // Validate that Action is selected
+    if (!flyer.actionId || !flyer.actionName) {
+      throw new BadRequestException('Není vybrána žádná akce');
+    }
+
     // Validate flyer is complete enough to submit
     if (!flyer.validFrom || !flyer.validTo) {
       throw new BadRequestException('Flyer must have valid dates set');
@@ -1158,6 +1167,37 @@ export class FlyersService {
 
     if (flyer.pages.length === 0) {
       throw new BadRequestException('Flyer must have at least one page');
+    }
+
+    // Validate all products against ERP with actionId filter
+    const productsMap = new Map();
+    for (const page of flyer.pages) {
+      for (const slot of page.slots) {
+        if (slot.product && !productsMap.has(slot.product.id)) {
+          productsMap.set(slot.product.id, {
+            id: slot.product.id,
+            name: slot.product.name,
+            eanCode: slot.product.eanCode,
+            price: parseFloat(slot.product.price.toString()),
+            originalPrice: slot.product.originalPrice
+              ? parseFloat(slot.product.originalPrice.toString())
+              : undefined,
+          });
+        }
+      }
+    }
+
+    const products = Array.from(productsMap.values());
+    const validationErrors = await this.mssqlService.validateFlyerProducts(
+      products,
+      flyer.actionId,
+    );
+
+    if (validationErrors.length > 0) {
+      throw new BadRequestException({
+        message: 'Flyer validation failed',
+        errors: validationErrors,
+      });
     }
 
     // Create a version snapshot before submission

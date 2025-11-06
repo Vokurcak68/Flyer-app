@@ -1,7 +1,7 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Request, Res, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Request, Res, NotFoundException } from '@nestjs/common';
 import { Response } from 'express';
 import { PromoImagesService } from './promo-images.service';
-import { CreatePromoImageDto, PromoImageFilterDto } from './dto';
+import { CreatePromoImageDto, UpdatePromoImageDto, PromoImageFilterDto } from './dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -46,6 +46,13 @@ export class PromoImagesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   findOne(@Param('id') id: string) {
     return this.promoImagesService.findOne(id);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('supplier', 'admin')
+  update(@Param('id') id: string, @Body() dto: UpdatePromoImageDto, @Request() req: any) {
+    return this.promoImagesService.update(id, dto, req.user.userId, req.user.role);
   }
 
   @Delete(':id')

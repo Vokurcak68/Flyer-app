@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreatePromoImageDto, PromoImageFilterDto } from './dto';
+import { CreatePromoImageDto, UpdatePromoImageDto, PromoImageFilterDto } from './dto';
 
 @Injectable()
 export class PromoImagesService {
@@ -103,6 +103,52 @@ export class PromoImagesService {
     }
 
     return promoImage;
+  }
+
+  async update(id: string, dto: UpdatePromoImageDto, userId: string, userRole: string) {
+    const promoImage = await this.findOne(id);
+
+    // Admin can update any promo image, suppliers can only update their own
+    if (userRole !== 'admin' && promoImage.supplierId !== userId) {
+      throw new ForbiddenException('You can only update your own promo images');
+    }
+
+    // Verify brand access if brandId is being changed (skip for admin)
+    if (dto.brandId && userRole !== 'admin') {
+      const hasAccess = await this.prisma.userBrand.findFirst({
+        where: {
+          userId,
+          brandId: dto.brandId,
+        },
+      });
+
+      if (!hasAccess) {
+        throw new ForbiddenException('You do not have access to this brand');
+      }
+    }
+
+    // Prepare update data
+    const updateData: any = {};
+
+    if (dto.name !== undefined) updateData.name = dto.name;
+    if (dto.defaultSize !== undefined) updateData.defaultSize = dto.defaultSize;
+    if (dto.brandId !== undefined) updateData.brandId = dto.brandId;
+    if (dto.isForEndUsers !== undefined) updateData.isForEndUsers = dto.isForEndUsers;
+    if (dto.fillDate !== undefined) updateData.fillDate = dto.fillDate;
+
+    // Handle image update if provided
+    if (dto.imageData && dto.imageMimeType) {
+      updateData.imageData = Buffer.from(dto.imageData, 'base64');
+      updateData.imageMimeType = dto.imageMimeType;
+    }
+
+    return this.prisma.promoImage.update({
+      where: { id },
+      data: updateData,
+      include: {
+        brand: true,
+      },
+    });
   }
 
   async remove(id: string, userId: string, userRole: string) {

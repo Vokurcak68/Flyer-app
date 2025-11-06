@@ -589,16 +589,19 @@ export class ApprovalsService {
           if (slot.slotPosition >= 0 && slot.slotPosition < 8) {
             // Format product with icon URLs if present
             let formattedProduct = slot.product;
-            if (slot.product && slot.product.icons) {
+            if (slot.product) {
               formattedProduct = {
                 ...slot.product,
-                icons: slot.product.icons.map((productIcon: any) => ({
+                brandName: slot.product.brand?.name,
+                brandColor: slot.product.brand?.color,
+                icons: slot.product.icons ? slot.product.icons.map((productIcon: any) => ({
                   id: productIcon.icon.id,
                   name: productIcon.icon.name,
                   imageUrl: `${baseUrl}/api/icons/${productIcon.icon.id}/image`,
+                  isEnergyClass: productIcon.icon.isEnergyClass,
                   position: productIcon.position,
                   icon: productIcon.icon, // Keep full icon object for PDF generation
-                })),
+                })) : [],
               };
             }
 

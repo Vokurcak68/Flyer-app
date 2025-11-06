@@ -180,9 +180,10 @@ export class FlyersController {
 
     const products = Array.from(productsMap.values());
 
-    // Validate all products
+    // Validate all products with actionId filter
     const validationErrors = await this.mssqlService.validateFlyerProducts(
       products,
+      flyer.actionId,
     );
 
     return {

@@ -25,6 +25,36 @@ export class CreatePromoImageDto {
   fillDate?: boolean;
 }
 
+export class UpdatePromoImageDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  imageData?: string; // Base64 encoded promo image
+
+  @IsString()
+  @IsOptional()
+  imageMimeType?: string; // e.g., 'image/jpeg', 'image/png'
+
+  @IsEnum(['single', 'horizontal', 'square', 'full_page', 'footer', 'header_2x1', 'header_2x2'])
+  @IsOptional()
+  defaultSize?: 'single' | 'horizontal' | 'square' | 'full_page' | 'footer' | 'header_2x1' | 'header_2x2';
+
+  @IsString()
+  @IsOptional()
+  brandId?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isForEndUsers?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  fillDate?: boolean;
+}
+
 export class PromoImageFilterDto {
   @IsUUID()
   @IsOptional()

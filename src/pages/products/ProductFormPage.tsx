@@ -202,8 +202,6 @@ export const ProductFormPage: React.FC = () => {
       sessionStorage.removeItem('copyProductImage');
       sessionStorage.removeItem('copyProductImageMimeType');
       console.log('SessionStorage vyčištěn');
-    } else if (brands.length > 0 && !formData.brandId) {
-      setFormData(prev => ({ ...prev, brandId: brands[0].id }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product, brands, searchParams.get('copyFrom')]);
@@ -968,6 +966,7 @@ export const ProductFormPage: React.FC = () => {
                       updatedAt: '',
                     } as Product}
                     customImageUrl={imagePreview}
+                    brandColor={brands.find(b => b.id === formData.brandId)?.color}
                   />
               </div>
             </div>

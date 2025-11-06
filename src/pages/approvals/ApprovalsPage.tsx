@@ -61,6 +61,9 @@ export const ApprovalsPage: React.FC = () => {
                     )}
                   </div>
                   <div className="text-sm text-gray-600 space-y-1">
+                    {approval.flyer?.actionName && (
+                      <div className="font-medium text-blue-700">Akce: {approval.flyer.actionName}</div>
+                    )}
                     <div>Platnost: {approval.flyer ? `${formatDate(approval.flyer.validFrom)} - ${formatDate(approval.flyer.validTo)}` : 'N/A'}</div>
                     <div>Stránek: {approval.flyer?.pages.length || 0}</div>
                     <div>Odesláno: {formatDate(approval.createdAt)}</div>

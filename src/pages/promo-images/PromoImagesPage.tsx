@@ -1,6 +1,6 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Upload, Image as ImageIcon, Search } from 'lucide-react';
+import { Plus, Trash2, Edit, Upload, Image as ImageIcon, Search } from 'lucide-react';
 import { promoImagesService } from '../../services/promoImagesService';
 import { brandsService } from '../../services/brandsService';
 import { useAuthStore } from '../../store/authStore';
@@ -14,6 +14,7 @@ export const PromoImagesPage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuthStore();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [editingPromoImage, setEditingPromoImage] = useState<any | null>(null);
   const [uploadName, setUploadName] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -62,6 +63,23 @@ export const PromoImagesPage: React.FC = () => {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { name?: string; image?: File; defaultSize?: 'single' | 'horizontal' | 'square' | 'full_page' | 'footer' | 'header_2x1' | 'header_2x2'; brandId?: string; isForEndUsers?: boolean; fillDate?: boolean } }) =>
+      promoImagesService.updatePromoImage(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['promo-images', user?.role] });
+      setIsUploadModalOpen(false);
+      setEditingPromoImage(null);
+      setUploadName('');
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setSelectedSize('single');
+      setSelectedBrandId('');
+      setIsForEndUsers(false);
+      setFillDate(false);
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => promoImagesService.deletePromoImage(id),
     onSuccess: () => {
@@ -92,10 +110,13 @@ export const PromoImagesPage: React.FC = () => {
       alert('Prosím zadejte název obrázku');
       return;
     }
-    if (!selectedFile) {
+
+    // For new promo image, file is required
+    if (!editingPromoImage && !selectedFile) {
       alert('Prosím vyberte soubor');
       return;
     }
+
     if (!selectedBrandId || selectedBrandId.trim() === '') {
       alert('Prosím vyberte značku');
       return;
@@ -108,14 +129,41 @@ export const PromoImagesPage: React.FC = () => {
       return;
     }
 
-    await uploadMutation.mutateAsync({
-      name: uploadName,
-      image: selectedFile,
-      defaultSize: selectedSize,
-      brandId: selectedBrandId,
-      isForEndUsers,
-      fillDate,
-    });
+    if (editingPromoImage) {
+      // Update existing promo image
+      await updateMutation.mutateAsync({
+        id: editingPromoImage.id,
+        data: {
+          name: uploadName,
+          image: selectedFile || undefined,
+          defaultSize: selectedSize,
+          brandId: selectedBrandId,
+          isForEndUsers,
+          fillDate,
+        },
+      });
+    } else {
+      // Create new promo image
+      await uploadMutation.mutateAsync({
+        name: uploadName,
+        image: selectedFile!,
+        defaultSize: selectedSize,
+        brandId: selectedBrandId,
+        isForEndUsers,
+        fillDate,
+      });
+    }
+  };
+
+  const handleEdit = (promoImage: any) => {
+    setEditingPromoImage(promoImage);
+    setUploadName(promoImage.name);
+    setSelectedSize(promoImage.defaultSize);
+    setSelectedBrandId(promoImage.brandId || '');
+    setIsForEndUsers(promoImage.isForEndUsers || false);
+    setFillDate(promoImage.fillDate || false);
+    setPreviewUrl(getPromoImageUrl(promoImage.id));
+    setIsUploadModalOpen(true);
   };
 
   const handleDelete = async (id: string, name: string) => {
@@ -250,9 +298,17 @@ export const PromoImagesPage: React.FC = () => {
                 {/* Actions */}
                 <div className="flex space-x-2">
                   <button
+                    onClick={() => handleEdit(promoImage)}
+                    className="text-blue-600 hover:text-blue-900 p-2 rounded hover:bg-blue-50"
+                    title="Editovat"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
                     onClick={() => handleDelete(promoImage.id, promoImage.name)}
                     className="text-red-600 hover:text-red-900 p-2 rounded hover:bg-red-50"
                     disabled={deleteMutation.isPending}
+                    title="Smazat"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -263,11 +319,12 @@ export const PromoImagesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Upload Modal */}
+      {/* Upload/Edit Modal */}
       <Modal
         isOpen={isUploadModalOpen}
         onClose={() => {
           setIsUploadModalOpen(false);
+          setEditingPromoImage(null);
           setUploadName('');
           setSelectedFile(null);
           setPreviewUrl(null);
@@ -275,7 +332,7 @@ export const PromoImagesPage: React.FC = () => {
           setIsForEndUsers(false);
           setFillDate(false);
         }}
-        title="Nahrát promo obrázek"
+        title={editingPromoImage ? 'Editovat promo obrázek' : 'Nahrát promo obrázek'}
       >
         <div className="space-y-4">
           <div>
@@ -423,10 +480,10 @@ export const PromoImagesPage: React.FC = () => {
             </Button>
             <Button
               onClick={handleUpload}
-              isLoading={uploadMutation.isPending}
-              disabled={!uploadName.trim() || !selectedFile || !selectedBrandId}
+              isLoading={uploadMutation.isPending || updateMutation.isPending}
+              disabled={!uploadName.trim() || (!editingPromoImage && !selectedFile) || !selectedBrandId}
             >
-              Nahrát
+              {editingPromoImage ? 'Uložit změny' : 'Nahrát'}
             </Button>
           </div>
         </div>

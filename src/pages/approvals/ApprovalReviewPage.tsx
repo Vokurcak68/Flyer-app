@@ -198,6 +198,8 @@ export const ApprovalReviewPage: React.FC = () => {
             page={currentPage}
             pageIndex={currentPageIndex}
             isEditable={false}
+            validFrom={flyer.validFrom}
+            validTo={flyer.validTo}
           />
         </div>
       </div>

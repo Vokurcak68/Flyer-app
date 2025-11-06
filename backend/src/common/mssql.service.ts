@@ -36,6 +36,7 @@ export class MssqlService implements OnModuleInit {
     ean: string,
     price?: number,
     originalPrice?: number,
+    actionId?: number,
   ): Promise<{
     found: boolean;
     pricesMatch: boolean;
@@ -51,12 +52,22 @@ export class MssqlService implements OnModuleInit {
         await this.onModuleInit();
       }
 
-      const result = await this.pool
+      let query = 'SELECT TOP 1 Barcode, AkcniCena, CenaMO, KodDodavatele, Znacka, Kategorie FROM hvw_vok_Oresi_EletakNew_NC WHERE Barcode = @ean';
+
+      // Add ActionID filter if provided
+      if (actionId !== undefined) {
+        query += ' AND IDDoklad = @actionId';
+      }
+
+      const request = this.pool
         .request()
-        .input('ean', sql.VarChar(50), ean)
-        .query(
-          'SELECT TOP 1 BarCode, AkcniCena, CenaMO, KodDodavatele, Znacka, Kategorie FROM hvw_vok_Oresi_EletakNew WHERE BarCode = @ean',
-        );
+        .input('ean', sql.VarChar(50), ean);
+
+      if (actionId !== undefined) {
+        request.input('actionId', sql.Int, actionId);
+      }
+
+      const result = await request.query(query);
 
       if (result.recordset.length === 0) {
         return { found: false, pricesMatch: false };
@@ -99,6 +110,7 @@ export class MssqlService implements OnModuleInit {
       price: number;
       originalPrice?: number;
     }>,
+    actionId?: number,
   ): Promise<
     Array<{
       productId: string;
@@ -120,6 +132,7 @@ export class MssqlService implements OnModuleInit {
         product.eanCode,
         product.price,
         product.originalPrice,
+        actionId,
       );
 
       if (!validation.found) {
