@@ -317,11 +317,13 @@ enum SlotType {
 }
 
 enum PromoSlotSize {
-  single     // 1 slot (1x1)
-  horizontal // 2 slots horizontal (2x1)
-  square     // 4 slots (2x2)
-  full_page  // 8 slots (full page)
-  footer     // Footer (2cm height, full width) - only for page 1
+  single      // 1 slot (1x1)
+  horizontal  // 2 slots horizontal (2x1)
+  square      // 4 slots (2x2)
+  full_page   // 8 slots (full page)
+  footer      // Footer (2cm height, full width) - only for page 1
+  header_2x1  // Header 2 slots horizontal (2x1) - top row
+  header_2x2  // Header 4 slots (2x2) - top two rows
 }
 
 // ========================================

@@ -10,8 +10,8 @@ export class CreatePromoImageDto {
   @IsString()
   imageMimeType: string; // e.g., 'image/jpeg', 'image/png'
 
-  @IsEnum(['single', 'horizontal', 'square', 'full_page', 'footer'])
-  defaultSize: 'single' | 'horizontal' | 'square' | 'full_page' | 'footer';
+  @IsEnum(['single', 'horizontal', 'square', 'full_page', 'footer', 'header_2x1', 'header_2x2'])
+  defaultSize: 'single' | 'horizontal' | 'square' | 'full_page' | 'footer' | 'header_2x1' | 'header_2x2';
 
   @IsString()
   brandId: string;

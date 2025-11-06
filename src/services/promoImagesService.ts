@@ -12,7 +12,7 @@ export const promoImagesService = {
     return response.data;
   },
 
-  async createPromoImage(data: { name: string; image: File; defaultSize: 'single' | 'horizontal' | 'square' | 'full_page' | 'footer'; brandId: string; isForEndUsers?: boolean; fillDate?: boolean }): Promise<PromoImage> {
+  async createPromoImage(data: { name: string; image: File; defaultSize: 'single' | 'horizontal' | 'square' | 'full_page' | 'footer' | 'header_2x1' | 'header_2x2'; brandId: string; isForEndUsers?: boolean; fillDate?: boolean }): Promise<PromoImage> {
     // Convert File to Base64
     const imageData = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();

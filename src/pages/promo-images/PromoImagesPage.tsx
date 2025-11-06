@@ -17,7 +17,7 @@ export const PromoImagesPage: React.FC = () => {
   const [uploadName, setUploadName] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [selectedSize, setSelectedSize] = useState<'single' | 'horizontal' | 'square' | 'full_page' | 'footer'>('single');
+  const [selectedSize, setSelectedSize] = useState<'single' | 'horizontal' | 'square' | 'full_page' | 'footer' | 'header_2x1' | 'header_2x2'>('single');
   const [selectedBrandId, setSelectedBrandId] = useState<string>('');
   const [isForEndUsers, setIsForEndUsers] = useState(false);
   const [fillDate, setFillDate] = useState(false);
@@ -47,7 +47,7 @@ export const PromoImagesPage: React.FC = () => {
   }, [promoImages, searchQuery]);
 
   const uploadMutation = useMutation({
-    mutationFn: (data: { name: string; image: File; defaultSize: 'single' | 'horizontal' | 'square' | 'full_page' | 'footer'; brandId: string; isForEndUsers?: boolean; fillDate?: boolean }) =>
+    mutationFn: (data: { name: string; image: File; defaultSize: 'single' | 'horizontal' | 'square' | 'full_page' | 'footer' | 'header_2x1' | 'header_2x2'; brandId: string; isForEndUsers?: boolean; fillDate?: boolean }) =>
       promoImagesService.createPromoImage(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['promo-images', user?.role] });
@@ -148,6 +148,8 @@ export const PromoImagesPage: React.FC = () => {
       case 'square': return '4 sloty (2×2)';
       case 'full_page': return 'Celá stránka';
       case 'footer': return 'Patička';
+      case 'header_2x1': return 'Hlavička 2 sloty (2×1)';
+      case 'header_2x2': return 'Hlavička 4 sloty (2×2)';
       default: return size;
     }
   };
@@ -315,7 +317,7 @@ export const PromoImagesPage: React.FC = () => {
             </label>
             <select
               value={selectedSize}
-              onChange={(e) => setSelectedSize(e.target.value as 'single' | 'horizontal' | 'square' | 'full_page' | 'footer')}
+              onChange={(e) => setSelectedSize(e.target.value as 'single' | 'horizontal' | 'square' | 'full_page' | 'footer' | 'header_2x1' | 'header_2x2')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="single">1 slot (1×1)</option>
@@ -323,6 +325,8 @@ export const PromoImagesPage: React.FC = () => {
               <option value="square">4 sloty čtverec (2×2)</option>
               <option value="full_page">Celá stránka (8 slotů)</option>
               <option value="footer">Patička (2cm výška, celá šířka)</option>
+              <option value="header_2x1">Hlavička 2 sloty (2×1)</option>
+              <option value="header_2x2">Hlavička 4 sloty (2×2)</option>
             </select>
             <p className="mt-1 text-xs text-gray-500">
               Vyberte velikost podle rozměrů vašeho obrázku, aby se nedeformoval

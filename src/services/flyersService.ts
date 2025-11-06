@@ -5,8 +5,8 @@ export interface CreateFlyerDTO {
   name: string;
   actionId?: number;
   actionName?: string;
-  validFrom: string;
-  validTo: string;
+  validFrom?: string;
+  validTo?: string;
 }
 
 export interface UpdateFlyerDTO {

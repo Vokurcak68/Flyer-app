@@ -8,7 +8,7 @@ export type PreApprovalStatus = 'pending' | 'pre_approved' | 'rejected';
 
 export type SlotType = 'empty' | 'product' | 'promo';
 
-export type PromoSlotSize = 'single' | 'horizontal' | 'square' | 'full_page' | 'footer';
+export type PromoSlotSize = 'single' | 'horizontal' | 'square' | 'full_page' | 'footer' | 'header_2x1' | 'header_2x2';
 
 export interface User {
   id: string;

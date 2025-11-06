@@ -254,8 +254,8 @@ export const FlyerEditorPage: React.FC = () => {
           name: data.name,
           actionId: data.actionId,
           actionName: data.actionName,
-          validFrom: data.validFrom,
-          validTo: data.validTo,
+          validFrom: data.validFrom || undefined,
+          validTo: data.validTo || undefined,
         });
         console.log('🔍 Flyer created with ID:', created.id);
 
@@ -263,8 +263,8 @@ export const FlyerEditorPage: React.FC = () => {
           name: data.name,
           actionId: data.actionId,
           actionName: data.actionName,
-          validFrom: data.validFrom,
-          validTo: data.validTo,
+          validFrom: data.validFrom || undefined,
+          validTo: data.validTo || undefined,
           pages: preparePagesForAPI(data.pages)
         });
         console.log('🔍 Flyer updated, returning with wasNew flag');
@@ -280,8 +280,8 @@ export const FlyerEditorPage: React.FC = () => {
         name: data.name,
         actionId: data.actionId,
         actionName: data.actionName,
-        validFrom: data.validFrom,
-        validTo: data.validTo,
+        validFrom: data.validFrom || undefined,
+        validTo: data.validTo || undefined,
         pages: preparePagesForAPI(data.pages),
       });
     },
@@ -723,14 +723,14 @@ export const FlyerEditorPage: React.FC = () => {
                   label="Platnost od"
                   value={flyerData.validFrom}
                   onChange={(e) => setFlyerData({ ...flyerData, validFrom: e.target.value })}
-                  disabled={isLocked}
+                  disabled={true}
                 />
                 <Input
                   type="date"
                   label="Platnost do"
                   value={flyerData.validTo}
                   onChange={(e) => setFlyerData({ ...flyerData, validTo: e.target.value })}
-                  disabled={isLocked}
+                  disabled={true}
                 />
               </div>
 
