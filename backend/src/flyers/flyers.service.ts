@@ -1546,6 +1546,18 @@ export class FlyersService {
             }
 
             if (canUsePromoImage) {
+              // Validate header promo placement - only on first page and top row
+              if (slotData.promoSize === 'header_2x1' || slotData.promoSize === 'header_2x2') {
+                if (page.pageNumber !== 1) {
+                  console.log(`[syncPages] Header promo ${slotData.promoImageId} can only be placed on first page`);
+                  continue; // Skip this slot
+                }
+                if (position !== 0 && position !== 1) {
+                  console.log(`[syncPages] Header promo ${slotData.promoImageId} can only be placed in top row (slots 0-1)`);
+                  continue; // Skip this slot
+                }
+              }
+
               await this.prisma.flyerPageSlot.updateMany({
                 where: {
                   pageId: createdPage.id,

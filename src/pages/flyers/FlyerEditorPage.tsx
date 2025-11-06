@@ -459,6 +459,17 @@ export const FlyerEditorPage: React.FC = () => {
         alert('Promo "Patička" pouze do patičky na stránce 1');
         return;
       }
+      // Validate header promos - only on first page and top row
+      if (promo.defaultSize === 'header_2x1' || promo.defaultSize === 'header_2x2') {
+        if (pageIndex !== 0) {
+          alert('Hlavičky lze vložit pouze na první stránku');
+          return;
+        }
+        if (slotIndex !== 0 && slotIndex !== 1) {
+          alert('Hlavičky lze vložit pouze do horního řádku (první dva sloty)');
+          return;
+        }
+      }
       newSlots[slotIndex] = { type: 'promo', promoImage: promo, promoSize: promo.defaultSize };
     } else return;
 
