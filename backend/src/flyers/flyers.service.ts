@@ -615,6 +615,76 @@ export class FlyersService {
       throw new BadRequestException('Only draft flyers can be updated');
     }
 
+    // Handle pages if provided (must be done before calculating validTo)
+    if (updateFlyerDto.pages) {
+      await this.syncPages(id, updateFlyerDto.pages, userId, userRole);
+    }
+
+    // For end users, automatically calculate validTo from source flyers
+    let calculatedValidTo = updateFlyerDto.validTo;
+    if (userRole === UserRole.end_user) {
+      // Fetch all product IDs from the current flyer
+      const flyerWithProducts = await this.prisma.flyer.findUnique({
+        where: { id },
+        include: {
+          pages: {
+            include: {
+              slots: {
+                select: {
+                  productId: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      // Collect all unique product IDs
+      const productIds: string[] = [];
+      flyerWithProducts?.pages.forEach(page => {
+        page.slots.forEach(slot => {
+          if (slot.productId && !productIds.includes(slot.productId)) {
+            productIds.push(slot.productId);
+          }
+        });
+      });
+
+      // Find all ACTIVE flyers that contain these products and have validTo set
+      if (productIds.length > 0) {
+        const sourceFlyersWithDates = await this.prisma.flyer.findMany({
+          where: {
+            id: { not: id }, // Exclude current flyer
+            status: FlyerStatus.active, // Only active flyers
+            validTo: { not: null },
+            pages: {
+              some: {
+                slots: {
+                  some: {
+                    productId: { in: productIds },
+                  },
+                },
+              },
+            },
+          },
+          select: {
+            validTo: true,
+          },
+        });
+
+        // Find the minimum (earliest) validTo date from source flyers
+        if (sourceFlyersWithDates.length > 0) {
+          const validToDates = sourceFlyersWithDates
+            .map(f => f.validTo)
+            .filter(date => date !== null) as Date[];
+
+          if (validToDates.length > 0) {
+            const minDate = new Date(Math.min(...validToDates.map(d => d.getTime())));
+            calculatedValidTo = minDate.toISOString().split('T')[0];
+          }
+        }
+      }
+    }
+
     // Prepare data object
     const data: any = {
       name: updateFlyerDto.name,
@@ -623,8 +693,8 @@ export class FlyersService {
       validFrom: updateFlyerDto.validFrom
         ? new Date(updateFlyerDto.validFrom)
         : undefined,
-      validTo: updateFlyerDto.validTo
-        ? new Date(updateFlyerDto.validTo)
+      validTo: calculatedValidTo
+        ? new Date(calculatedValidTo)
         : undefined,
       lastEditedAt: new Date(),
     };
@@ -633,11 +703,6 @@ export class FlyersService {
     if (updateFlyerDto.pdfData && updateFlyerDto.pdfMimeType) {
       data.pdfData = updateFlyerDto.pdfData;
       data.pdfMimeType = updateFlyerDto.pdfMimeType;
-    }
-
-    // Handle pages if provided
-    if (updateFlyerDto.pages) {
-      await this.syncPages(id, updateFlyerDto.pages, userId, userRole);
     }
 
     const updated = await this.prisma.flyer.update({

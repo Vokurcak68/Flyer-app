@@ -94,6 +94,11 @@ export const FlyerEditorPage: React.FC = () => {
   const [showValidationModal, setShowValidationModal] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
 
+  // Price filter states for end users
+  const [minPrice, setMinPrice] = useState<number>(0);
+  const [maxPrice, setMaxPrice] = useState<number>(10000);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
+
   // Sensors for drag and drop - use PointerSensor with distance to prevent conflicts
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -120,7 +125,7 @@ export const FlyerEditorPage: React.FC = () => {
     name: 'Nový leták',
     actionId: undefined as number | undefined,
     actionName: undefined as string | undefined,
-    validFrom: '',
+    validFrom: isNew && user?.role === 'end_user' ? new Date().toISOString().split('T')[0] : '',
     validTo: '',
     pages: [{
       id: '1',
@@ -618,7 +623,28 @@ export const FlyerEditorPage: React.FC = () => {
     )
   );
 
-  const filteredProducts = allProducts;
+  // Calculate min/max price from all products for end users
+  useEffect(() => {
+    if (isMyFlyers && allProducts.length > 0) {
+      const prices = allProducts.map(p => Number(p.price));
+      const min = Math.floor(Math.min(...prices));
+      const max = Math.ceil(Math.max(...prices));
+      setMinPrice(min);
+      setMaxPrice(max);
+      // Only reset range if it's the initial state
+      if (priceRange[0] === 0 && priceRange[1] === 10000) {
+        setPriceRange([min, max]);
+      }
+    }
+  }, [allProducts, isMyFlyers, priceRange]);
+
+  // Filter products by price range for end users
+  const filteredProducts = isMyFlyers
+    ? allProducts.filter(p => {
+        const price = Number(p.price);
+        return price >= priceRange[0] && price <= priceRange[1];
+      })
+    : allProducts;
 
   const filteredPromoImages = promoImages.filter(p =>
     p.name.toLowerCase().includes(promoSearch.toLowerCase())
@@ -688,35 +714,38 @@ export const FlyerEditorPage: React.FC = () => {
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Zpět
                   </Button>
-                  <div className="flex-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Název akce
-                    </label>
-                    <select
-                      value={flyerData.actionId || ''}
-                      onChange={(e) => {
-                        const selectedActionId = e.target.value ? parseInt(e.target.value) : undefined;
-                        const selectedAction = actions.find(a => a.id === selectedActionId);
-                        setFlyerData({
-                          ...flyerData,
-                          actionId: selectedActionId,
-                          actionName: selectedAction?.name,
-                          // Auto-fill validity dates from selected action
-                          validFrom: selectedAction?.validFrom || flyerData.validFrom,
-                          validTo: selectedAction?.validTo || flyerData.validTo,
-                        });
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      disabled={isLocked}
-                    >
-                      <option value="">Vyberte akci</option>
-                      {actions.map((action) => (
-                        <option key={action.id} value={action.id}>
-                          {action.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* Hide action selector for end users */}
+                  {user?.role !== 'end_user' && (
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Název akce
+                      </label>
+                      <select
+                        value={flyerData.actionId || ''}
+                        onChange={(e) => {
+                          const selectedActionId = e.target.value ? parseInt(e.target.value) : undefined;
+                          const selectedAction = actions.find(a => a.id === selectedActionId);
+                          setFlyerData({
+                            ...flyerData,
+                            actionId: selectedActionId,
+                            actionName: selectedAction?.name,
+                            // Auto-fill validity dates from selected action
+                            validFrom: selectedAction?.validFrom || flyerData.validFrom,
+                            validTo: selectedAction?.validTo || flyerData.validTo,
+                          });
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        disabled={isLocked}
+                      >
+                        <option value="">Vyberte akci</option>
+                        {actions.map((action) => (
+                          <option key={action.id} value={action.id}>
+                            {action.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
                 <Input
                   value={flyerData.name}
@@ -828,6 +857,91 @@ export const FlyerEditorPage: React.FC = () => {
                       onChange={(e) => setSearch(e.target.value)}
                       className="mb-4 flex-shrink-0"
                     />
+
+                    {/* Price Range Filter - only for end users */}
+                    {isMyFlyers && allProducts.length > 0 && (
+                      <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200 flex-shrink-0">
+                        <div className="flex justify-between items-center mb-2">
+                          <label className="text-sm font-medium text-gray-700">
+                            Cenové rozpětí
+                          </label>
+                          <span className="text-sm text-gray-600">
+                            {priceRange[0]} - {priceRange[1]} Kč
+                          </span>
+                        </div>
+                        <div className="relative pt-1 pb-4">
+                          <input
+                            type="range"
+                            min={minPrice}
+                            max={maxPrice}
+                            value={priceRange[0]}
+                            onChange={(e) => {
+                              const value = Number(e.target.value);
+                              if (value <= priceRange[1]) {
+                                setPriceRange([value, priceRange[1]]);
+                              }
+                            }}
+                            className="absolute w-full h-2 bg-transparent appearance-none cursor-pointer pointer-events-none"
+                            style={{
+                              zIndex: priceRange[0] > maxPrice - 100 ? 5 : 3,
+                            }}
+                          />
+                          <input
+                            type="range"
+                            min={minPrice}
+                            max={maxPrice}
+                            value={priceRange[1]}
+                            onChange={(e) => {
+                              const value = Number(e.target.value);
+                              if (value >= priceRange[0]) {
+                                setPriceRange([priceRange[0], value]);
+                              }
+                            }}
+                            className="absolute w-full h-2 bg-transparent appearance-none cursor-pointer pointer-events-none"
+                            style={{
+                              zIndex: 4,
+                            }}
+                          />
+                          <div className="relative h-2 bg-gray-300 rounded-lg">
+                            <div
+                              className="absolute h-2 bg-blue-600 rounded-lg"
+                              style={{
+                                left: `${((priceRange[0] - minPrice) / (maxPrice - minPrice)) * 100}%`,
+                                right: `${100 - ((priceRange[1] - minPrice) / (maxPrice - minPrice)) * 100}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-500 text-center">
+                          Zobrazeno {filteredProducts.length} z {allProducts.length} produktů
+                        </div>
+                        <style>{`
+                          input[type="range"]::-webkit-slider-thumb {
+                            appearance: none;
+                            pointer-events: all;
+                            width: 18px;
+                            height: 18px;
+                            background-color: #2563eb;
+                            border-radius: 50%;
+                            cursor: pointer;
+                            border: 2px solid white;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                          }
+                          input[type="range"]::-moz-range-thumb {
+                            appearance: none;
+                            pointer-events: all;
+                            width: 18px;
+                            height: 18px;
+                            background-color: #2563eb;
+                            border-radius: 50%;
+                            cursor: pointer;
+                            border: 2px solid white;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                          }
+                        `}</style>
+                      </div>
+                    )}
+
                     <div className="space-y-2 flex-1 overflow-y-auto">
                       {(!isMyFlyers && isLoadingProducts && productPage === 1) ? (
                         <div className="flex justify-center py-8">
