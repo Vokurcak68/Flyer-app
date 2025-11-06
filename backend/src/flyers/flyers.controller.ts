@@ -228,10 +228,26 @@ export class FlyersController {
       throw new NotFoundException('Flyer PDF not found');
     }
 
+    // For end users, generate PDF dynamically with black headers
+    // For suppliers/approvers, use the stored PDF with brand colors
+    let pdfData = flyer.pdfData;
+
+    if (req.user.role === 'end_user') {
+      console.log('🔵 Generating PDF for end_user with black headers');
+      // Get full flyer data for PDF generation
+      const flyerForPdf = await this.flyersService.findOneForPdf(
+        id,
+        req.user.userId,
+        req.user.role,
+      );
+      // Generate PDF with end_user role (black headers)
+      pdfData = await this.pdfService.generateFlyerPDF(flyerForPdf, 'end_user');
+    }
+
     res.set('Content-Type', flyer.pdfMimeType);
     res.set('Content-Disposition', `attachment; filename="${flyer.name}.pdf"`);
-    res.set('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
-    res.send(flyer.pdfData);
+    res.set('Cache-Control', req.user.role === 'end_user' ? 'no-cache' : 'public, max-age=31536000');
+    res.send(pdfData);
   }
 
   @Post(':id/generate-pdf')
