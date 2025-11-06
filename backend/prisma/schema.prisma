@@ -63,6 +63,7 @@ model Brand {
   name      String
   logoData  Bytes?   @map("logo_data")
   logoMimeType String? @map("logo_mime_type")
+  color     String?  // Hex color code for brand (e.g., #FF5733)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

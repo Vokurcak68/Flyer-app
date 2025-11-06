@@ -28,6 +28,7 @@ export interface Brand {
   name: string;
   logoData?: Buffer | null;
   logoMimeType?: string | null;
+  color?: string | null;
   createdAt: string;
   _count?: {
     products: number;
@@ -74,6 +75,7 @@ export interface Product {
   description?: string;
   brandId: string;
   brandName?: string;
+  brandColor?: string | null;
   categoryId?: string;
   categoryName?: string;
   subcategoryId?: string;

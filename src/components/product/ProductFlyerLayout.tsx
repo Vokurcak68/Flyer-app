@@ -1,10 +1,12 @@
 import React from 'react';
 import { Product } from '../../types';
+import { useAuthStore } from '../../store/authStore';
 
 interface ProductFlyerLayoutProps {
   product: Product;
   className?: string;
   customImageUrl?: string; // For preview before saving
+  brandColor?: string | null; // Brand color from product
 }
 
 /**
@@ -14,18 +16,24 @@ interface ProductFlyerLayoutProps {
 export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
   product,
   className = '',
-  customImageUrl
+  customImageUrl,
+  brandColor
 }) => {
+  const { user } = useAuthStore();
+
   const getProductImageUrl = (id: string) => {
     if (customImageUrl) return customImageUrl;
     const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
     return `${API_URL}/products/${id}/image`;
   };
 
+  // Use brand color for suppliers, always black for end users
+  const headerColor = user?.role === 'end_user' ? '#000000' : (brandColor || '#000000');
+
   return (
     <div className={`bg-white h-full flex flex-col overflow-hidden ${className}`}>
-      {/* Black header with brand and product name */}
-      <div className="bg-black text-white px-2 py-1.5 flex-none flex items-center justify-center gap-2">
+      {/* Header with brand color (black for end_user, brand color for others) */}
+      <div className="text-white px-2 py-1.5 flex-none flex items-center justify-center gap-2" style={{ backgroundColor: headerColor }}>
         {product.brandName && (
           <span className="font-bold text-[0.7rem] leading-tight" style={{ fontFamily: '"Vodafone Rg", "Arial Black", sans-serif' }}>
             {product.brandName}

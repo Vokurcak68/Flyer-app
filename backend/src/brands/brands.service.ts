@@ -61,7 +61,8 @@ export class BrandsService {
       name: dto.name,
       hasLogoData: !!dto.logoData,
       logoMimeType: dto.logoMimeType,
-      logoDataLength: dto.logoData?.length
+      logoDataLength: dto.logoData?.length,
+      color: dto.color
     });
 
     const data: any = {
@@ -73,6 +74,11 @@ export class BrandsService {
       data.logoData = Buffer.from(dto.logoData, 'base64');
       data.logoMimeType = dto.logoMimeType;
       console.log('✅ Logo data converted to Buffer, size:', data.logoData.length, 'bytes');
+    }
+
+    // Add color if provided
+    if (dto.color) {
+      data.color = dto.color;
     }
 
     const result = await this.prisma.brand.create({
@@ -88,7 +94,8 @@ export class BrandsService {
       name: dto.name,
       hasLogoData: !!dto.logoData,
       logoMimeType: dto.logoMimeType,
-      logoDataLength: dto.logoData?.length
+      logoDataLength: dto.logoData?.length,
+      color: dto.color
     });
 
     const brand = await this.findOne(id);
@@ -104,6 +111,11 @@ export class BrandsService {
       data.logoData = Buffer.from(dto.logoData, 'base64');
       data.logoMimeType = dto.logoMimeType;
       console.log('✅ Logo data converted to Buffer, size:', data.logoData.length, 'bytes');
+    }
+
+    // Add color if provided
+    if (dto.color !== undefined) {
+      data.color = dto.color;
     }
 
     const result = await this.prisma.brand.update({

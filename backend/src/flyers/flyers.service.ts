@@ -1158,7 +1158,7 @@ export class FlyersService {
     const flyerForPdf = await this.findOneForPdf(flyerId, userId, UserRole.supplier);
 
     // Generate and save PDF permanently
-    const pdfData = await this.pdfService.generateFlyerPDF(flyerForPdf);
+    const pdfData = await this.pdfService.generateFlyerPDF(flyerForPdf, UserRole.supplier);
 
     // Update flyer status and save PDF
     const updated = await this.prisma.flyer.update({
@@ -1607,6 +1607,7 @@ export class FlyersService {
               price: slot.product.price ? parseFloat(slot.product.price.toString()) : 0,
               originalPrice: slot.product.originalPrice ? parseFloat(slot.product.originalPrice.toString()) : null,
               brandName: slot.product.brand?.name,
+              brandColor: slot.product.brand?.color,
               icons: slot.product.icons ? slot.product.icons.map((productIcon: any) => ({
                 id: productIcon.icon.id,
                 name: productIcon.icon.name,

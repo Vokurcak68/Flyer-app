@@ -16,6 +16,7 @@ export const BrandFormPage: React.FC = () => {
     name: '',
     logoData: '',
     logoMimeType: '',
+    color: '',
   });
   const [logoPreview, setLogoPreview] = useState<string>('');
 
@@ -31,6 +32,7 @@ export const BrandFormPage: React.FC = () => {
         name: brand.name,
         logoData: '',
         logoMimeType: '',
+        color: brand.color || '',
       });
       // Set preview from API endpoint if brand has logo
       if (id) {
@@ -84,11 +86,17 @@ export const BrandFormPage: React.FC = () => {
         payload.logoMimeType = data.logoMimeType;
       }
 
+      // Include color if provided
+      if (data.color) {
+        payload.color = data.color;
+      }
+
       console.log('Saving brand with payload:', {
         name: payload.name,
         hasLogoData: !!payload.logoData,
         logoMimeType: payload.logoMimeType,
-        logoDataLength: payload.logoData?.length
+        logoDataLength: payload.logoData?.length,
+        color: payload.color
       });
 
       if (isEdit && id) {
@@ -133,6 +141,35 @@ export const BrandFormPage: React.FC = () => {
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
             />
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Barva značky
+              </label>
+              <div className="flex items-center space-x-3">
+                <input
+                  type="color"
+                  value={formData.color || '#000000'}
+                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                  className="h-10 w-20 border border-gray-300 rounded cursor-pointer"
+                />
+                <Input
+                  type="text"
+                  value={formData.color || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '' || /^#[0-9A-Fa-f]{0,6}$/.test(value)) {
+                      setFormData({ ...formData, color: value });
+                    }
+                  }}
+                  placeholder="#FF5733"
+                  className="flex-1"
+                />
+              </div>
+              <p className="mt-1 text-sm text-gray-500">
+                Tato barva se použije pro barevný pruh v hlavičce produktu
+              </p>
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

@@ -57,10 +57,10 @@ export class PdfService {
   /**
    * Generate PDF for a flyer using PDFKit with 2x4 slot-based layout
    */
-  async generateFlyerPDF(flyer: any): Promise<Buffer> {
+  async generateFlyerPDF(flyer: any, userRole?: string): Promise<Buffer> {
     return new Promise(async (resolve, reject) => {
       try {
-        this.logger.log(`Generating PDF for flyer ${flyer.id}`);
+        this.logger.log(`Generating PDF for flyer ${flyer.id} for user role: ${userRole}`);
         this.logger.log(`Flyer structure: pages count = ${flyer.pages?.length || 0}`);
 
         const filename = `flyer-${flyer.id}-${Date.now()}.pdf`;
@@ -125,7 +125,7 @@ export class PdfService {
           doc.addPage();
 
           // Render 2x4 slot grid (full bleed, no header)
-          await this.renderSlotGrid(doc, page, flyer);
+          await this.renderSlotGrid(doc, page, flyer, userRole);
         }
 
         // Finalize PDF
@@ -144,7 +144,7 @@ export class PdfService {
    * Layout with small gaps between slots (3 points ≈ 1mm)
    * Page 1: Has 2cm footer for promo image - only first row (2 slots) is smaller
    */
-  private async renderSlotGrid(doc: any, page: any, flyer: any) {
+  private async renderSlotGrid(doc: any, page: any, flyer: any, userRole?: string) {
     const startX = 0;
     const startY = 0;
     const pageWidth = 595; // A4 width in points (210mm)
@@ -224,7 +224,7 @@ export class PdfService {
         this.renderEmptySlot(doc, x, y, slotWidth, slotHeight);
       } else if (slot.type === 'product' && slot.product) {
         // Render product slot
-        await this.renderProductSlot(doc, x, y, slotWidth, slotHeight, slot.product);
+        await this.renderProductSlot(doc, x, y, slotWidth, slotHeight, slot.product, userRole);
       } else if (slot.type === 'promo' && slot.promoImage) {
         // Render promo slot (may span multiple slots)
         const spannedSlots = this.getPromoSpannedSlots(position, slot.promoSize);
@@ -264,13 +264,16 @@ export class PdfService {
    * - Left side (45% width): Image + prices
    * - Right side (55% width): Description
    */
-  private async renderProductSlot(doc: any, x: number, y: number, width: number, height: number, product: any) {
+  private async renderProductSlot(doc: any, x: number, y: number, width: number, height: number, product: any, userRole?: string) {
     const padding = 6; // Fixed 6px padding (matches px-2 in React)
 
-    // Black header - matches React: py-1.5 (6px) + text-xs (~12px) + py-1.5 (6px) = ~24px
+    // Header color: use brand color for suppliers, always black for end users
+    const headerColor = userRole === 'end_user' ? '#000000' : (product.brand?.color || '#000000');
+
+    // Header - matches React: py-1.5 (6px) + text-xs (~12px) + py-1.5 (6px) = ~24px
     const headerHeight = 24;
     doc.rect(x, y, width, headerHeight)
-       .fill('#000000');
+       .fill(headerColor);
 
     // Brand and product name in header - text-[0.7rem] = ~9px font size, centered
     // Brand is bold, name is regular, with space between them

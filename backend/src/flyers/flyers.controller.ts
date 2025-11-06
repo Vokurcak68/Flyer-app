@@ -244,7 +244,7 @@ export class FlyersController {
     );
 
     // Generate PDF (returns base64 string)
-    const pdfData = await this.pdfService.generateFlyerPDF(flyer);
+    const pdfData = await this.pdfService.generateFlyerPDF(flyer, req.user.role);
     await this.flyersService.update(
       flyerId,
       { pdfData, pdfMimeType: 'application/pdf' },

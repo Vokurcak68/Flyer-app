@@ -48,7 +48,7 @@ export const DroppableSlot: React.FC<DroppableSlotProps> = ({ id, slot, onRemove
               <X className="w-3 h-3" />
             </button>
           )}
-          <ProductFlyerLayout product={product} />
+          <ProductFlyerLayout product={product} brandColor={product.brandColor} />
         </div>
       ) : slot?.type === 'promo' && promoImage ? (
         <div className="relative h-full">
