@@ -12,6 +12,7 @@ import { BrandFormPage } from './pages/brands/BrandFormPage';
 import { CategoriesListPage } from './pages/categories/CategoriesListPage';
 import { CategoryFormPage } from './pages/categories/CategoryFormPage';
 import { PromoImagesPage } from './pages/promo-images/PromoImagesPage';
+import { PromoImageFormPage } from './pages/promo-images/PromoImageFormPage';
 import { FlyersListPage } from './pages/flyers/FlyersListPage';
 import { FlyerEditorPage } from './pages/flyers/FlyerEditorPage';
 import { ActiveFlyersPage } from './pages/flyers/ActiveFlyersPage';
@@ -185,6 +186,22 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['supplier', 'admin']}>
                 <PromoImagesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="promo-images/new"
+            element={
+              <ProtectedRoute allowedRoles={['supplier', 'admin']}>
+                <PromoImageFormPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="promo-images/:id/edit"
+            element={
+              <ProtectedRoute allowedRoles={['supplier', 'admin']}>
+                <PromoImageFormPage />
               </ProtectedRoute>
             }
           />

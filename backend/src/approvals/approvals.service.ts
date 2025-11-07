@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApprovalStatus, PreApprovalStatus, FlyerStatus } from '@prisma/client';
+import { emailService } from '../services/emailService';
 
 @Injectable()
 export class ApprovalsService {
@@ -90,6 +91,29 @@ export class ApprovalsService {
       throw new BadRequestException('This pre-approval has already been processed');
     }
 
+    // Get flyer, supplier, and approver information for email
+    const flyer = await this.prisma.flyer.findUnique({
+      where: { id: flyerId },
+      include: {
+        supplier: {
+          select: {
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    const approver = await this.prisma.user.findUnique({
+      where: { id: approverId },
+      select: {
+        firstName: true,
+        lastName: true,
+        email: true,
+      },
+    });
+
     // Update pre-approval status
     if (status === PreApprovalStatus.pre_approved) {
       const updated = await this.prisma.approval.update({
@@ -107,6 +131,22 @@ export class ApprovalsService {
       });
 
       await this.updatePreApprovalWorkflow(flyerId);
+
+      // Send email to supplier
+      if (flyer && flyer.supplier && approver) {
+        const flyerUrl = `${process.env.FRONTEND_URL}/flyers/${flyerId}`;
+        await emailService.sendFlyerApprovedEmail(
+          flyer.supplier.email,
+          `${flyer.supplier.firstName} ${flyer.supplier.lastName}`,
+          flyer.name,
+          `${approver.firstName} ${approver.lastName}`,
+          comment || '',
+          flyerUrl,
+          true // isPreApproval
+        );
+        console.log(`📧 Sent pre-approval email to ${flyer.supplier.email}`);
+      }
+
       return updated;
     } else if (status === PreApprovalStatus.rejected) {
       // If pre-approver rejects, flyer goes back to draft
@@ -132,6 +172,21 @@ export class ApprovalsService {
           rejectionReason: comment || 'Rejected by pre-approver without comment',
         },
       });
+
+      // Send rejection email to supplier
+      if (flyer && flyer.supplier && approver) {
+        const flyerUrl = `${process.env.FRONTEND_URL}/flyers/${flyerId}`;
+        await emailService.sendFlyerRejectedEmail(
+          flyer.supplier.email,
+          `${flyer.supplier.firstName} ${flyer.supplier.lastName}`,
+          flyer.name,
+          `${approver.firstName} ${approver.lastName}`,
+          comment || 'Rejected by pre-approver without comment',
+          flyerUrl,
+          true // isPreApproval
+        );
+        console.log(`📧 Sent pre-rejection email to ${flyer.supplier.email}`);
+      }
 
       return updated;
     }
@@ -178,6 +233,29 @@ export class ApprovalsService {
       throw new BadRequestException('This approval has already been processed');
     }
 
+    // Get flyer, supplier, and approver information for email
+    const flyer = await this.prisma.flyer.findUnique({
+      where: { id: flyerId },
+      include: {
+        supplier: {
+          select: {
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    const approver = await this.prisma.user.findUnique({
+      where: { id: approverId },
+      select: {
+        firstName: true,
+        lastName: true,
+        email: true,
+      },
+    });
+
     // Update workflow
     if (status === ApprovalStatus.approved) {
       // Update approval record
@@ -196,6 +274,22 @@ export class ApprovalsService {
       });
 
       await this.updateApprovalWorkflow(flyerId);
+
+      // Send approval email to supplier
+      if (flyer && flyer.supplier && approver) {
+        const flyerUrl = `${process.env.FRONTEND_URL}/flyers/${flyerId}`;
+        await emailService.sendFlyerApprovedEmail(
+          flyer.supplier.email,
+          `${flyer.supplier.firstName} ${flyer.supplier.lastName}`,
+          flyer.name,
+          `${approver.firstName} ${approver.lastName}`,
+          comment || '',
+          flyerUrl,
+          false // isPreApproval
+        );
+        console.log(`📧 Sent final approval email to ${flyer.supplier.email}`);
+      }
+
       return updated;
     } else if (status === ApprovalStatus.rejected) {
       // Update approval record first
@@ -222,6 +316,21 @@ export class ApprovalsService {
           rejectionReason: comment || 'Rejected without comment',
         },
       });
+
+      // Send rejection email to supplier
+      if (flyer && flyer.supplier && approver) {
+        const flyerUrl = `${process.env.FRONTEND_URL}/flyers/${flyerId}`;
+        await emailService.sendFlyerRejectedEmail(
+          flyer.supplier.email,
+          `${flyer.supplier.firstName} ${flyer.supplier.lastName}`,
+          flyer.name,
+          `${approver.firstName} ${approver.lastName}`,
+          comment || 'Rejected without comment',
+          flyerUrl,
+          false // isPreApproval
+        );
+        console.log(`📧 Sent final rejection email to ${flyer.supplier.email}`);
+      }
 
       return updated;
     }

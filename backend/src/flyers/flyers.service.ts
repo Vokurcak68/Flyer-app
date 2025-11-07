@@ -22,6 +22,7 @@ import {
 } from './dto';
 import { FlyerStatus, UserRole, FlyerActionType, SlotType } from '@prisma/client';
 import { MssqlService } from '../common/mssql.service';
+import { emailService } from '../services/emailService';
 
 @Injectable()
 export class FlyersService {
@@ -1345,11 +1346,33 @@ export class FlyersService {
     const workflow = await this.approvalsService.createApprovalWorkflow(flyerId, 1);
     console.log(`✅ Created approval workflow: ${workflow.id}`);
 
-    // Create approval requests for all approvers
+    // Get the supplier information for email
+    const supplier = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { firstName: true, lastName: true, email: true },
+    });
+
+    // Create approval requests for all approvers and send notification emails
     for (const approver of approvers) {
       try {
         const approval = await this.approvalsService.requestApproval(flyerId, approver.id);
         console.log(`✅ Created approval request for ${approver.email}: ${approval.id}`);
+
+        // Send email notification to approver
+        if (supplier) {
+          const approvalUrl = `${process.env.FRONTEND_URL}/approvals/${approval.id}`;
+          const isPreApproval = approver.role === UserRole.pre_approver;
+
+          await emailService.sendFlyerSubmittedEmail(
+            approver.email,
+            `${approver.firstName} ${approver.lastName}`,
+            updated.name,
+            `${supplier.firstName} ${supplier.lastName}`,
+            approvalUrl,
+            isPreApproval
+          );
+          console.log(`📧 Sent notification email to ${approver.email}`);
+        }
       } catch (error) {
         console.error(`❌ Failed to create approval for ${approver.email}:`, error.message);
       }
@@ -1612,22 +1635,53 @@ export class FlyersService {
           if (slotData.type === 'product' && slotData.productId) {
             // Verify product access based on user role
             let canUseProduct = false;
+            let productHasEnergyClass = false;
 
             if (userRole === UserRole.supplier) {
               // Supplier: product must belong to them
               const dbProduct = await this.prisma.product.findUnique({
                 where: { id: slotData.productId },
+                include: {
+                  icons: {
+                    include: {
+                      icon: true,
+                    },
+                  },
+                },
               });
               canUseProduct = dbProduct && dbProduct.supplierId === userId;
+              // Check if product has energy class icon
+              if (dbProduct) {
+                productHasEnergyClass = dbProduct.icons.some(pi => pi.icon.isEnergyClass === true);
+              }
             } else if (userRole === UserRole.end_user) {
               // End user: product must exist (frontend already filters to show only products from active flyers)
               const dbProduct = await this.prisma.product.findUnique({
                 where: { id: slotData.productId },
+                include: {
+                  icons: {
+                    include: {
+                      icon: true,
+                    },
+                  },
+                },
               });
               canUseProduct = !!dbProduct;
+              // Check if product has energy class icon
+              if (dbProduct) {
+                productHasEnergyClass = dbProduct.icons.some(pi => pi.icon.isEnergyClass === true);
+              }
             }
 
-            if (canUseProduct) {
+            // Validate that product has energy class icon
+            if (canUseProduct && !productHasEnergyClass) {
+              console.log(`[syncPages] Product ${slotData.productId} rejected: missing energy class icon`);
+              throw new BadRequestException(
+                `Produkt nemůže být vložen do letáku. Produkt musí mít přiřazenou ikonu s energetickým štítkem.`
+              );
+            }
+
+            if (canUseProduct && productHasEnergyClass) {
               await this.prisma.flyerPageSlot.updateMany({
                 where: {
                   pageId: createdPage.id,
@@ -1638,6 +1692,8 @@ export class FlyersService {
                   productId: slotData.productId,
                 },
               });
+            } else if (canUseProduct && !productHasEnergyClass) {
+              console.log(`[syncPages] Product ${slotData.productId} skipped: missing energy class icon`);
             } else {
               console.log(`[syncPages] Product ${slotData.productId} not accessible for user ${userId} (role: ${userRole})`);
             }

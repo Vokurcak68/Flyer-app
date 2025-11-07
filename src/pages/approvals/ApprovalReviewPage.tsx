@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { FlyerPageView } from '../../components/flyer/FlyerPageView';
 import { formatDate } from '../../utils/helpers';
 import { useAuthStore } from '../../store/authStore';
+import { AppFooter } from '../../components/layout/AppFooter';
 
 export const ApprovalReviewPage: React.FC = () => {
   const { approvalId } = useParams<{ approvalId: string }>();
@@ -113,7 +114,7 @@ export const ApprovalReviewPage: React.FC = () => {
   const currentPage = flyer.pages[currentPageIndex];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-3">
+    <div className="max-w-7xl mx-auto px-4 py-3 pb-16">
       {/* Main Content - 2 column layout */}
       <div className="grid grid-cols-5 gap-6 mb-6">
         {/* Left Column: Info & Actions */}
@@ -223,6 +224,8 @@ export const ApprovalReviewPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <AppFooter />
     </div>
   );
 };

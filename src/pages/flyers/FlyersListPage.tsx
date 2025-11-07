@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { formatDate } from '../../utils/helpers';
+import { AppFooter } from '../../components/layout/AppFooter';
 
 type TabType = 'active' | 'archive';
 
@@ -134,7 +135,7 @@ export const FlyersListPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">{getTitle()}</h1>
@@ -310,6 +311,8 @@ export const FlyersListPage: React.FC = () => {
           ))}
         </div>
       )}
+
+      <AppFooter />
     </div>
   );
 };

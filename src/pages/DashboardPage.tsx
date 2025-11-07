@@ -8,6 +8,7 @@ import { flyersService } from '../services/flyersService';
 import { approvalsService } from '../services/approvalsService';
 import { Button } from '../components/ui/Button';
 import { api } from '../services/api';
+import { AppFooter } from '../components/layout/AppFooter';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -52,7 +53,7 @@ const SupplierDashboard: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Přehled dodavatele</h1>
         <p className="mt-2 text-gray-600">Spravujte své produkty a letáky</p>
@@ -156,6 +157,8 @@ const SupplierDashboard: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      <AppFooter />
     </div>
   );
 };
@@ -183,7 +186,7 @@ const ApproverDashboard: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
           {isPreApprover ? 'Přehled předschvalovatele' : 'Přehled schvalovatele'}
@@ -260,6 +263,8 @@ const ApproverDashboard: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      <AppFooter />
     </div>
   );
 };
@@ -289,7 +294,7 @@ const EndUserDashboard: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Vítejte</h1>
         <p className="mt-2 text-gray-600">Procházejte aktivní letáky a vytvářejte vlastní</p>
@@ -366,6 +371,8 @@ const EndUserDashboard: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      <AppFooter />
     </div>
   );
 };
@@ -397,7 +404,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Administrátorský přehled</h1>
         <p className="mt-2 text-gray-600">Spravujte uživatele a značky systému</p>
@@ -474,6 +481,8 @@ const AdminDashboard: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      <AppFooter />
     </div>
   );
 };

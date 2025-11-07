@@ -46,12 +46,10 @@ export class ApprovalsController {
     if (parts.length !== 2) {
       throw new Error('Invalid approval ID format');
     }
-    const [flyerId, approverId] = parts;
+    const [flyerId] = parts;
 
-    // Verify the approver is the logged-in user
-    if (approverId !== req.user.userId) {
-      throw new Error('Unauthorized to approve this flyer');
-    }
+    // Use the logged-in user's ID as the approverId
+    const approverId = req.user.userId;
 
     return this.approvalsService.processApproval(
       flyerId,
@@ -73,12 +71,10 @@ export class ApprovalsController {
     if (parts.length !== 2) {
       throw new Error('Invalid approval ID format');
     }
-    const [flyerId, approverId] = parts;
+    const [flyerId] = parts;
 
-    // Verify the approver is the logged-in user
-    if (approverId !== req.user.userId) {
-      throw new Error('Unauthorized to reject this flyer');
-    }
+    // Use the logged-in user's ID as the approverId
+    const approverId = req.user.userId;
 
     return this.approvalsService.processApproval(
       flyerId,
@@ -100,12 +96,10 @@ export class ApprovalsController {
     if (parts.length !== 2) {
       throw new Error('Invalid approval ID format');
     }
-    const [flyerId, approverId] = parts;
+    const [flyerId] = parts;
 
-    // Verify the pre-approver is the logged-in user
-    if (approverId !== req.user.userId) {
-      throw new Error('Unauthorized to pre-approve this flyer');
-    }
+    // Use the logged-in user's ID as the approverId
+    const approverId = req.user.userId;
 
     return this.approvalsService.processPreApproval(
       flyerId,
@@ -127,12 +121,10 @@ export class ApprovalsController {
     if (parts.length !== 2) {
       throw new Error('Invalid approval ID format');
     }
-    const [flyerId, approverId] = parts;
+    const [flyerId] = parts;
 
-    // Verify the pre-approver is the logged-in user
-    if (approverId !== req.user.userId) {
-      throw new Error('Unauthorized to pre-reject this flyer');
-    }
+    // Use the logged-in user's ID as the approverId
+    const approverId = req.user.userId;
 
     return this.approvalsService.processPreApproval(
       flyerId,
