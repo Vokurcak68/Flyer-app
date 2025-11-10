@@ -2,7 +2,7 @@ import React from 'react';
 
 export const AppFooter: React.FC = () => {
   return (
-    <footer className="mt-12 pt-6 border-t border-gray-200">
+    <footer className="mt-3 pt-1.5 border-t border-gray-200">
       <div className="flex justify-between items-center text-sm text-gray-500">
         <div className="flex items-center gap-2">
           <span className="text-lg">©</span>

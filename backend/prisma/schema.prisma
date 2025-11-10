@@ -152,6 +152,7 @@ model Icon {
   imageData     Bytes    @map("image_data")
   imageMimeType String   @map("image_mime_type")
   isEnergyClass Boolean  @default(false) @map("is_energy_class") // Energy class icons are 2x wider
+  useBrandColor Boolean  @default(false) @map("use_brand_color") // If true, icon background will use product's brand color
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 

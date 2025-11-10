@@ -322,6 +322,7 @@ export class FlyersService {
                             id: true,
                             name: true,
                             isEnergyClass: true,
+                            useBrandColor: true,
                           },
                         },
                         position: true,
@@ -406,6 +407,7 @@ export class FlyersService {
                             id: true,
                             name: true,
                             isEnergyClass: true,
+                            useBrandColor: true,
                             imageData: true, // INCLUDED for PDF generation
                             imageMimeType: true, // INCLUDED for PDF generation
                           },
@@ -524,6 +526,7 @@ export class FlyersService {
                             id: true,
                             name: true,
                             isEnergyClass: true,
+                            useBrandColor: true,
                             // imageData: excluded for performance - frontend uses URL
                             // imageMimeType: excluded for performance
                           },
@@ -1812,6 +1815,7 @@ export class FlyersService {
                 name: productIcon.icon.name,
                 imageUrl: `${baseUrl}/api/icons/${productIcon.icon.id}/image`,
                 isEnergyClass: productIcon.icon.isEnergyClass,
+                useBrandColor: productIcon.icon.useBrandColor,
                 position: productIcon.position,
                 icon: productIcon.icon, // Keep full icon object for PDF generation
               })) : [],

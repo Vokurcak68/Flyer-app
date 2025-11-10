@@ -72,12 +72,17 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
                   return (
                     <div key={slotIndex} className="h-6 flex items-center">
                       {icon && (
-                        <img
-                          src={icon.imageUrl}
-                          alt={icon.name}
-                          className={`h-6 object-contain ${icon.isEnergyClass ? 'w-12' : 'w-6'}`}
-                          title={icon.name}
-                        />
+                        <div
+                          className={`h-6 flex items-center justify-center ${icon.isEnergyClass ? 'w-12' : 'w-6'}`}
+                          style={icon.useBrandColor && brandColor ? { backgroundColor: brandColor } : undefined}
+                        >
+                          <img
+                            src={icon.imageUrl}
+                            alt={icon.name}
+                            className={`h-6 object-contain ${icon.isEnergyClass ? 'w-12' : 'w-6'}`}
+                            title={icon.name}
+                          />
+                        </div>
                       )}
                     </div>
                   );

@@ -884,7 +884,7 @@ export const FlyerEditorPage: React.FC = () => {
             </div>
 
             {/* Products & Promos with Tabs */}
-            <div className="bg-white rounded-lg shadow flex flex-col overflow-hidden max-h-[680px]">
+            <div className="bg-white rounded-lg shadow flex flex-col overflow-hidden max-h-[600px]">
               {/* Tabs */}
               <div className="flex border-b">
                 <button

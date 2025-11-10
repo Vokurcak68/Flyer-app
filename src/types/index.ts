@@ -42,6 +42,7 @@ export interface Icon {
   imageUrl: string;
   imageMimeType?: string;
   isEnergyClass?: boolean; // Energy class icons are displayed 2x wider
+  useBrandColor?: boolean; // If true, icon background will use product's brand color
   categories?: Array<{
     category: {
       id: string;
@@ -64,6 +65,7 @@ export interface ProductIcon {
   name: string;
   imageUrl: string;
   isEnergyClass?: boolean; // Energy class icons are displayed 2x wider
+  useBrandColor?: boolean; // If true, icon background will use product's brand color
   position: number;
 }
 

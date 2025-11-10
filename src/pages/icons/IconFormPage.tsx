@@ -20,6 +20,7 @@ export const IconFormPage: React.FC = () => {
     imageData: '',
     imageMimeType: '',
     isEnergyClass: false,
+    useBrandColor: false,
     categoryIds: [] as string[],
     brandIds: [] as string[],
   });
@@ -48,6 +49,7 @@ export const IconFormPage: React.FC = () => {
         imageData: '',
         imageMimeType: '',
         isEnergyClass: icon.isEnergyClass || false,
+        useBrandColor: icon.useBrandColor || false,
         categoryIds: icon.categories?.map((ic: any) => ic.category.id) || [],
         brandIds: icon.brands?.map((ib: any) => ib.brand.id) || [],
       });
@@ -96,6 +98,7 @@ export const IconFormPage: React.FC = () => {
       const payload: any = {
         name: data.name,
         isEnergyClass: data.isEnergyClass,
+        useBrandColor: data.useBrandColor,
         categoryIds: data.categoryIds,
         brandIds: data.brandIds,
       };
@@ -164,11 +167,13 @@ export const IconFormPage: React.FC = () => {
                 <div className="flex-shrink-0">
                   {imagePreview ? (
                     <div className="relative">
-                      <img
-                        src={imagePreview}
-                        alt="Náhled"
-                        className="h-32 w-32 object-contain border-2 border-gray-300 rounded"
-                      />
+                      <div className="h-32 w-32 bg-gray-100 rounded border-2 border-gray-300 flex items-center justify-center p-2">
+                        <img
+                          src={imagePreview}
+                          alt="Náhled"
+                          className="max-h-full max-w-full object-contain"
+                        />
+                      </div>
                       <button
                         type="button"
                         onClick={() => {
@@ -194,11 +199,11 @@ export const IconFormPage: React.FC = () => {
                     className="hidden"
                     id="icon-image"
                   />
-                  <label htmlFor="icon-image">
-                    <Button type="button" variant="outline" onClick={() => document.getElementById('icon-image')?.click()}>
+                  <label htmlFor="icon-image" className="cursor-pointer">
+                    <span className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                       <Upload className="w-4 h-4 mr-2" />
                       {imagePreview ? 'Změnit obrázek' : 'Vybrat obrázek'}
-                    </Button>
+                    </span>
                   </label>
                   <p className="mt-2 text-sm text-gray-500">
                     Podporované formáty: PNG, JPG, SVG. Doporučená velikost: 64x64 px.
@@ -207,17 +212,35 @@ export const IconFormPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="isEnergyClass"
-                checked={formData.isEnergyClass}
-                onChange={(e) => setFormData({ ...formData, isEnergyClass: e.target.checked })}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label htmlFor="isEnergyClass" className="ml-2 block text-sm text-gray-900">
-                Ikona energetické třídy
-              </label>
+            <div className="space-y-3">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="isEnergyClass"
+                  checked={formData.isEnergyClass}
+                  onChange={(e) => setFormData({ ...formData, isEnergyClass: e.target.checked })}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="isEnergyClass" className="ml-2 block text-sm text-gray-900">
+                  Ikona energetické třídy
+                </label>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="useBrandColor"
+                  checked={formData.useBrandColor}
+                  onChange={(e) => setFormData({ ...formData, useBrandColor: e.target.checked })}
+                  className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                />
+                <label htmlFor="useBrandColor" className="ml-2 block text-sm text-gray-900">
+                  Použít barvu značky jako pozadí
+                </label>
+              </div>
+              <p className="text-sm text-gray-500 ml-6 -mt-2">
+                Ikona se zobrazí s podbarvením podle barvy značky produktu
+              </p>
             </div>
 
             <div>

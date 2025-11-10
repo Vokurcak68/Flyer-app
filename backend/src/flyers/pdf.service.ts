@@ -445,7 +445,17 @@ export class PdfService {
             // Regular icons are square (24px × 24px)
             const iconWidth = icon.isEnergyClass ? iconSize * 2 : iconSize;
 
-            // Draw icon at the fixed slot position
+            // Draw background color if useBrandColor is true and brand color is available
+            this.logger.debug(`Icon ${icon.name || 'unknown'}: useBrandColor=${icon.useBrandColor}, brand.color=${product.brand?.color}`);
+            if (icon.useBrandColor && product.brand?.color) {
+              this.logger.debug(`Drawing background color ${product.brand.color} for icon ${icon.name}`);
+              doc.save(); // Save graphics state
+              doc.rect(iconsX, slotY, iconWidth, iconSize)
+                .fill(product.brand.color);
+              doc.restore(); // Restore graphics state
+            }
+
+            // Draw icon at the fixed slot position (PNG with transparency will show the background)
             doc.image(pngIconBuffer, iconsX, slotY, {
               fit: [iconWidth, iconSize],
               align: 'left',

@@ -898,7 +898,7 @@ export const ProductFormPage: React.FC = () => {
                     return (
                       <div
                         key={iconId}
-                        className="relative w-16 h-16 border-2 border-blue-500 rounded-lg p-1 bg-blue-50"
+                        className="relative w-16 h-16 border-2 border-blue-500 rounded-lg p-1 bg-gray-100"
                       >
                         <img
                           src={icon.imageUrl}
@@ -982,6 +982,7 @@ export const ProductFormPage: React.FC = () => {
                           name: icon.name,
                           imageUrl: icon.imageUrl,
                           isEnergyClass: icon.isEnergyClass,
+                          useBrandColor: icon.useBrandColor,
                           position: index,
                         } : null;
                       }).filter(Boolean) as any,
@@ -1153,7 +1154,7 @@ export const ProductFormPage: React.FC = () => {
                         }
                       `}
                     >
-                      <div className="aspect-square flex items-center justify-center">
+                      <div className="aspect-square flex items-center justify-center bg-gray-100 rounded">
                         <img
                           src={icon.imageUrl}
                           alt={icon.name}

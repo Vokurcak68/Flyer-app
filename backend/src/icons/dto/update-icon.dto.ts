@@ -18,6 +18,10 @@ export class UpdateIconDto {
   isEnergyClass?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  useBrandColor?: boolean;
+
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
   categoryIds?: string[];

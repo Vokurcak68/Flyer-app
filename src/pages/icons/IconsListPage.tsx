@@ -119,11 +119,13 @@ export const IconsListPage: React.FC = () => {
               {filteredIcons.map((icon: any) => (
                 <tr key={icon.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <img
-                      src={icon.imageUrl}
-                      alt={icon.name}
-                      className="h-8 w-auto object-contain"
-                    />
+                    <div className="bg-gray-100 rounded p-1 inline-block">
+                      <img
+                        src={icon.imageUrl}
+                        alt={icon.name}
+                        className="h-8 w-auto object-contain"
+                      />
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{icon.name}</div>
