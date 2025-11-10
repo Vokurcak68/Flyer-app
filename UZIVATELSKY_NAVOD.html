@@ -480,6 +480,19 @@
                 <div class="feature">
                     <h3>O aplikaci</h3>
                     <p>Systém pro správu letáků je webová aplikace určená pro tvorbu, správu a schvalování propagačních letáků. Aplikace podporuje kompletní workflow od vytvoření letáku, přes jeho schvalování až po finální distribuci.</p>
+
+                    <div class="alert alert-success" style="margin-top: 20px;">
+                        <strong>🎉 Nové ve verzi 3.1.2:</strong>
+                        <ul style="margin-top: 10px; margin-left: 20px;">
+                            <li><strong>Brand management s barvami</strong> - Značky mohou mít vlastní barvy pro produkty</li>
+                            <li><strong>Pre-approval workflow</strong> - Dvoustupňové schvalování letáků</li>
+                            <li><strong>Automatické datum v patičce</strong> - Footer může automaticky zobrazit datum platnosti</li>
+                            <li><strong>Černé hlavičky pro end usery</strong> - Jednotný vzhled PDF pro koncové uživatele</li>
+                            <li><strong>Zjednodušené vytváření letáků</strong> - Auto-nastavení dat pro end usery</li>
+                            <li><strong>Cenový filtr</strong> - Dual-handle slider pro filtrování produktů podle ceny</li>
+                            <li><strong>Vylepšené PDF generování</strong> - 1:1 layout s frontendem, lepší fonty</li>
+                        </ul>
+                    </div>
                 </div>
 
                 <div class="feature">
@@ -651,6 +664,11 @@
                 <div class="feature">
                     <h3>3. Správa značek (Brands)</h3>
 
+                    <div class="alert alert-info">
+                        <strong>💡 Nová funkcionalita:</strong> Značky nyní podporují vlastní barvy pro produkty! Každá značka může mít přiřazenou barvu, která se použije pro barevné zvýraznění v letácích.
+                    </div>
+
+                    <h4 style="margin: 20px 0 10px 0;">3.1 Vytvoření nové značky</h4>
                     <div class="step">
                         <span class="step-number">1</span>
                         V menu klikněte na <strong>Značky</strong>
@@ -661,15 +679,32 @@
                     </div>
                     <div class="step">
                         <span class="step-number">3</span>
-                        Vyplňte název značky
+                        Vyplňte povinné údaje:
+                        <ul style="margin-top: 10px; margin-left: 30px;">
+                            <li>Název značky</li>
+                            <li>Barva značky (hex kód, např. #FF5733) - <strong>VOLITELNÉ</strong></li>
+                        </ul>
                     </div>
                     <div class="step">
                         <span class="step-number">4</span>
-                        Nahrajte logo značky (PNG s průhledným pozadím doporučeno)
+                        Klikněte na <span class="button btn-success">Uložit</span>
                     </div>
-                    <div class="step">
-                        <span class="step-number">5</span>
-                        Uložte změny
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Screenshot: Správa značek</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Stránka se seznamem značek s tlačítky pro úpravy a mazání]
+                        </div>
+                    </div>
+
+                    <h4 style="margin: 20px 0 10px 0;">3.2 Jak fungují barvy značek</h4>
+                    <div class="alert alert-success">
+                        <strong>✅ Automatické barevné zvýraznění:</strong>
+                        <ul style="margin-top: 10px; margin-left: 20px;">
+                            <li><strong>Pro Suppliery/Pre-approvery/Approvery:</strong> Produkty se zobrazují s barvou jejich značky - např. Samsung produkty v modré, Apple produkty v šedé</li>
+                            <li><strong>Pro End Usery:</strong> Všechny produkty mají černé hlavičky (bez barevného zvýraznění) pro jednotný vzhled</li>
+                            <li><strong>V PDF:</strong> PDF se generuje podle role - buď s barvami (pro internal users) nebo černě (pro end users)</li>
+                        </ul>
                     </div>
                 </div>
 
@@ -692,18 +727,55 @@
                         <span class="step-number">4</span>
                         Vyberte typ velikosti:
                         <ul style="margin-top: 10px; margin-left: 30px;">
-                            <li><strong>HEADER</strong> - pro hlavičku letáku</li>
-                            <li><strong>FOOTER</strong> - pro patičku letáku</li>
-                            <li><strong>PRODUCT_SIZE</strong> - velikost produktu</li>
+                            <li><strong>single</strong> - jeden slot (1x1)</li>
+                            <li><strong>horizontal</strong> - horizontální (2x1)</li>
+                            <li><strong>square</strong> - čtverec (2x2)</li>
+                            <li><strong>full_page</strong> - celá stránka</li>
+                            <li><strong>footer</strong> - patička letáku (pouze strana 1)</li>
+                            <li><strong>header_2x1</strong> - hlavička horizontální (pouze horní řada strana 1)</li>
+                            <li><strong>header_2x2</strong> - hlavička čtvercová (pouze horní řada strana 1)</li>
                         </ul>
                     </div>
                     <div class="step">
                         <span class="step-number">5</span>
-                        Vyberte značky, ke kterým se promo obrázek vztahuje
+                        Vyberte značku, ke které se promo obrázek vztahuje (volitelné)
                     </div>
                     <div class="step">
                         <span class="step-number">6</span>
-                        Nahrajte obrázek
+                        Zaškrtněte "Pro end usery", pokud má být dostupný pro end usery
+                    </div>
+                    <div class="step">
+                        <span class="step-number">7</span>
+                        <strong>NOVÉ:</strong> Pro footer promo obrázky zaškrtněte "Vyplnit datum", pokud chcete automaticky vložit datum platnosti do pravého horního rohu patičky
+                    </div>
+                    <div class="step">
+                        <span class="step-number">8</span>
+                        Nahrajte obrázek (JPG, PNG, max 5MB)
+                    </div>
+                    <div class="step">
+                        <span class="step-number">9</span>
+                        Klikněte na <span class="button btn-success">Uložit</span>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>💡 Automatické datum v patičce:</strong> Pokud zaškrtnete "Vyplnit datum" u footer promo obrázku, systém automaticky zobrazí datum platnosti letáku v českém formátu (DD.MM.YYYY) v pravém horním rohu footeru.
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Screenshot: Formulář pro vytvoření promo obrázku</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Formulář s všemi poli včetně checkboxu "Vyplnit datum"]
+                        </div>
+                    </div>
+
+                    <h4 style="margin: 20px 0 10px 0;">4.1 Omezení pro header promo</h4>
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Důležité omezení:</strong> Header promo obrázky (header_2x1 a header_2x2) lze použít pouze:
+                        <ul style="margin-top: 10px; margin-left: 20px;">
+                            <li>Na <strong>první stránce</strong> letáku</li>
+                            <li>V <strong>horní řadě</strong> (první 2 sloty)</li>
+                            <li>Jinak se chovají jako běžné promo obrázky</li>
+                        </ul>
                     </div>
                 </div>
 
@@ -733,32 +805,15 @@
                         Klikněte na <span class="button btn-success">Vytvořit</span>
                     </div>
 
-                    <div class="mockup">
-                        <div class="mockup-header">📄 Editor letáku - přehled</div>
-                        <div style="display: flex; gap: 20px;">
-                            <div style="flex: 2;">
-                                <strong>Náhled stránky</strong>
-                                <div class="page-preview">
-                                    <div class="product-grid">
-                                        <div class="product-slot">🖼️</div>
-                                        <div class="product-slot">🖼️</div>
-                                        <div class="product-slot">🖼️</div>
-                                        <div class="product-slot">🖼️</div>
-                                        <div class="product-slot"></div>
-                                        <div class="product-slot"></div>
-                                        <div class="product-slot"></div>
-                                        <div class="product-slot"></div>
-                                    </div>
-                                    <div class="page-number">Strana 1</div>
-                                </div>
-                            </div>
-                            <div style="flex: 1;">
-                                <strong>Seznam produktů</strong>
-                                <div class="card">Produkt 1</div>
-                                <div class="card">Produkt 2</div>
-                                <div class="card">Produkt 3</div>
-                            </div>
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Screenshot: Editor letáku - přehled</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Editor letáku s levým panelem (náhled stránky), pravým panelem (produkty/promos), horní lištou (název letáku, datum od/do, tlačítka Uložit/Odeslat)]
                         </div>
+                    </div>
+
+                    <div class="alert alert-success">
+                        <strong>✅ Barevné produkty pro Suppliery:</strong> V editoru vidíte produkty s barvami podle jejich značek (např. Samsung modře, Apple šedě). End users vidí všechny produkty černě.
                     </div>
 
                     <h4 style="margin: 20px 0 10px 0;">5.2 Přidání stránky</h4>
@@ -997,35 +1052,11 @@
                         Zobrazí se seznam letáků čekajících na předschválení
                     </div>
 
-                    <div class="mockup">
-                        <div class="mockup-header">📋 Letáky čekající na předschválení</div>
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Název</th>
-                                    <th>Supplier</th>
-                                    <th>Platnost</th>
-                                    <th>Stav</th>
-                                    <th>Akce</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Letní akce 2025</td>
-                                    <td>Jan Novák</td>
-                                    <td>01.06.2025 - 30.06.2025</td>
-                                    <td><span class="status-badge status-pending">Čeká na předschválení</span></td>
-                                    <td><button class="button btn-primary btn-sm">Zobrazit</button></td>
-                                </tr>
-                                <tr>
-                                    <td>Black Friday 2025</td>
-                                    <td>Marie Svobodová</td>
-                                    <td>15.11.2025 - 30.11.2025</td>
-                                    <td><span class="status-badge status-pending">Čeká na předschválení</span></td>
-                                    <td><button class="button btn-primary btn-sm">Zobrazit</button></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Screenshot: Seznam letáků čekajících na předschválení</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Stránka Schvalování s kartami letáků obsahujícími název, platnost, odesláno, tlačítko "Zobrazit detail"]
+                        </div>
                     </div>
                 </div>
 
@@ -1158,30 +1189,15 @@
                         Zobrazí se letáky, které prošly předschválením
                     </div>
 
-                    <div class="mockup">
-                        <div class="mockup-header">📋 Letáky čekající na finální schválení</div>
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Název</th>
-                                    <th>Supplier</th>
-                                    <th>Pre-approver</th>
-                                    <th>Platnost</th>
-                                    <th>Stav</th>
-                                    <th>Akce</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Letní akce 2025</td>
-                                    <td>Jan Novák</td>
-                                    <td>Petra Dvořáková</td>
-                                    <td>01.06.2025 - 30.06.2025</td>
-                                    <td><span class="status-badge status-pending">Čeká na schválení</span></td>
-                                    <td><button class="button btn-primary btn-sm">Zobrazit</button></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Screenshot: Seznam letáků čekajících na finální schválení (Approver)</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Stránka Schvalování s kartami letáků, včetně informace o předschválení a předschvalovateli (modrý badge "Předschváleno")]
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>💡 Předschválení:</strong> Approvery vidí u letáků informaci o předschválení včetně jména pre-approvera a data předschválení. Modrý badge "Předschváleno" indikuje, že leták prošel prvním kontrolním kolem.
                     </div>
                 </div>
 
@@ -1282,12 +1298,88 @@
                     Návod pro End Usery
                 </h2>
 
+                <div class="alert alert-success">
+                    <strong>🎉 Nové v3.1.2:</strong> End users nyní mohou snadno vytvářet vlastní letáky s automatickým nastavením dat a cenovým filtrem pro rychlý výběr produktů!
+                </div>
+
                 <div class="feature">
-                    <h3>1. Zobrazení aktivních letáků</h3>
+                    <h3>1. Vytvoření vlastního letáku (NOVÉ!)</h3>
+
+                    <h4 style="margin: 20px 0 10px 0;">1.1 Zjednodušený proces</h4>
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        V menu klikněte na <strong>Moje letáky</strong>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Klikněte na <span class="button btn-primary">+ Nový leták</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Vyplňte pouze <strong>název letáku</strong>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        <strong>Datum od</strong> se automaticky nastaví na dnešní datum ✅
+                    </div>
+                    <div class="step">
+                        <span class="step-number">5</span>
+                        <strong>Datum do</strong> se automaticky vypočítá po přidání produktů ✅
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>💡 Automatický výpočet data:</strong> Systém automaticky najde nejnižší (nejbližší) datum platnosti ze všech aktivních letáků, které obsahují produkty, které jste vložili do vašeho letáku.
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Screenshot: Formulář pro nový leták (End User)</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Formulář bez pole "Název akce", datum od automaticky vyplněné, datum do disabled]
+                        </div>
+                    </div>
+
+                    <h4 style="margin: 20px 0 10px 0;">1.2 Cenový filtr produktů (NOVÉ!)</h4>
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        V editoru letáku najdete v pravém panelu <strong>posuvník cenového rozpětí</strong>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Přetáhněte levý a pravý ukazatel pro nastavení min a max ceny
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Produkty se automaticky filtrují podle zadaného cenového rozpětí
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        Pod sliderem vidíte počet zobrazených produktů
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Screenshot: Cenový filtr v editoru</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Dual-handle slider s filtrem 0 - 10000 Kč a textem "Zobrazeno X z Y produktů"]
+                        </div>
+                    </div>
+
+                    <div class="alert alert-success">
+                        <strong>✅ Výhody cenového filtru:</strong>
+                        <ul style="margin-top: 10px; margin-left: 20px;">
+                            <li>Rychlé filtrování produktů podle ceny</li>
+                            <li>Snadné vytváření letáků pro specifické cenové kategorie</li>
+                            <li>Přehledný dual-handle slider pro nastavení min/max</li>
+                            <li>Okamžitá aktualizace seznamu produktů</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>2. Zobrazení aktivních letáků</h3>
 
                     <div class="step">
                         <span class="step-number">1</span>
-                        Po přihlášení automaticky vidíte <strong>Aktivní letáky</strong>
+                        V menu klikněte na <strong>Aktivní letáky</strong>
                     </div>
                     <div class="step">
                         <span class="step-number">2</span>
@@ -1297,6 +1389,10 @@
                             <li>Které jsou v období platnosti</li>
                             <li>Které patří k vašim značkám (pokud máte přiřazené)</li>
                         </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Černé hlavičky:</strong> Pro jednotný vzhled se všem end userům zobrazují produkty s černými hlavičkami (bez barevného zvýraznění podle značek).
                     </div>
 
                     <div class="mockup">
@@ -1325,7 +1421,7 @@
                 </div>
 
                 <div class="feature">
-                    <h3>2. Zobrazení PDF letáku</h3>
+                    <h3>3. Zobrazení PDF letáku</h3>
 
                     <div class="step">
                         <span class="step-number">1</span>
@@ -1333,7 +1429,7 @@
                     </div>
                     <div class="step">
                         <span class="step-number">2</span>
-                        PDF se otevře v novém okně
+                        PDF se otevře v novém okně s <strong>černými hlavičkami</strong> (jednotný vzhled pro end usery)
                     </div>
                     <div class="step">
                         <span class="step-number">3</span>
@@ -1345,10 +1441,21 @@
                             <li>Sdílet</li>
                         </ul>
                     </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Screenshot: PDF s černými hlavičkami (End User)</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: PDF leták s produkty s černými hlavičkami místo barevných]
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>💡 Automatické datum v patičce:</strong> Pokud footer obsahuje promo obrázek s nastaveným "Vyplnit datum", zobrazí se automaticky datum platnosti v pravém horním rohu footeru.
+                    </div>
                 </div>
 
                 <div class="feature">
-                    <h3>3. Detail letáku</h3>
+                    <h3>4. Detail letáku</h3>
 
                     <div class="step">
                         <span class="step-number">1</span>
@@ -1359,7 +1466,7 @@
                         Zobrazí se detailní informace o letáku:
                         <ul style="margin-top: 10px; margin-left: 30px;">
                             <li>Všechny stránky letáku</li>
-                            <li>Seznam všech produktů</li>
+                            <li>Seznam všech produktů s <strong>černými hlavičkami</strong></li>
                             <li>Ceny a slevy</li>
                             <li>Období platnosti</li>
                             <li>Promo obrázky</li>
@@ -1368,7 +1475,7 @@
                 </div>
 
                 <div class="feature">
-                    <h3>4. Filtrování letáků</h3>
+                    <h3>5. Filtrování letáků</h3>
 
                     <div class="step">
                         <span class="step-number">1</span>
@@ -1386,27 +1493,6 @@
                             <li>Platnosti</li>
                             <li>Názvu</li>
                         </ul>
-                    </div>
-                </div>
-
-                <div class="feature">
-                    <h3>5. Moje letáky</h3>
-
-                    <div class="step">
-                        <span class="step-number">1</span>
-                        Klikněte na <strong>Moje letáky</strong> v menu
-                    </div>
-                    <div class="step">
-                        <span class="step-number">2</span>
-                        Zobrazí se letáky, které jste vytvořili (pokud máte práva)
-                    </div>
-                    <div class="step">
-                        <span class="step-number">3</span>
-                        Můžete vytvořit nový leták nebo upravit existující koncept
-                    </div>
-
-                    <div class="alert alert-info">
-                        <strong>💡 Info:</strong> End User může vytvářet letáky, ale nemůže je odesílat ke schválení. To musí udělat Supplier.
                     </div>
                 </div>
             </section>
@@ -1525,7 +1611,7 @@
             <footer style="background: #2c3e50; color: white; padding: 30px 40px; margin-top: 40px;">
                 <div style="text-align: center;">
                     <h3>Systém pro správu letáků</h3>
-                    <p style="margin-top: 10px; opacity: 0.8;">Verze 1.0 | Poslední aktualizace: 2. listopadu 2025</p>
+                    <p style="margin-top: 10px; opacity: 0.8;">Verze 3.1.2 | Poslední aktualizace: 6. listopadu 2025</p>
                     <p style="margin-top: 20px; font-size: 0.9em;">
                         <strong>Technická podpora:</strong> podpora@example.com | +420 123 456 789
                     </p>

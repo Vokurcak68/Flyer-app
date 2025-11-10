@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { formatDate } from '../../utils/helpers';
+import { AppFooter } from '../../components/layout/AppFooter';
 
 export const ActiveFlyersPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,7 +52,7 @@ export const ActiveFlyersPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Aktivní letáky</h1>
         <p className="mt-2 text-gray-600">
@@ -127,6 +128,8 @@ export const ActiveFlyersPage: React.FC = () => {
           ))}
         </div>
       )}
+
+      <AppFooter />
     </div>
   );
 };

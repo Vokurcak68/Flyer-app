@@ -42,11 +42,11 @@ export const cn = (...classes: (string | boolean | undefined)[]): string => {
 };
 
 export const getProductImageUrl = (productId: string): string => {
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
+  const API_URL = process.env.REACT_APP_API_URL || '/api';
   return `${API_URL}/products/${productId}/image`;
 };
 
 export const getIconImageUrl = (iconId: string): string => {
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
-  return `${API_URL}/products/icons/${iconId}/image`;
+  const API_URL = process.env.REACT_APP_API_URL || '/api';
+  return `${API_URL}/icons/${iconId}/image`;
 };

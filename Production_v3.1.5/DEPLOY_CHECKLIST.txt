@@ -1,0 +1,141 @@
+================================================================================
+  DEPLOYMENT CHECKLIST - Flyer App v3.1.5
+  CRITICAL FIX: Promo images now persist when submitting for verification
+  Build Date: 2025-11-09
+  BUILD VERIFIED: Frontend submit fix + Backend brand access confirmed
+================================================================================
+
+BUILD VERIFICATION COMPLETED:
+==============================
+[X] Backend version: 3.1.5
+[X] Frontend version: 3.1.5 (footer)
+[X] Backend fix verified: 4x hasAccessToBrand found (from v3.1.4)
+[X] Frontend fix verified: pages field in submitMutation
+[X] Frontend URLs verified: 0x localhost:4000, 13x /api
+[X] Debug logging removed: clean backend code
+[X] .env verified: API_URL and FRONTEND_URL set correctly
+
+WHAT WAS FIXED:
+===============
+CRITICAL ISSUE: Promo images disappearing after "Odeslat k autorizaci"
+
+   Problem: Dodavatel přidá promo → klikne "Odeslat k autorizaci" → promo zmizí
+            Předschvalovatel a schvalovatel nevidí promo v PDF
+
+   Root Cause: Frontend při submitu ukládal pouze metadata (název, akce, datum),
+               ale NE stránky s produkty a promo obrázky!
+
+               Nový leták: ✓ ukládal pages
+               Existující leták: ✗ neukládal pages
+
+   Fix Applied: Frontend nyní ukládá pages i pro existující letáky před submitem:
+
+                await flyersService.updateFlyer(id!, {
+                  name, actionId, actionName, validFrom, validTo,
+                  pages: preparePagesForAPI(flyerData.pages) // ← ADDED
+                });
+
+   File Changed: src/pages/flyers/FlyerEditorPage.tsx, line 326
+
+PRE-DEPLOYMENT:
+===============
+[_] Create backup of current backend
+[_] Stop FlcyManagementAPI service
+
+DEPLOYMENT:
+===========
+[_] Copy Production_v3.1.5 contents to C:\inetpub\flyer-app\backend\
+[_] **VERIFY .env file contains:**
+    API_URL=https://eflyer.kuchyneoresi.eu
+    FRONTEND_URL=https://eflyer.kuchyneoresi.eu
+    NODE_ENV=production
+[_] npm ci --production (if needed)
+[_] Start FlcyManagementAPI service
+
+POST-DEPLOYMENT VERIFICATION:
+==============================
+[_] Backend health: https://eflyer.kuchyneoresi.eu/api/health
+    Should return: {"status":"ok"}
+
+[_] **VERSION CHECK:**
+    [_] Open app in browser
+    [_] Check footer
+    [_] **MUST SHOW: Verze: 3.1.5** (pokud ne, build se nenahrál správně!)
+
+[_] **CRITICAL TEST - Complete Submit Workflow:**
+    [_] Login as admin
+    [_] Create promo image with brand assignment
+    [_] Login as supplier who has that brand
+    [_] Create new flyer or open existing draft
+    [_] Add brand promo image to flyer
+    [_] **Click "Odeslat k autorizaci"**
+    [_] **Reload page**
+    [_] **MUST SEE: Promo image still in flyer** ✓
+    [_] Login as pre_approver
+    [_] Open the pending flyer
+    [_] **MUST SEE: Promo image in flyer view** ✓
+    [_] **Download/view PDF**
+    [_] **MUST SEE: Promo image in PDF** ✓
+    [_] Login as approver
+    [_] Open the pending flyer
+    [_] **View PDF**
+    [_] **MUST SEE: Promo image in PDF** ✓
+
+[_] Check console:
+    [_] NO errors
+    [_] NO "Mixed Content" warnings
+
+[_] **CODE VERIFICATION (Optional but recommended):**
+    Run on server:
+    findstr /C:"hasAccessToBrand" C:\inetpub\flyer-app\backend\dist\src\flyers\flyers.service.js
+    Should find 4 matches (backend brand access fix from v3.1.4)
+
+SUCCESS CRITERIA:
+=================
+✓ Version 3.1.5 displayed in footer
+✓ Promo images persist after "Odeslat k autorizaci"
+✓ Pre-approvers see promo in flyer and PDF
+✓ Approvers see promo in flyer and PDF
+✓ No console errors
+✓ No Mixed Content warnings
+✓ Works same in production as in development
+
+DEPLOYMENT LOG:
+===============
+Date: _____________
+Version in footer: _________ (MUST be 3.1.5!)
+
+Submit Test Results:
+- Promo added to flyer: YES / NO (MUST be YES!)
+- After submit, promo still in flyer: YES / NO (MUST be YES!)
+- Pre-approver sees promo in view: YES / NO (MUST be YES!)
+- Pre-approver sees promo in PDF: YES / NO (MUST be YES!)
+- Approver sees promo in PDF: YES / NO (MUST be YES!)
+
+Technical Checks:
+- Console errors: YES / NO (MUST be NO!)
+- hasAccessToBrand in code: YES / NO (MUST be YES!)
+- Backend health OK: YES / NO (MUST be YES!)
+
+Final status: SUCCESS / ROLLBACK
+
+================================================================================
+IMPORTANT: If version shows 3.1.4 or older, the deployment did not work!
+           Stop service, clear browser cache, restart service, try again.
+================================================================================
+
+TROUBLESHOOTING:
+================
+If promo still disappears after submit:
+1. Clear browser cache (Ctrl+Shift+Delete)
+2. Check browser console for errors
+3. Verify version is 3.1.5 in footer
+4. Check Network tab - ensure updateFlyer includes pages data
+5. Check backend logs for save errors
+
+If version doesn't update:
+1. Stop service
+2. Delete contents of C:\inetpub\flyer-app\backend
+3. Copy Production_v3.1.5 files again
+4. Start service
+5. Hard refresh browser (Ctrl+F5)

@@ -7,6 +7,7 @@ import { User, UserRole } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { AssignBrandsModal } from './AssignBrandsModal';
+import { AppFooter } from '../../components/layout/AppFooter';
 
 const getRoleLabel = (role: UserRole): string => {
   const roleLabels: Record<UserRole, string> = {
@@ -74,7 +75,7 @@ export const UsersListPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Uživatelé</h1>
@@ -223,6 +224,8 @@ export const UsersListPage: React.FC = () => {
           onSuccess={handleAssignSuccess}
         />
       )}
+
+      <AppFooter />
     </div>
   );
 };

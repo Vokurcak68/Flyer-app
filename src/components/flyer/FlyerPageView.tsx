@@ -82,7 +82,7 @@ export const FlyerPageView: React.FC<FlyerPageViewProps> = ({
   };
 
   const getPromoImageUrl = (id: string) => {
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
+    const API_URL = process.env.REACT_APP_API_URL || '/api';
     return `${API_URL}/promo-images/${id}/image`;
   };
 

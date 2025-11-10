@@ -6,6 +6,7 @@ import { productsService } from '../../services/productsService';
 import { Button } from '../../components/ui/Button';
 import { SearchInput } from '../../components/SearchInput';
 import { formatCurrency, getProductImageUrl } from '../../utils/helpers';
+import { AppFooter } from '../../components/layout/AppFooter';
 
 export const ProductsListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -117,7 +118,7 @@ export const ProductsListPage: React.FC = () => {
   const isLoading = isInitialLoading && !data;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Produkty</h1>
@@ -332,6 +333,8 @@ export const ProductsListPage: React.FC = () => {
       )}
         </>
       )}
+
+      <AppFooter />
     </div>
   );
 };

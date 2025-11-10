@@ -16,7 +16,7 @@ export const AppFooter: React.FC = () => {
           </a>
         </div>
         <div className="text-gray-400">
-          Verze: 3.1.2
+          Verze: 3.1.5
         </div>
       </div>
     </footer>

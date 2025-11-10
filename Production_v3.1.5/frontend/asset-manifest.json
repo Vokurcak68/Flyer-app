@@ -1,0 +1,21 @@
+{
+  "files": {
+    "main.css": "/static/css/main.97a0ec61.css",
+    "main.js": "/static/js/main.87e5e67a.js",
+    "static/js/821.75b23882.chunk.js": "/static/js/821.75b23882.chunk.js",
+    "static/js/453.ae0ecb2d.chunk.js": "/static/js/453.ae0ecb2d.chunk.js",
+    "static/media/VodafoneRgBd.ttf": "/static/media/VodafoneRgBd.c34f745834fabd4d7869.ttf",
+    "static/media/VodafoneLt.ttf": "/static/media/VodafoneLt.db260a29d7b1141f31e2.ttf",
+    "static/media/VodafoneRg.ttf": "/static/media/VodafoneRg.3b6ae98af2a0a6017b6e.ttf",
+    "static/media/VodafoneExBd.ttf": "/static/media/VodafoneExBd.f408bd8bcfe3b63d9a57.ttf",
+    "index.html": "/index.html",
+    "main.97a0ec61.css.map": "/static/css/main.97a0ec61.css.map",
+    "main.87e5e67a.js.map": "/static/js/main.87e5e67a.js.map",
+    "821.75b23882.chunk.js.map": "/static/js/821.75b23882.chunk.js.map",
+    "453.ae0ecb2d.chunk.js.map": "/static/js/453.ae0ecb2d.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.97a0ec61.css",
+    "static/js/main.87e5e67a.js"
+  ]
+}

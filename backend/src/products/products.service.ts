@@ -514,6 +514,7 @@ export class ProductsService {
       categoryName: product.category?.name,
       subcategoryId: product.subcategoryId,
       subcategoryName: product.subcategory?.name,
+      installationType: product.installationType,
       brand: product.brand ? {
         id: product.brand.id,
         name: product.brand.name,

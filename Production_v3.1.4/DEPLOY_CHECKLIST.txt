@@ -1,0 +1,100 @@
+================================================================================
+  DEPLOYMENT CHECKLIST - Flyer App v3.1.4
+  FIX: Promo images with brands now save correctly
+  Build Date: 2025-11-09
+  BUILD VERIFIED: hasAccessToBrand fix confirmed present
+================================================================================
+
+BUILD VERIFICATION COMPLETED:
+==============================
+[X] Backend version: 3.1.4
+[X] Frontend version: 3.1.4 (footer)
+[X] Backend fix verified: 4x hasAccessToBrand found
+[X] Frontend URLs verified: 0x localhost:4000, 13x /api
+[X] .env verified: API_URL and FRONTEND_URL set correctly
+
+WHAT WAS FIXED:
+===============
+1. PROMO IMAGES WITH BRANDS:
+   Problem: Admin vytvoří promo s brandId → dodavatel s tímto brandem ho vidí
+            → vloží do letáku → při uložení zmizí
+
+   Root Cause: Backend validace pouze: promoImage.supplierId === userId
+               Ale promo patřilo adminovi, ne dodavateli!
+
+   Fix Applied: Backend nyní kontroluje:
+                1. Patří promo dodavateli NEBO
+                2. Je přiřazeno značce, ke které má dodavatel přístup
+
+2. PDF IMAGE QUALITY:
+   Problem: Obrázky v PDF byly rozmazané kvůli vysoké kompresi
+   Fix Applied: JPEG kvalita zvýšena z 85 na 100 (maximum)
+                Obrázky budou křišťálově čisté, PDF větší (~20-30%)
+
+PRE-DEPLOYMENT:
+===============
+[_] Create backup of current backend
+[_] Stop FlcyManagementAPI service
+
+DEPLOYMENT:
+===========
+[_] Copy Production_v3.1.4 contents to C:\inetpub\flyer-app\backend\
+[_] **VERIFY .env file contains:**
+    API_URL=https://eflyer.kuchyneoresi.eu
+    FRONTEND_URL=https://eflyer.kuchyneoresi.eu
+    NODE_ENV=production
+[_] npm ci --production (if needed)
+[_] Start FlcyManagementAPI service
+
+POST-DEPLOYMENT VERIFICATION:
+==============================
+[_] Backend health: https://eflyer.kuchyneoresi.eu/api/health
+    Should return: {"status":"ok"}
+
+[_] **VERSION CHECK:**
+    [_] Open app in browser
+    [_] Check footer
+    [_] **MUST SHOW: Verze: 3.1.4** (pokud ne, build se nenahrál správně!)
+
+[_] **CRITICAL TEST - Promo Images with Brands:**
+    [_] Login as admin
+    [_] Create promo image with brand assignment
+    [_] Login as supplier who has that brand
+    [_] See promo image in list
+    [_] Drag promo into flyer
+    [_] Save flyer
+    [_] Reload page
+    [_] **MUST SEE**: Promo image still in flyer ✓
+
+[_] Check console:
+    [_] NO errors
+    [_] NO "Mixed Content" warnings
+
+[_] **CODE VERIFICATION (Optional but recommended):**
+    Run on server:
+    findstr /C:"hasAccessToBrand" C:\inetpub\flyer-app\backend\dist\src\flyers\flyers.service.js
+    Should find 4 matches
+
+SUCCESS CRITERIA:
+=================
+✓ Version 3.1.4 displayed in footer
+✓ Promo images with brands persist after save
+✓ Suppliers can use brand-assigned promo images
+✓ No console errors
+✓ No Mixed Content warnings
+
+DEPLOYMENT LOG:
+===============
+Date: _____________
+Version in footer: _________ (MUST be 3.1.4!)
+Promo with brand saved: YES / NO (MUST be YES!)
+Promo persists after reload: YES / NO (MUST be YES!)
+Console errors: YES / NO (MUST be NO!)
+hasAccessToBrand in code: YES / NO (MUST be YES!)
+
+Final status: SUCCESS / ROLLBACK
+
+================================================================================
+IMPORTANT: If version shows 3.1.3 or older, the deployment did not work!
+           Stop service, clear browser cache, restart service, try again.
+================================================================================

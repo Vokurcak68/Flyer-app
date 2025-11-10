@@ -9,20 +9,26 @@ interface DraggableProductProps {
 }
 
 export const DraggableProduct: React.FC<DraggableProductProps> = ({ product, isUsed = false }) => {
+  // Check if product has energy class icon
+  const hasEnergyClassIcon = product.icons?.some((icon: any) => icon.isEnergyClass === true);
+  const cannotUse = !hasEnergyClassIcon;
+
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: product.id,
     data: product,
-    disabled: isUsed,
+    disabled: isUsed || cannotUse,
   });
 
   return (
     <div
       ref={setNodeRef}
-      {...(!isUsed ? listeners : {})}
-      {...(!isUsed ? attributes : {})}
+      {...(!isUsed && !cannotUse ? listeners : {})}
+      {...(!isUsed && !cannotUse ? attributes : {})}
       className={`border rounded-lg p-2 transition-shadow relative ${
         isUsed
           ? 'opacity-50 bg-gray-100 cursor-not-allowed'
+          : cannotUse
+          ? 'border-red-300 bg-red-50 cursor-not-allowed'
           : 'cursor-move hover:shadow-md bg-white'
       } ${isDragging ? 'opacity-50' : ''}`}
     >
@@ -61,6 +67,12 @@ export const DraggableProduct: React.FC<DraggableProductProps> = ({ product, isU
 
           {isUsed && (
             <div className="text-xs text-red-600 font-medium mt-1">Již použito v letáku</div>
+          )}
+          {cannotUse && (
+            <div className="text-xs text-red-600 font-medium mt-1 flex items-start gap-1">
+              <span className="text-red-500">⚠️</span>
+              <span>Chybí energetický štítek</span>
+            </div>
           )}
         </div>
       </div>

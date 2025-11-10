@@ -26,8 +26,9 @@ export class PdfService {
 
   /**
    * Convert and optimize image for PDF (compress and resize if needed)
+   * Converts to JPEG for product and promo images
    */
-  private async convertImageToPNG(imageBuffer: Buffer, maxWidth: number = 800): Promise<Buffer> {
+  private async convertImageToJPEG(imageBuffer: Buffer, maxWidth: number = 800, quality: number = 100): Promise<Buffer> {
     try {
       const image = sharp(imageBuffer);
       const metadata = await image.metadata();
@@ -40,16 +41,45 @@ export class PdfService {
         });
       }
 
-      // Convert to JPEG with quality 85 for much smaller file size
-      // JPEG is better for photos/product images and creates smaller PDFs
+      // Convert to JPEG with configurable quality (from .env)
       return await image
         .jpeg({
-          quality: 85,
+          quality: quality,
           mozjpeg: true, // Use MozJPEG for better compression
         })
         .toBuffer();
     } catch (error) {
-      this.logger.error(`Failed to convert image: ${error.message}`);
+      this.logger.error(`Failed to convert image to JPEG: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Convert and optimize icon for PDF while preserving transparency
+   * Keeps PNG format to maintain alpha channel
+   */
+  private async convertIconToPNG(imageBuffer: Buffer, maxWidth: number = 100, compressionLevel: number = 9): Promise<Buffer> {
+    try {
+      const image = sharp(imageBuffer);
+      const metadata = await image.metadata();
+
+      // Resize if image is too large (maintain aspect ratio)
+      if (metadata.width && metadata.width > maxWidth) {
+        image.resize(maxWidth, null, {
+          fit: 'inside',
+          withoutEnlargement: true,
+        });
+      }
+
+      // Convert to PNG to preserve transparency (alpha channel) with configurable compression
+      return await image
+        .png({
+          compressionLevel: compressionLevel, // Configurable compression level (from .env)
+          palette: true, // Use palette mode for smaller file size if possible
+        })
+        .toBuffer();
+    } catch (error) {
+      this.logger.error(`Failed to convert icon to PNG: ${error.message}`);
       throw error;
     }
   }
@@ -63,7 +93,8 @@ export class PdfService {
         this.logger.log(`Generating PDF for flyer ${flyer.id} for user role: ${userRole}`);
         this.logger.log(`Flyer structure: pages count = ${flyer.pages?.length || 0}`);
 
-        const filename = `flyer-${flyer.id}-${Date.now()}.pdf`;
+        // Use flyer ID only (no timestamp) to overwrite previous versions
+        const filename = `flyer-${flyer.id}.pdf`;
         const filepath = path.join(this.uploadsDir, filename);
 
         // Create PDF document with no margins for full-bleed layout and compression
@@ -347,11 +378,12 @@ export class PdfService {
         }
 
         // Convert and compress image (max 600px width for product images)
-        const pngBuffer = await this.convertImageToPNG(imageBuffer, 600);
+        const productQuality = parseInt(this.configService.get<string>('PDF_PRODUCT_JPEG_QUALITY', '100'));
+        const jpegBuffer = await this.convertImageToJPEG(imageBuffer, 600, productQuality);
 
         // Make image square (same width as height)
         const imageWidth = imageHeight;
-        doc.image(pngBuffer, leftX, leftY, {
+        doc.image(jpegBuffer, leftX, leftY, {
           fit: [imageWidth, imageHeight],
           align: 'center',
           valign: 'center',
@@ -361,29 +393,33 @@ export class PdfService {
       }
     }
 
-    // Icons overlaid on left side of image - vertically aligned and evenly distributed
+    // Icons overlaid on left side of image - 4 fixed evenly distributed slots, icons fill from top
+    // Matches frontend ProductFlyerLayout.tsx behavior (lines 70-84)
     if (product.icons && product.icons.length > 0) {
       try {
         const iconSize = 24; // w-6 h-6 = 24px
         const iconsX = x; // Left edge of slot (matching frontend left-0)
 
-        // Render up to 4 icons vertically
-        const iconsToRender = product.icons.slice(0, 4);
-        const iconCount = iconsToRender.length;
+        // Fixed 4 slots, fill with icons from top (matching frontend)
+        const maxSlots = 4;
+        const iconsToRender = product.icons.slice(0, maxSlots);
 
         // Leave 8px margin at top and bottom (matching frontend: top: '8px', height: 'calc(100% - 16px)')
         const topMargin = 8;
         const bottomMargin = 8;
         const usableHeight = imageHeight - topMargin - bottomMargin;
 
-        // Calculate spacing to distribute icons evenly in the usable space
-        const totalIconSpace = iconCount * iconSize;
+        // Calculate spacing for 4 fixed evenly distributed slots
+        const totalIconSpace = maxSlots * iconSize;
         const availableSpace = usableHeight - totalIconSpace;
-        const iconGap = iconCount > 1 ? availableSpace / (iconCount - 1) : 0;
+        const slotGap = maxSlots > 1 ? availableSpace / (maxSlots - 1) : 0;
 
-        let iconsY = leftY + topMargin; // Start with top margin
+        // Render icons in their slots (fill from top)
+        for (let slotIndex = 0; slotIndex < maxSlots; slotIndex++) {
+          const productIcon = iconsToRender[slotIndex];
+          if (!productIcon) continue; // Empty slot, skip
 
-        for (const productIcon of iconsToRender) {
+          const slotY = leftY + topMargin + (slotIndex * (iconSize + slotGap));
           const icon = productIcon.icon || productIcon;
 
           if (icon.imageData) {
@@ -401,22 +437,20 @@ export class PdfService {
               iconBuffer = Buffer.from(icon.imageData);
             }
 
-            // Convert and compress icon (max 100px width for small icons)
-            const pngIconBuffer = await this.convertImageToPNG(iconBuffer, 100);
+            // Convert and optimize icon while preserving transparency (max 100px width)
+            const iconCompression = parseInt(this.configService.get<string>('PDF_ICON_PNG_COMPRESSION', '9'));
+            const pngIconBuffer = await this.convertIconToPNG(iconBuffer, 100, iconCompression);
 
             // Energy class icons are 2x wider (48px width, 24px height)
             // Regular icons are square (24px × 24px)
             const iconWidth = icon.isEnergyClass ? iconSize * 2 : iconSize;
 
-            // Draw icon with fit to maintain aspect ratio
-            doc.image(pngIconBuffer, iconsX, iconsY, {
+            // Draw icon at the fixed slot position
+            doc.image(pngIconBuffer, iconsX, slotY, {
               fit: [iconWidth, iconSize],
               align: 'left',
               valign: 'top',
             });
-
-            // Move Y position down by icon size + gap for next icon
-            iconsY += iconSize + iconGap;
           }
         }
       } catch (error) {
@@ -580,10 +614,11 @@ export class PdfService {
         }
 
         // Convert and compress promo image (max 1200px width for larger promo images)
-        const pngBuffer = await this.convertImageToPNG(imageBuffer, 1200);
+        const promoQuality = parseInt(this.configService.get<string>('PDF_PROMO_JPEG_QUALITY', '100'));
+        const jpegBuffer = await this.convertImageToJPEG(imageBuffer, 1200, promoQuality);
 
         // Use exact width and height to fill entire area without white space
-        doc.image(pngBuffer, x, y, {
+        doc.image(jpegBuffer, x, y, {
           width: width,
           height: height,
         });

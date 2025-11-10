@@ -1,406 +1,374 @@
-# ğŸš€ Deployment Guide - Flyer Management App
+# Deployment Guide - Flyer Management System v3.1.2
 
-## ğŸ“‹ Obsah
-- [RychlÃ½ Start](#rychlÃ½-start)
-- [Deployment Metody](#deployment-metody)
-- [ProdukÄnÃ­ NasazenÃ­](#produkÄnÃ­-nasazenÃ­)
-- [Monitoring](#monitoring)
-- [Troubleshooting](#troubleshooting)
+## PYehled zmn od poslední verze
 
----
+### Zmny v databázi (Prisma Schema)
+Od poslední verze doalo k následujícím zmnám v databázovém schématu:
 
-## âš¡ RychlÃ½ Start
+1. **Brand Model** - PYidán novı model pro správu znaek/brando
+   - `id` (String, UUID)
+   - `name` (String)
+   - `color` (String, optional) - Hex kód barvy brandu
+   - Vztah 1:N s produkty
 
-### Prerekvizity
-- Node.js 20+ a npm
-- Docker & Docker Compose
-- Git
+2. **Product Model** - RozaíYení
+   - `brandId` (String, optional) - Vazba na brand
+   - `brand` (Brand, optional) - Vztah na brand
 
-### LokÃ¡lnÃ­ vÃ½voj
-```bash
-# 1. Instalace zÃ¡vislostÃ­
-npm install
+3. **Approval Model** - PYidány nové stavy pro pre-approval workflow
+   - `preApprovalStatus` (PreApprovalStatus, optional)
+   - `preApprovedAt` (DateTime, optional)
 
-# 2. SpuÅ¡tÄ›nÃ­ dev serveru
-npm start
+4. **ApprovalWorkflow Model** - RozaíYení pro pre-approval
+   - `requiredPreApprovers` (Int, default: 1)
+   - `currentPreApprovals` (Int, default: 0)
+   - `isPreApprovalComplete` (Boolean, default: false)
 
-# Aplikace bÄ›Å¾Ã­ na http://localhost:3000
-```
+5. **PromoImage Model** - Nové pole
+   - `fillDate` (Boolean, default: false) - Uruje, zda se má do patiky vyplHovat datum
 
-### Demo ÃºÄty
-```
-ğŸ“¦ Dodavatel:    dodavatel@acme.cz / admin
-âœ… Schvalovatel: schvalovatel1@company.cz / admin
-ğŸ‘¤ UÅ¾ivatel:     uzivatel@email.cz / admin
-```
+### Nové funkce
 
----
+#### 1. Správa brando a barev
+- Mo~nost vytváYet a spravovat brandy s vlastními barvami
+- Produkty mohou bıt pYiYazeny k brandom
+- Barevné zvıraznní produkto podle brandu v letácích
+- erné hlaviky pro end usery (bez barevného zvıraznní)
 
-## ğŸ³ Deployment Metody
+#### 2. Pre-approval workflow
+- Nová role `pre_approver` pro pYedschválení letáko
+- DvoustupHovı schvalovací proces:
+  1. Pre-approver provede první kontrolu
+  2. Approver provede finální schválení
+- Tracking stavu pre-approval v approval workflow
 
-### Metoda 1: Docker (DOPORUÄŒENO)
+#### 3. Zlepaení PDF generování
+- 100% shodné rozlo~ení s frontendem
+- Pou~ití Vodafone Rg fontu
+- Správné zobrazení brando (tun) a názvo produkto
+- Lepaí Yádkování a spacing
+- Podpora a~ 16 vizuálních Yádko v popisech produkto
+- erné hlaviky pro end usery v PDF
 
-#### Windows
-```powershell
-# SpuÅ¡tÄ›nÃ­ deployment scriptu
-.\deploy.ps1
+#### 4. Footer promo s automatickım datem
+- Mo~nost nastavit `fillDate` flag u footer promo obrázko
+- Automatické vyplnní data platnosti do pravého horního rohu footeru
+- Zobrazení v eském formátu (DD.MM.YYYY)
 
-# S parametry
-.\deploy.ps1 -SkipBuild      # PÅ™eskoÄit build
-.\deploy.ps1 -Clean          # VyÄistit starÃ© images
-```
+#### 5. Koncovı u~ivatel - Zjednoduaené vytváYení letáko
+- Skrytı vıbr akce z MSSQL pro end usery
+- Automatické nastavení "datum od" na datum vytvoYení
+- Automatickı vıpoet "datum do" podle nejni~aího data z aktivních letáko obsahujících stejné produkty
+- Posuvník pro filtrování produkto podle cenového rozptí
+- Dual-handle slider pro min/max cenu
 
-#### Linux/Mac
-```bash
-# Nastavit executable
-chmod +x deploy.sh
+### Backend zmny
 
-# SpuÅ¡tÄ›nÃ­
-./deploy.sh
-```
+#### Nové endpointy a úpravy:
+1. **Brands Management** (`/api/brands`)
+   - `GET /api/brands` - Seznam vaech brando
+   - `POST /api/brands` - VytvoYení nového brandu
+   - `PATCH /api/brands/:id` - Aktualizace brandu
+   - `DELETE /api/brands/:id` - Smazání brandu
 
-#### ManuÃ¡lnÄ›
-```bash
-# 1. Build aplikace
-npm run build
+2. **Products** - RozaíYení odpovdí
+   - PYidáno pole `brandName` a `brandColor` do odpovdí
 
-# 2. Build Docker image
-docker-compose build
+3. **Flyers** - Auto-kalkulace validTo
+   - Pro end usery se automaticky vypoítá `validTo` z aktivních source letáko
 
-# 3. SpuÅ¡tÄ›nÃ­ kontejnerÅ¯
-docker-compose up -d
+4. **Approvals** - Pre-approval workflow
+   - `POST /api/approvals/:id/pre-approve` - PYedschválení
+   - `POST /api/approvals/:id/pre-reject` - Zamítnutí pYedschválení
+   - RozaíYené query pro zobrazení pre-approval informací
 
-# 4. Kontrola stavu
-docker-compose ps
-docker-compose logs -f
-```
+5. **PDF Generation** - Vylepaení
+   - Novı endpoint `GET /api/flyers/:id/pdf` s query parametrem `?blackHeaders=true`
+   - 1:1 layout s frontendem
+   - Podpora brand barev vs ernıch hlaviek
 
-### Metoda 2: StatickÃ½ Web Server
+### Frontend zmny
 
-```bash
-# 1. Build
-npm run build
+#### Nové komponenty a stránky:
+1. **BrandsManagementPage** - Správa brando
+2. **ProductFlyerLayout** - Vylepaené zobrazení produkto s brand barvami
+3. Vylepaenı **FlyerEditorPage** pro end usery:
+   - Cenovı filtr s dual-handle sliderem
+   - Skrytı vıbr akce
+   - Auto-nastavení dat
 
-# 2. Instalace serve
-npm install -g serve
-
-# 3. SpuÅ¡tÄ›nÃ­
-serve -s build -l 8080
-```
-
-### Metoda 3: Nginx (produkce)
-
-```bash
-# 1. Build
-npm run build
-
-# 2. KopÃ­rovÃ¡nÃ­ do nginx
-sudo cp -r build/* /var/www/html/
-
-# 3. Konfigurace nginx
-sudo cp nginx.conf /etc/nginx/sites-available/flyer-app
-sudo ln -s /etc/nginx/sites-available/flyer-app /etc/nginx/sites-enabled/
-
-# 4. Restart nginx
-sudo systemctl restart nginx
-```
+#### Stylingové zmny:
+- Konzistentní pou~ití Vodafone Rg fontu
+- Lepaí line-height a spacing v popisech produkto
+- Podpora brand barev vs ernıch hlaviek
 
 ---
 
-## ğŸŒ ProdukÄnÃ­ NasazenÃ­
+## Deployment instrukce pro IIS
 
-### 1. Cloud Hosting (AWS/Azure/Google Cloud)
+### PYedpoklady
+- Windows Server s IIS
+- Node.js nainstalován na serveru
+- PostgreSQL databáze
+- PM2 nebo jinı process manager pro Node.js
 
-#### AWS EC2 + Docker
+### Krok 1: PYíprava souboro
+
+1. **Frontend (build slo~ka)**
+   - Zkopírovat celou slo~ku `build` do `C:\inetpub\wwwroot\flyer-app` (nebo jiné cesty podle vaaeho nastavení)
+
+2. **Backend (celá backend slo~ka)**
+   - Zkopírovat celou slo~ku `backend` do `C:\Apps\flyer-app-backend` (nebo jiné cesty)
+   - Slo~ka musí obsahovat:
+     - `dist` (zkompilovanı kód)
+     - `node_modules` (pokud nejsou na serveru, spustit `npm install --production`)
+     - `prisma` (schema a migrace)
+     - `.env` (konfiguraní soubor)
+     - `package.json`
+
+### Krok 2: Konfigurace prostYedí
+
+#### Backend .env soubor
+VytvoYte nebo aktualizujte soubor `backend/.env`:
+
+```env
+DATABASE_URL="postgresql://username:password@localhost:5432/flyer_db"
+JWT_SECRET="your-secure-jwt-secret-key"
+PORT=4000
+NODE_ENV=production
+API_URL=http://your-domain.com
+CORS_ORIGIN=http://your-domain.com
+```
+
+**Dole~ité**: Ujistte se, ~e `DATABASE_URL` odkazuje na produkní databázi.
+
+### Krok 3: Migrace databáze
+
+  **KRITICKİ KROK** - Spusete Prisma migrace pro aktualizaci databázového schématu:
+
 ```bash
-# PÅ™ipojenÃ­ na EC2
-ssh -i your-key.pem ubuntu@your-instance-ip
-
-# Instalace Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-
-# Clone repository
-git clone https://github.com/your-repo/flyer-app.git
-cd flyer-app
-
-# Deployment
-./deploy.sh
+cd C:\Apps\flyer-app-backend
+npx prisma migrate deploy
 ```
 
-#### AWS S3 + CloudFront (static hosting)
+Tento pYíkaz aplikuje vaechny nové migrace na produkní databázi, vetn:
+- PYidání Brand modelu
+- RozaíYení Product modelu o brandId
+- RozaíYení Approval modelu o pre-approval pole
+- RozaíYení ApprovalWorkflow o pre-approval tracking
+- PYidání fillDate do PromoImage
+
+**OvYení migrace:**
 ```bash
-# Build
-npm run build
-
-# Upload do S3
-aws s3 sync build/ s3://your-bucket-name --delete
-
-# Invalidace CloudFront cache
-aws cloudfront create-invalidation \
-  --distribution-id YOUR_DIST_ID \
-  --paths "/*"
+npx prisma migrate status
 ```
 
-### 2. Netlify
+**Vygenerování Prisma Clienta:**
 ```bash
-# Instalace Netlify CLI
-npm install -g netlify-cli
-
-# Login
-netlify login
-
-# Deploy
-netlify deploy --prod --dir=build
+npx prisma generate
 ```
 
-### 3. Vercel
+### Krok 4: Konfigurace IIS pro Frontend
+
+1. OtevYete IIS Manager
+2. VytvoYte novı website nebo aktualizujte existující:
+   - **Site name**: Flyer App
+   - **Physical path**: `C:\inetpub\wwwroot\flyer-app`
+   - **Binding**: HTTP/HTTPS na portu 80/443
+
+3. **URL Rewrite pro React Router** (dole~ité pro SPA):
+   - Nainstalujte URL Rewrite module pro IIS (pokud jeat není)
+   - VytvoYte `web.config` v root slo~ce frontendu:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <system.webServer>
+    <rewrite>
+      <rules>
+        <rule name="React Routes" stopProcessing="true">
+          <match url=".*" />
+          <conditions logicalGrouping="MatchAll">
+            <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
+            <add input="{REQUEST_URI}" pattern="^/(api)" negate="true" />
+          </conditions>
+          <action type="Rewrite" url="/" />
+        </rule>
+      </rules>
+    </rewrite>
+    <staticContent>
+      <mimeMap fileExtension=".json" mimeType="application/json" />
+    </staticContent>
+  </system.webServer>
+</configuration>
+```
+
+4. Nastavte správná oprávnní:
+   - IIS_IUSRS musí mít Read & Execute práva na slo~ku
+
+### Krok 5: Spuatní Backend serveru
+
+#### Mo~nost A: Pomocí PM2 (doporueno)
+
+1. Nainstalujte PM2 globáln (pokud jeat není):
 ```bash
-# Instalace Vercel CLI
-npm install -g vercel
-
-# Deploy
-vercel --prod
+npm install -g pm2
 ```
 
-### 4. Kubernetes
-
-```yaml
-# kubernetes/deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: flyer-app
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: flyer-app
-  template:
-    metadata:
-      labels:
-        app: flyer-app
-    spec:
-      containers:
-      - name: flyer-app
-        image: your-registry/flyer-app:latest
-        ports:
-        - containerPort: 80
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 80
-          initialDelaySeconds: 30
-          periodSeconds: 10
-```
-
-Deploy:
-```bash
-kubectl apply -f kubernetes/
-kubectl rollout status deployment/flyer-app
-```
-
----
-
-## ğŸ“Š Monitoring
-
-### Docker Logs
-```bash
-# Zobrazit logy
-docker-compose logs -f
-
-# Logy konkrÃ©tnÃ­ho kontejneru
-docker-compose logs -f flyer-app
-
-# PoslednÃ­ 100 Å™Ã¡dkÅ¯
-docker-compose logs --tail=100
-```
-
-### Health Check
-```bash
-# HTTP check
-curl http://localhost:8080/health
-
-# Docker health
-docker inspect --format='{{.State.Health.Status}}' flyer-app-frontend
-```
-
-### Metriky
-```bash
-# Docker stats
-docker stats flyer-app-frontend
-
-# Disk usage
-docker system df
-```
-
----
-
-## ğŸ› Troubleshooting
-
-### Problem: Port 8080 je obsazenÃ½
-```bash
-# Zjistit, co bÄ›Å¾Ã­ na portu
-# Windows
-netstat -ano | findstr :8080
-
-# Linux/Mac
-lsof -i :8080
-
-# ZmÄ›nit port v docker-compose.yml
-ports:
-  - "8081:80"  # ZmÄ›nit 8080 na 8081
-```
-
-### Problem: Docker build selhÃ¡vÃ¡
-```bash
-# VyÄistit Docker cache
-docker system prune -a
-
-# Build bez cache
-docker-compose build --no-cache
-
-# Zkontrolovat logy
-docker-compose logs
-```
-
-### Problem: Aplikace nereaguje
-```bash
-# Restart kontejnerÅ¯
-docker-compose restart
-
-# ÃšplnÃ© zastavenÃ­ a start
-docker-compose down
-docker-compose up -d
-
-# Zkontrolovat health
-curl -v http://localhost:8080/health
-```
-
-### Problem: Nedostatek pamÄ›ti
-```bash
-# ZvÃ½Å¡it limit v docker-compose.yml
-services:
-  flyer-app:
-    mem_limit: 1g
-    mem_reservation: 512m
-```
-
-### Problem: CSS se nenaÄÃ­tÃ¡
-```bash
-# VyÄistit cache prohlÃ­Å¾eÄe
-# Ctrl+Shift+R (Windows)
-# Cmd+Shift+R (Mac)
-
-# Zkontrolovat Tailwind v index.html
-# <script src="https://cdn.tailwindcss.com"></script>
-```
-
----
-
-## ğŸ”’ BezpeÄnost
-
-### Production checklist
-- [ ] ZmÄ›nit demo hesla
-- [ ] Nastavit HTTPS
-- [ ] Konfigurovat CORS
-- [ ] Nastavit rate limiting
-- [ ] ZÃ¡lohovat data
-- [ ] Nastavit monitoring
-- [ ] Konfigurovat firewall
-- [ ] PravidelnÃ© security updaty
-
-### HTTPS Setup (Nginx + Let's Encrypt)
-```bash
-# Instalace Certbot
-sudo apt install certbot python3-certbot-nginx
-
-# ZÃ­skÃ¡nÃ­ certifikÃ¡tu
-sudo certbot --nginx -d yourdomain.com
-
-# Auto-renewal
-sudo certbot renew --dry-run
-```
-
----
-
-## ğŸ”„ Update Procedure
-
-### Rolling Update
-```bash
-# 1. Pull zmÄ›ny
-git pull origin main
-
-# 2. Build novÃ© verze
-npm run build
-docker-compose build
-
-# 3. Zero-downtime update
-docker-compose up -d --no-deps --build flyer-app
-
-# 4. OvÄ›Å™enÃ­
-curl http://localhost:8080/health
-```
-
-### Rollback
-```bash
-# Rollback na pÅ™edchozÃ­ verzi
-docker-compose down
-git checkout <previous-commit>
-./deploy.sh
-```
-
----
-
-## ğŸ“ˆ Performance Optimization
-
-### Build Optimization
-```json
-// package.json
-{
-  "scripts": {
-    "build": "GENERATE_SOURCEMAP=false react-scripts build"
-  }
+2. VytvoYte PM2 ecosystem soubor `backend/ecosystem.config.js`:
+```javascript
+module.exports = {
+  apps: [{
+    name: 'flyer-api',
+    script: 'dist/main.js',
+    cwd: 'C:/Apps/flyer-app-backend',
+    instances: 1,
+    exec_mode: 'cluster',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 4000
+    }
+  }]
 }
 ```
 
-### Nginx Cache
-```nginx
-# nginx.conf
-location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
-    expires 1y;
-    add_header Cache-Control "public, immutable";
-}
+3. Spusete aplikaci:
+```bash
+cd C:\Apps\flyer-app-backend
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup
 ```
 
-### Compression
-```nginx
-gzip on;
-gzip_types text/plain text/css application/json application/javascript;
-gzip_min_length 1024;
+#### Mo~nost B: Pomocí Windows Service (node-windows)
+
+1. VytvoYte service wrapper script `backend/service.js`:
+```javascript
+const Service = require('node-windows').Service;
+
+const svc = new Service({
+  name: 'Flyer Management API',
+  description: 'Backend API pro Flyer Management System',
+  script: 'C:\\Apps\\flyer-app-backend\\dist\\main.js',
+  nodeOptions: [
+    '--max_old_space_size=4096'
+  ]
+});
+
+svc.on('install', function() {
+  svc.start();
+});
+
+svc.install();
 ```
 
+2. Spusete:
+```bash
+npm install -g node-windows
+node service.js
+```
+
+### Krok 6: Konfigurace IIS jako Reverse Proxy pro Backend
+
+1. Nainstalujte ARR (Application Request Routing) a URL Rewrite moduly
+2. V IIS vytvoYte novı site nebo pou~ijte existující pro API
+3. PYidejte URL Rewrite pravidlo pro reverse proxy:
+
+```xml
+<rewrite>
+  <rules>
+    <rule name="ReverseProxyInboundRule1" stopProcessing="true">
+      <match url="api/(.*)" />
+      <action type="Rewrite" url="http://localhost:4000/api/{R:1}" />
+    </rule>
+  </rules>
+</rewrite>
+```
+
+### Krok 7: OvYení deployment
+
+1. **Zkontrolujte backend API**:
+   - OtevYete `http://your-domain.com/api/health` (nebo podobnı endpoint)
+   - Mla by vrátit 200 OK
+
+2. **Zkontrolujte frontend**:
+   - OtevYete `http://your-domain.com`
+   - Mla by se naíst pYihlaaovací stránka
+
+3. **Zkontrolujte databázové pYipojení**:
+   - PYihlaste se do aplikace
+   - VytvoYte testovací produkt nebo brand
+
+4. **Zkontrolujte PDF generování**:
+   - OtevYete existující leták
+   - Vygenerujte PDF a zkontrolujte formátování
+
+### Krok 8: Monitoring a logs
+
+#### PM2 logs:
+```bash
+pm2 logs flyer-api
+pm2 monit
+```
+
+#### Windows Event Viewer:
+- Zkontrolujte Application logs pro Node.js service
+
+#### IIS logs:
+- Najdete v `C:\inetpub\logs\LogFiles`
+
 ---
 
-## ğŸ“ Support
+## Rollback plán
 
-Pro dalÅ¡Ã­ pomoc:
-- ğŸ“§ Email: support@flyer-app.com
-- ğŸ“š Dokumentace: https://docs.flyer-app.com
-- ğŸ› Issues: https://github.com/your-repo/flyer-app/issues
+Pokud deployment sel~e:
 
----
+1. **Databáze rollback**:
+```bash
+cd C:\Apps\flyer-app-backend
+npx prisma migrate resolve --rolled-back [migration-name]
+```
 
-## ğŸ“ Changelog
+2. **Backend rollback**:
+   - Obnovte pYedchozí verzi `backend` slo~ky
+   - Restartujte service: `pm2 restart flyer-api`
 
-### v1.0.0 (2025-10-20)
-- âœ¨ InicÃ¡lnÃ­ release
-- ğŸ¨ KompletnÃ­ UI pro 3 role
-- ğŸš€ Docker deployment
-- ğŸ“¦ ProduktovÃ¡ databÃ¡ze
-- ğŸ“„ Editor letÃ¡kÅ¯
-- âœ… Workflow schvalovÃ¡nÃ­
+3. **Frontend rollback**:
+   - Obnovte pYedchozí verzi `build` slo~ky
 
 ---
 
-VytvoÅ™eno s â¤ï¸ pro efektivnÃ­ sprÃ¡vu marketingovÃ½ch materiÃ¡lÅ¯
+## asté problémy a Yeaení
+
+### Problém: Databázové pYipojení selhává
+**Xeaení**:
+- Zkontrolujte DATABASE_URL v .env
+- OvYte, ~e PostgreSQL b~í: `services.msc`
+- Zkontrolujte firewall pravidla
+
+### Problém: PDF generování nefunguje
+**Xeaení**:
+- Zkontrolujte, ~e fonty jsou správn nainstalovány na serveru
+- OvYte write permissions pro temp slo~ku
+
+### Problém: CORS errors
+**Xeaení**:
+- Zkontrolujte CORS_ORIGIN v backend .env
+- OvYte, ~e frontend volá správnou API URL
+
+### Problém: React routing nefunguje (404 pYi refresh)
+**Xeaení**:
+- Zkontrolujte, ~e web.config obsahuje URL Rewrite pravidla
+- OvYte, ~e URL Rewrite module je nainstalován v IIS
+
+---
+
+## Kontakt a podpora
+
+PYi problémech s deploymentem kontaktujte vıvojovı tım.
+
+**Verze**: 3.1.2
+**Datum buildu**: 2025-11-06
+**Node.js verze**: 16.x nebo vyaaí
+**PostgreSQL verze**: 12.x nebo vyaaí

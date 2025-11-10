@@ -45,9 +45,10 @@ class IconsService {
   }
 
   getIconImageUrl(id: string): string {
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
+    const API_URL = process.env.REACT_APP_API_URL || '/api';
     return `${API_URL}/icons/${id}/image`;
   }
 }
 
-export default new IconsService();
+const iconsService = new IconsService();
+export default iconsService;

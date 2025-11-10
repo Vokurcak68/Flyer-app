@@ -20,6 +20,7 @@ export const AssignBrandsModal: React.FC<AssignBrandsModalProps> = ({
   onSuccess,
 }) => {
   const [selectedBrandIds, setSelectedBrandIds] = useState<string[]>([]);
+  const API_URL = process.env.REACT_APP_API_URL || '/api';
 
   // Načtení všech značek
   const { data: brands = [], isLoading: brandsLoading } = useQuery({
@@ -92,7 +93,7 @@ export const AssignBrandsModal: React.FC<AssignBrandsModalProps> = ({
                 <div className="ml-3 flex items-center flex-1">
                   {brand.logoData && brand.logoMimeType ? (
                     <img
-                      src={`http://localhost:4000/api/brands/${brand.id}/logo`}
+                      src={`${API_URL}/brands/${brand.id}/logo`}
                       alt={brand.name}
                       className="w-8 h-8 object-contain mr-3"
                     />

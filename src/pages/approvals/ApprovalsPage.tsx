@@ -6,6 +6,7 @@ import { approvalsService } from '../../services/approvalsService';
 import { Button } from '../../components/ui/Button';
 import { formatDate } from '../../utils/helpers';
 import { useAuthStore } from '../../store/authStore';
+import { AppFooter } from '../../components/layout/AppFooter';
 
 export const ApprovalsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ export const ApprovalsPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">
           {isPreApprover ? 'Předschvalování' : 'Schvalování'}
@@ -86,6 +87,8 @@ export const ApprovalsPage: React.FC = () => {
           ))}
         </div>
       )}
+
+      <AppFooter />
     </div>
   );
 };

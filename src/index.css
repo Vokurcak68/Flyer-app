@@ -12,6 +12,39 @@
   }
 */
 
+/* Vodafone Fonts */
+@font-face {
+  font-family: 'Vodafone Rg';
+  src: url('../public/fonts/VodafoneRg.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Vodafone Rg';
+  src: url('../public/fonts/VodafoneRgBd.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Vodafone Lt';
+  src: url('../public/fonts/VodafoneLt.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Vodafone ExBd';
+  src: url('../public/fonts/VodafoneExBd.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',

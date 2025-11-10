@@ -5,6 +5,7 @@ import { Save, ArrowLeft, Upload } from 'lucide-react';
 import { brandsService } from '../../services/brandsService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { AppFooter } from '../../components/layout/AppFooter';
 
 export const BrandFormPage: React.FC = () => {
   const { id } = useParams();
@@ -36,7 +37,8 @@ export const BrandFormPage: React.FC = () => {
       });
       // Set preview from API endpoint if brand has logo
       if (id) {
-        setLogoPreview(`http://localhost:4000/api/brands/${id}/logo`);
+        const API_URL = process.env.REACT_APP_API_URL || '/api';
+        setLogoPreview(`${API_URL}/brands/${id}/logo`);
       }
     }
   }, [brand, id]);
@@ -121,7 +123,7 @@ export const BrandFormPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
       <div className="mb-6">
         <Button variant="outline" onClick={() => navigate('/brands')} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -224,6 +226,8 @@ export const BrandFormPage: React.FC = () => {
           </Button>
         </div>
       </form>
+
+      <AppFooter />
     </div>
   );
 };

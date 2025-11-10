@@ -7,6 +7,7 @@ import { categoriesService } from '../../services/categoriesService';
 import { brandsService } from '../../services/brandsService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { AppFooter } from '../../components/layout/AppFooter';
 
 export const IconFormPage: React.FC = () => {
   const { id } = useParams();
@@ -133,7 +134,7 @@ export const IconFormPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
       <div className="mb-6">
         <Button variant="outline" onClick={() => navigate('/admin/icons')} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -296,6 +297,8 @@ export const IconFormPage: React.FC = () => {
           </div>
         </div>
       </form>
+
+      <AppFooter />
     </div>
   );
 };

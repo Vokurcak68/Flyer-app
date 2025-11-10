@@ -9,7 +9,13 @@
       "Bash(tasklist:*)",
       "Bash(findstr:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(while read file)",
+      "Bash(do if grep -q \"AppFooter\" \"$file\")",
+      "Bash(then echo \"$file\")",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(./build-production.bat)"
     ],
     "deny": [],
     "ask": []

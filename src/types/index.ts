@@ -80,6 +80,7 @@ export interface Product {
   categoryName?: string;
   subcategoryId?: string;
   subcategoryName?: string;
+  installationType?: 'BUILT_IN' | 'FREESTANDING';
   price: number;
   originalPrice?: number;
   icons?: ProductIcon[];

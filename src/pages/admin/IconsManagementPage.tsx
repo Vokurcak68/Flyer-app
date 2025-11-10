@@ -6,6 +6,7 @@ import { Icon } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
+import { AppFooter } from '../../components/layout/AppFooter';
 
 export const IconsManagementPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -142,7 +143,7 @@ export const IconsManagementPage: React.FC = () => {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 pb-16">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Icon Library</h1>
         <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
@@ -248,6 +249,8 @@ export const IconsManagementPage: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      <AppFooter />
     </div>
   );
 };

@@ -5,11 +5,13 @@ import { Plus, Edit2, Trash2, Search, Building2 } from 'lucide-react';
 import { brandsService } from '../../services/brandsService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { AppFooter } from '../../components/layout/AppFooter';
 
 export const BrandsListPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
+  const API_URL = process.env.REACT_APP_API_URL || '/api';
 
   const { data: brands = [], isLoading } = useQuery({
     queryKey: ['brands'],
@@ -44,7 +46,7 @@ export const BrandsListPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Značky</h1>
@@ -113,7 +115,7 @@ export const BrandsListPage: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     {brand.id ? (
                       <img
-                        src={`http://localhost:4000/api/brands/${brand.id}/logo`}
+                        src={`${API_URL}/brands/${brand.id}/logo`}
                         alt={brand.name}
                         className="w-12 h-12 object-contain"
                         onError={(e) => {
@@ -152,6 +154,8 @@ export const BrandsListPage: React.FC = () => {
           </table>
         </div>
       )}
+
+      <AppFooter />
     </div>
   );
 };

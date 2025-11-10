@@ -6,6 +6,7 @@ import { usersService } from '../../services/usersService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { UserRole } from '../../types';
+import { AppFooter } from '../../components/layout/AppFooter';
 
 const roleLabels: Record<UserRole, string> = {
   admin: 'Administrátor',
@@ -69,7 +70,7 @@ export const UserFormPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
       <div className="mb-6">
         <Button variant="outline" onClick={() => navigate('/admin/users')} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -143,6 +144,8 @@ export const UserFormPage: React.FC = () => {
           </Button>
         </div>
       </form>
+
+      <AppFooter />
     </div>
   );
 };

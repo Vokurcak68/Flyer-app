@@ -5,6 +5,7 @@ import { Plus, Edit2, Trash2, Search, Star } from 'lucide-react';
 import iconsService from '../../services/iconsService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { AppFooter } from '../../components/layout/AppFooter';
 
 export const IconsListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -48,7 +49,7 @@ export const IconsListPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Ikony</h1>
@@ -171,6 +172,8 @@ export const IconsListPage: React.FC = () => {
           </table>
         </div>
       )}
+
+      <AppFooter />
     </div>
   );
 };

@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, arrayMove, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ArrowLeft, Save, Send, Plus, Minus, Search, FileText, AlertCircle, Copy, XCircle, GripVertical } from 'lucide-react';
+import { ArrowLeft, Save, Send, Plus, Minus, Search, FileText, AlertCircle, Copy, XCircle, GripVertical, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { flyersService } from '../../services/flyersService';
 import { productsService } from '../../services/productsService';
 import { promoImagesService } from '../../services/promoImagesService';
@@ -18,6 +18,7 @@ import { ValidationErrorsModal } from '../../components/flyer/ValidationErrorsMo
 import { Product, FlyerPage, FlyerSlot } from '../../types';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import { useAuthStore } from '../../store/authStore';
+import { AppFooter } from '../../components/layout/AppFooter';
 
 // Sortable Page Button Component
 const SortablePageButton: React.FC<{
@@ -92,12 +93,20 @@ export const FlyerEditorPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'products' | 'promos'>('products');
   const [validationErrors, setValidationErrors] = useState<any[]>([]);
   const [showValidationModal, setShowValidationModal] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
+  const [isValidating] = useState(false);
 
   // Price filter states for end users
   const [minPrice, setMinPrice] = useState<number>(0);
   const [maxPrice, setMaxPrice] = useState<number>(10000);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
+
+  // Advanced filter states
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [filterEan, setFilterEan] = useState('');
+  const [filterBrandId, setFilterBrandId] = useState('');
+  const [filterCategoryId, setFilterCategoryId] = useState('');
+  const [filterSubcategoryId, setFilterSubcategoryId] = useState('');
+  const [filterInstallationType, setFilterInstallationType] = useState<'' | 'BUILT_IN' | 'FREESTANDING'>('');
 
   // Sensors for drag and drop - use PointerSensor with distance to prevent conflicts
   const sensors = useSensors(
@@ -231,6 +240,36 @@ export const FlyerEditorPage: React.FC = () => {
     queryFn: () => promoImagesService.getPromoImages(),
   });
 
+  // Fetch categories and brands for advanced filters (only for end users)
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { categoriesService } = await import('../../services/categoriesService');
+      return categoriesService.getAllCategories();
+    },
+    enabled: isMyFlyers,
+  });
+
+  const { data: brands = [] } = useQuery({
+    queryKey: ['brands'],
+    queryFn: async () => {
+      const { brandsService } = await import('../../services/brandsService');
+      return brandsService.getBrands();
+    },
+    enabled: isMyFlyers,
+  });
+
+  // Get subcategories for selected category
+  const { data: subcategories = [] } = useQuery({
+    queryKey: ['subcategories', filterCategoryId],
+    queryFn: async () => {
+      if (!filterCategoryId) return [];
+      const { categoriesService } = await import('../../services/categoriesService');
+      return categoriesService.getSubcategories(filterCategoryId);
+    },
+    enabled: isMyFlyers && !!filterCategoryId,
+  });
+
   useEffect(() => {
     if (flyer) {
       setFlyerData({
@@ -322,6 +361,7 @@ export const FlyerEditorPage: React.FC = () => {
         actionName: flyerData.actionName,
         validFrom: flyerData.validFrom,
         validTo: flyerData.validTo,
+        pages: preparePagesForAPI(flyerData.pages), // Save pages before submission
       });
       return flyersService.submitForApproval(id!);
     },
@@ -458,6 +498,12 @@ export const FlyerEditorPage: React.FC = () => {
     const newSlots = [...newPages[pageIndex].slots];
 
     if (product) {
+      // Validate that product has an energy class icon
+      const hasEnergyClassIcon = product.icons?.some((icon: any) => icon.isEnergyClass === true);
+      if (!hasEnergyClassIcon) {
+        alert('❌ Produkt nelze vložit do letáku!\n\nProdukt musí mít přiřazenou ikonu s energetickým štítkem.\nPřidejte energetický štítek v editaci produktu.');
+        return;
+      }
       newSlots[slotIndex] = { type: 'product', product };
     } else if (promo) {
       if (promo.defaultSize === 'footer') {
@@ -638,11 +684,29 @@ export const FlyerEditorPage: React.FC = () => {
     }
   }, [allProducts, isMyFlyers, priceRange]);
 
-  // Filter products by price range for end users
+  // Filter products by price range and advanced filters for end users
   const filteredProducts = isMyFlyers
     ? allProducts.filter(p => {
+        // Price filter
         const price = Number(p.price);
-        return price >= priceRange[0] && price <= priceRange[1];
+        if (price < priceRange[0] || price > priceRange[1]) return false;
+
+        // EAN filter
+        if (filterEan && !p.eanCode.includes(filterEan)) return false;
+
+        // Brand filter
+        if (filterBrandId && p.brandId !== filterBrandId) return false;
+
+        // Category filter
+        if (filterCategoryId && p.categoryId !== filterCategoryId) return false;
+
+        // Subcategory filter
+        if (filterSubcategoryId && p.subcategoryId !== filterSubcategoryId) return false;
+
+        // Installation type filter
+        if (filterInstallationType && p.installationType !== filterInstallationType) return false;
+
+        return true;
       })
     : allProducts;
 
@@ -665,7 +729,7 @@ export const FlyerEditorPage: React.FC = () => {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="max-w-7xl mx-auto px-4 py-3">
+      <div className="max-w-7xl mx-auto px-4 py-3 pb-16">
         {/* Rejection History - Full Width Top */}
         <RejectionHistory approvals={flyer?.approvals} rejectionReason={flyer?.rejectionReason} />
 
@@ -858,87 +922,221 @@ export const FlyerEditorPage: React.FC = () => {
                       className="mb-4 flex-shrink-0"
                     />
 
-                    {/* Price Range Filter - only for end users */}
-                    {isMyFlyers && allProducts.length > 0 && (
-                      <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200 flex-shrink-0">
-                        <div className="flex justify-between items-center mb-2">
-                          <label className="text-sm font-medium text-gray-700">
-                            Cenové rozpětí
-                          </label>
-                          <span className="text-sm text-gray-600">
-                            {priceRange[0]} - {priceRange[1]} Kč
-                          </span>
-                        </div>
-                        <div className="relative pt-1 pb-4">
-                          <input
-                            type="range"
-                            min={minPrice}
-                            max={maxPrice}
-                            value={priceRange[0]}
-                            onChange={(e) => {
-                              const value = Number(e.target.value);
-                              if (value <= priceRange[1]) {
-                                setPriceRange([value, priceRange[1]]);
-                              }
-                            }}
-                            className="absolute w-full h-2 bg-transparent appearance-none cursor-pointer pointer-events-none"
-                            style={{
-                              zIndex: priceRange[0] > maxPrice - 100 ? 5 : 3,
-                            }}
-                          />
-                          <input
-                            type="range"
-                            min={minPrice}
-                            max={maxPrice}
-                            value={priceRange[1]}
-                            onChange={(e) => {
-                              const value = Number(e.target.value);
-                              if (value >= priceRange[0]) {
-                                setPriceRange([priceRange[0], value]);
-                              }
-                            }}
-                            className="absolute w-full h-2 bg-transparent appearance-none cursor-pointer pointer-events-none"
-                            style={{
-                              zIndex: 4,
-                            }}
-                          />
-                          <div className="relative h-2 bg-gray-300 rounded-lg">
-                            <div
-                              className="absolute h-2 bg-blue-600 rounded-lg"
-                              style={{
-                                left: `${((priceRange[0] - minPrice) / (maxPrice - minPrice)) * 100}%`,
-                                right: `${100 - ((priceRange[1] - minPrice) / (maxPrice - minPrice)) * 100}%`,
-                              }}
-                            />
+                    {/* Advanced Filters - only for end users */}
+                    {isMyFlyers && (
+                      <div className="mb-4 border border-gray-200 rounded-lg flex-shrink-0">
+                        <button
+                          onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                          className="w-full px-3 py-2 flex items-center justify-between text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-t-lg"
+                        >
+                          <span>Rozšířené filtry</span>
+                          {showAdvancedFilters ? (
+                            <ChevronUp className="w-4 h-4" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4" />
+                          )}
+                        </button>
+
+                        {showAdvancedFilters && (
+                          <div className="px-3 py-2 bg-gray-50 border-t border-gray-200">
+                            {/* Price Range Filter - Full Width */}
+                            {allProducts.length > 0 && (
+                              <div className="mb-2">
+                                <div className="flex justify-between items-center mb-1">
+                                  <label className="text-xs font-medium text-gray-700">
+                                    Cenové rozpětí
+                                  </label>
+                                  <span className="text-xs text-gray-600">
+                                    {priceRange[0]} - {priceRange[1]} Kč
+                                  </span>
+                                </div>
+                                <div className="relative pt-1 pb-3">
+                                  <input
+                                    type="range"
+                                    min={minPrice}
+                                    max={maxPrice}
+                                    value={priceRange[0]}
+                                    onChange={(e) => {
+                                      const value = Number(e.target.value);
+                                      if (value <= priceRange[1]) {
+                                        setPriceRange([value, priceRange[1]]);
+                                      }
+                                    }}
+                                    className="absolute w-full h-2 bg-transparent appearance-none cursor-pointer pointer-events-none"
+                                    style={{
+                                      zIndex: priceRange[0] > maxPrice - 100 ? 5 : 3,
+                                    }}
+                                  />
+                                  <input
+                                    type="range"
+                                    min={minPrice}
+                                    max={maxPrice}
+                                    value={priceRange[1]}
+                                    onChange={(e) => {
+                                      const value = Number(e.target.value);
+                                      if (value >= priceRange[0]) {
+                                        setPriceRange([priceRange[0], value]);
+                                      }
+                                    }}
+                                    className="absolute w-full h-2 bg-transparent appearance-none cursor-pointer pointer-events-none"
+                                    style={{
+                                      zIndex: 4,
+                                    }}
+                                  />
+                                  <div className="relative h-2 bg-gray-300 rounded-lg">
+                                    <div
+                                      className="absolute h-2 bg-blue-600 rounded-lg"
+                                      style={{
+                                        left: `${((priceRange[0] - minPrice) / (maxPrice - minPrice)) * 100}%`,
+                                        right: `${100 - ((priceRange[1] - minPrice) / (maxPrice - minPrice)) * 100}%`,
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                                <style>{`
+                                  input[type="range"]::-webkit-slider-thumb {
+                                    appearance: none;
+                                    pointer-events: all;
+                                    width: 14px;
+                                    height: 14px;
+                                    background-color: #2563eb;
+                                    border-radius: 50%;
+                                    cursor: pointer;
+                                    border: 2px solid white;
+                                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                                  }
+                                  input[type="range"]::-moz-range-thumb {
+                                    appearance: none;
+                                    pointer-events: all;
+                                    width: 14px;
+                                    height: 14px;
+                                    background-color: #2563eb;
+                                    border-radius: 50%;
+                                    cursor: pointer;
+                                    border: 2px solid white;
+                                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                                  }
+                                `}</style>
+                              </div>
+                            )}
+
+                            {/* Filters Grid - 2 columns for better space efficiency */}
+                            <div className="grid grid-cols-2 gap-2 mb-2">
+                              {/* EAN Filter */}
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">EAN kód</label>
+                                <div className="relative">
+                                  <input
+                                    type="text"
+                                    value={filterEan}
+                                    onChange={(e) => setFilterEan(e.target.value)}
+                                    placeholder="Hledat..."
+                                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  />
+                                  {filterEan && (
+                                    <button
+                                      onClick={() => setFilterEan('')}
+                                      className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Brand Filter */}
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Značka</label>
+                                <select
+                                  value={filterBrandId}
+                                  onChange={(e) => setFilterBrandId(e.target.value)}
+                                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                >
+                                  <option value="">Všechny</option>
+                                  {brands.map(brand => (
+                                    <option key={brand.id} value={brand.id}>{brand.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              {/* Category Filter */}
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Kategorie</label>
+                                <select
+                                  value={filterCategoryId}
+                                  onChange={(e) => {
+                                    setFilterCategoryId(e.target.value);
+                                    setFilterSubcategoryId(''); // Reset subcategory when category changes
+                                    setFilterInstallationType(''); // Reset installation type when category changes
+                                  }}
+                                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                >
+                                  <option value="">Všechny</option>
+                                  {categories.map(category => (
+                                    <option key={category.id} value={category.id}>{category.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              {/* Subcategory Filter - only shown when category is selected and has subcategories */}
+                              {filterCategoryId && subcategories.length > 0 && (
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">Podkategorie</label>
+                                  <select
+                                    value={filterSubcategoryId}
+                                    onChange={(e) => setFilterSubcategoryId(e.target.value)}
+                                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  >
+                                    <option value="">Všechny</option>
+                                    {subcategories.map(subcategory => (
+                                      <option key={subcategory.id} value={subcategory.id}>{subcategory.name}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              )}
+
+                              {/* Installation Type Filter - only shown when category requires it */}
+                              {filterCategoryId && categories.find(c => c.id === filterCategoryId)?.requiresInstallationType && (
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">Typ</label>
+                                  <select
+                                    value={filterInstallationType}
+                                    onChange={(e) => setFilterInstallationType(e.target.value as '' | 'BUILT_IN' | 'FREESTANDING')}
+                                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  >
+                                    <option value="">Všechny</option>
+                                    <option value="BUILT_IN">Vestavné</option>
+                                    <option value="FREESTANDING">Volně stojící</option>
+                                  </select>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Products Count Info and Clear Button - In a row */}
+                            <div className="flex items-center justify-between pt-1.5 border-t border-gray-200">
+                              <div className="text-xs text-gray-500">
+                                <strong>{filteredProducts.length}</strong> z <strong>{allProducts.length}</strong> produktů
+                              </div>
+
+                              {/* Clear All Filters Button */}
+                              {(filterEan || filterBrandId || filterCategoryId || filterSubcategoryId || filterInstallationType || priceRange[0] !== minPrice || priceRange[1] !== maxPrice) && (
+                                <button
+                                  onClick={() => {
+                                    setFilterEan('');
+                                    setFilterBrandId('');
+                                    setFilterCategoryId('');
+                                    setFilterSubcategoryId('');
+                                    setFilterInstallationType('');
+                                    setPriceRange([minPrice, maxPrice]);
+                                  }}
+                                  className="px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 border border-red-300 rounded"
+                                >
+                                  Vymazat filtry
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <div className="text-xs text-gray-500 text-center">
-                          Zobrazeno {filteredProducts.length} z {allProducts.length} produktů
-                        </div>
-                        <style>{`
-                          input[type="range"]::-webkit-slider-thumb {
-                            appearance: none;
-                            pointer-events: all;
-                            width: 18px;
-                            height: 18px;
-                            background-color: #2563eb;
-                            border-radius: 50%;
-                            cursor: pointer;
-                            border: 2px solid white;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                          }
-                          input[type="range"]::-moz-range-thumb {
-                            appearance: none;
-                            pointer-events: all;
-                            width: 18px;
-                            height: 18px;
-                            background-color: #2563eb;
-                            border-radius: 50%;
-                            cursor: pointer;
-                            border: 2px solid white;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                          }
-                        `}</style>
+                        )}
                       </div>
                     )}
 
@@ -1071,6 +1269,8 @@ export const FlyerEditorPage: React.FC = () => {
         errors={validationErrors}
         flyerName={flyerData.name}
       />
+
+      <AppFooter />
     </DndContext>
   );
 };

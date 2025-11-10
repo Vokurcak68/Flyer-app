@@ -312,6 +312,9 @@ export class FlyersService {
                     originalPrice: true,
                     brandId: true,
                     brand: true,
+                    categoryId: true,
+                    subcategoryId: true,
+                    installationType: true,
                     icons: {
                       select: {
                         icon: {
@@ -389,6 +392,9 @@ export class FlyersService {
                     imageData: true, // INCLUDED for PDF generation
                     imageMimeType: true, // INCLUDED for PDF generation
                     brandId: true,
+                    categoryId: true,
+                    subcategoryId: true,
+                    installationType: true,
                     supplierId: true,
                     createdAt: true,
                     updatedAt: true,
@@ -1589,12 +1595,28 @@ export class FlyersService {
       let validFooterPromoImageId = null;
       if (page.footerPromoImageId) {
         if (userRole === UserRole.supplier) {
-          // Supplier: footer promo image must belong to them
+          // Supplier: footer promo image must either belong to them OR be assigned to a brand they have access to
           const dbPromoImage = await this.prisma.promoImage.findUnique({
             where: { id: page.footerPromoImageId },
           });
-          if (dbPromoImage && dbPromoImage.supplierId === userId) {
-            validFooterPromoImageId = page.footerPromoImageId;
+
+          if (dbPromoImage) {
+            // Check if promo belongs to supplier directly
+            if (dbPromoImage.supplierId === userId) {
+              validFooterPromoImageId = page.footerPromoImageId;
+            }
+            // Check if promo is assigned to a brand the supplier has access to
+            else if (dbPromoImage.brandId) {
+              const hasAccessToBrand = await this.prisma.userBrand.findFirst({
+                where: {
+                  userId,
+                  brandId: dbPromoImage.brandId,
+                },
+              });
+              if (hasAccessToBrand) {
+                validFooterPromoImageId = page.footerPromoImageId;
+              }
+            }
           }
         } else if (userRole === UserRole.end_user) {
           // End user: footer promo image must exist (frontend already filters to show only promo images from active flyers)
@@ -1675,7 +1697,6 @@ export class FlyersService {
 
             // Validate that product has energy class icon
             if (canUseProduct && !productHasEnergyClass) {
-              console.log(`[syncPages] Product ${slotData.productId} rejected: missing energy class icon`);
               throw new BadRequestException(
                 `Produkt nemůže být vložen do letáku. Produkt musí mít přiřazenou ikonu s energetickým štítkem.`
               );
@@ -1692,21 +1713,33 @@ export class FlyersService {
                   productId: slotData.productId,
                 },
               });
-            } else if (canUseProduct && !productHasEnergyClass) {
-              console.log(`[syncPages] Product ${slotData.productId} skipped: missing energy class icon`);
-            } else {
-              console.log(`[syncPages] Product ${slotData.productId} not accessible for user ${userId} (role: ${userRole})`);
             }
           } else if (slotData.type === 'promo' && slotData.promoImageId) {
             // Verify promo image access based on user role
             let canUsePromoImage = false;
 
             if (userRole === UserRole.supplier) {
-              // Supplier: promo image must belong to them
+              // Supplier: promo image must either belong to them OR be assigned to a brand they have access to
               const dbPromoImage = await this.prisma.promoImage.findUnique({
                 where: { id: slotData.promoImageId },
               });
-              canUsePromoImage = dbPromoImage && dbPromoImage.supplierId === userId;
+
+              if (dbPromoImage) {
+                // Check if promo belongs to supplier directly
+                if (dbPromoImage.supplierId === userId) {
+                  canUsePromoImage = true;
+                }
+                // Check if promo is assigned to a brand the supplier has access to
+                else if (dbPromoImage.brandId) {
+                  const hasAccessToBrand = await this.prisma.userBrand.findFirst({
+                    where: {
+                      userId,
+                      brandId: dbPromoImage.brandId,
+                    },
+                  });
+                  canUsePromoImage = !!hasAccessToBrand;
+                }
+              }
             } else if (userRole === UserRole.end_user) {
               // End user: promo image must exist (frontend already filters to show only promo images from active flyers)
               const dbPromoImage = await this.prisma.promoImage.findUnique({
@@ -1719,12 +1752,10 @@ export class FlyersService {
               // Validate header promo placement - only on first page and top row
               if (slotData.promoSize === 'header_2x1' || slotData.promoSize === 'header_2x2') {
                 if (page.pageNumber !== 1) {
-                  console.log(`[syncPages] Header promo ${slotData.promoImageId} can only be placed on first page`);
-                  continue; // Skip this slot
+                  continue; // Skip this slot - header promo only on first page
                 }
                 if (position !== 0 && position !== 1) {
-                  console.log(`[syncPages] Header promo ${slotData.promoImageId} can only be placed in top row (slots 0-1)`);
-                  continue; // Skip this slot
+                  continue; // Skip this slot - header promo only in top row
                 }
               }
 
@@ -1739,8 +1770,6 @@ export class FlyersService {
                   promoSize: slotData.promoSize || null,
                 },
               });
-            } else {
-              console.log(`[syncPages] Promo image ${slotData.promoImageId} not accessible for user ${userId} (role: ${userRole})`);
             }
           }
         }

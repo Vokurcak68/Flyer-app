@@ -13,7 +13,7 @@ export const DraggablePromoImage: React.FC<DraggablePromoImageProps> = ({ promoI
   });
 
   const getPromoImageUrl = (id: string) => {
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
+    const API_URL = process.env.REACT_APP_API_URL || '/api';
     const url = `${API_URL}/promo-images/${id}/image`;
     console.log('Promo image URL:', url);
     return url;
