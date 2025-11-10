@@ -1,5 +1,6 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsArray, ArrayMaxSize, Matches, Min, IsUUID } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsArray, ArrayMaxSize, Matches, Min, IsUUID, IsEnum } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { InstallationType } from '@prisma/client';
 
 export class CreateProductDto {
   @IsString()
@@ -55,4 +56,8 @@ export class CreateProductDto {
   @ArrayMaxSize(4, { message: 'Maximum 4 icons allowed per product' })
   @IsOptional()
   iconIds?: string[]; // Array of icon IDs from global icon library
+
+  @IsEnum(InstallationType)
+  @IsOptional()
+  installationType?: InstallationType; // Required only if category has requiresInstallationType = true
 }

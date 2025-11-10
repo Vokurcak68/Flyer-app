@@ -5,6 +5,7 @@ import { Plus, Edit2, Trash2, Search, FolderTree } from 'lucide-react';
 import { categoriesService } from '../../services/categoriesService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { AppFooter } from '../../components/layout/AppFooter';
 
 export const CategoriesListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -48,7 +49,7 @@ export const CategoriesListPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Kategorie</h1>
@@ -98,6 +99,9 @@ export const CategoriesListPage: React.FC = () => {
                   Název
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Typ
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   MSSQL kód
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -116,6 +120,15 @@ export const CategoriesListPage: React.FC = () => {
                 <tr key={category.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{category.name}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      category.requiresInstallationType
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {category.requiresInstallationType ? 'Rozlišuje typ' : 'Bez rozlišení'}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">
@@ -151,6 +164,8 @@ export const CategoriesListPage: React.FC = () => {
           </table>
         </div>
       )}
+
+      <AppFooter />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
 
 export class CreateCategoryDto {
   @IsString()
@@ -8,4 +8,8 @@ export class CreateCategoryDto {
   @IsString()
   @IsOptional()
   mssqlCode?: string; // Code for MSSQL integration
+
+  @IsBoolean()
+  @IsOptional()
+  requiresInstallationType?: boolean; // If true, products in this category must specify installation type (built-in vs freestanding)
 }

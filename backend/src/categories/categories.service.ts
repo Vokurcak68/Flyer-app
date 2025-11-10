@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateCategoryDto, UpdateCategoryDto } from './dto';
+import { CreateCategoryDto, UpdateCategoryDto, CreateSubcategoryDto, UpdateSubcategoryDto } from './dto';
 
 @Injectable()
 export class CategoriesService {
@@ -68,6 +68,7 @@ export class CategoriesService {
       data: {
         name: dto.name,
         mssqlCode: dto.mssqlCode,
+        requiresInstallationType: dto.requiresInstallationType ?? false,
       },
     });
   }
@@ -92,6 +93,7 @@ export class CategoriesService {
       data: {
         ...(dto.name && { name: dto.name }),
         ...(dto.mssqlCode !== undefined && { mssqlCode: dto.mssqlCode }),
+        ...(dto.requiresInstallationType !== undefined && { requiresInstallationType: dto.requiresInstallationType }),
       },
     });
   }
@@ -109,6 +111,64 @@ export class CategoriesService {
 
     return this.prisma.category.delete({
       where: { id },
+    });
+  }
+
+  // Subcategory management
+  async createSubcategory(categoryId: string, dto: CreateSubcategoryDto) {
+    // Verify category exists
+    await this.findOne(categoryId);
+
+    return this.prisma.subcategory.create({
+      data: {
+        name: dto.name,
+        categoryId,
+      },
+    });
+  }
+
+  async updateSubcategory(subcategoryId: string, dto: UpdateSubcategoryDto) {
+    const subcategory = await this.prisma.subcategory.findUnique({
+      where: { id: subcategoryId },
+    });
+
+    if (!subcategory) {
+      throw new NotFoundException(`Subcategory with ID ${subcategoryId} not found`);
+    }
+
+    return this.prisma.subcategory.update({
+      where: { id: subcategoryId },
+      data: {
+        ...(dto.name && { name: dto.name }),
+      },
+    });
+  }
+
+  async removeSubcategory(subcategoryId: string) {
+    const subcategory = await this.prisma.subcategory.findUnique({
+      where: { id: subcategoryId },
+      include: {
+        _count: {
+          select: {
+            products: true,
+          },
+        },
+      },
+    });
+
+    if (!subcategory) {
+      throw new NotFoundException(`Subcategory with ID ${subcategoryId} not found`);
+    }
+
+    // Check if subcategory has products
+    if (subcategory._count.products > 0) {
+      throw new ConflictException(
+        `Cannot delete subcategory "${subcategory.name}" because it has ${subcategory._count.products} associated products`
+      );
+    }
+
+    return this.prisma.subcategory.delete({
+      where: { id: subcategoryId },
     });
   }
 }

@@ -12,6 +12,7 @@ import { Modal } from '../../components/ui/Modal';
 import { ProductFlyerLayout } from '../../components/product/ProductFlyerLayout';
 import { Product } from '../../types';
 import DuplicateEanDialog from '../../components/product/DuplicateEanDialog';
+import { AppFooter } from '../../components/layout/AppFooter';
 
 export const ProductFormPage: React.FC = () => {
   const { id } = useParams();
@@ -19,6 +20,7 @@ export const ProductFormPage: React.FC = () => {
   const queryClient = useQueryClient();
   const isEdit = !!id;
   const [searchParams] = useSearchParams();
+  const API_URL = process.env.REACT_APP_API_URL || '/api';
 
   const [formData, setFormData] = useState({
     ean: '',
@@ -33,6 +35,7 @@ export const ProductFormPage: React.FC = () => {
     imageData: '',
     imageMimeType: '',
     iconIds: [] as string[],
+    installationType: '' as 'BUILT_IN' | 'FREESTANDING' | '',
   });
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
@@ -105,10 +108,11 @@ export const ProductFormPage: React.FC = () => {
         imageData: '',
         imageMimeType: '',
         iconIds: product.icons?.map(i => i.id) || [],
+        installationType: (product as any).installationType || '',
       });
       // Set preview from API endpoint if product has image
       if (id) {
-        setImagePreview(`http://localhost:4000/api/products/${id}/image`);
+        setImagePreview(`${API_URL}/products/${id}/image`);
       }
 
       // Check if product is in active approved flyer
@@ -184,13 +188,14 @@ export const ProductFormPage: React.FC = () => {
         imageData: imageData || '',
         imageMimeType: imageMimeType || '',
         iconIds: searchParams.get('iconIds') ? JSON.parse(searchParams.get('iconIds')!) : [],
+        installationType: (searchParams.get('installationType') as 'BUILT_IN' | 'FREESTANDING' | '') || '',
       });
 
       console.log('FormData nastavena s imageData délkou:', imageData?.length || 0);
 
       // Nastavíme preview
       if (imageData && imageMimeType) {
-        const imageUrl = `http://localhost:4000/api/products/${copyFromId}/image`;
+        const imageUrl = `${API_URL}/products/${copyFromId}/image`;
         setImagePreview(imageUrl);
         console.log('Preview nastaven na:', imageUrl);
       }
@@ -278,9 +283,9 @@ export const ProductFormPage: React.FC = () => {
           newFormData.name = result.erpProductName;
         }
 
-        // Auto-fill brand if empty - find brand by name match
+        // Auto-fill brand if empty - find brand by name match (case-insensitive)
         if (!newFormData.brandId && result.erpBrand) {
-          const matchingBrand = brands.find(b => b.name === result.erpBrand);
+          const matchingBrand = brands.find(b => b.name.toLowerCase() === result.erpBrand.toLowerCase());
           if (matchingBrand) {
             newFormData.brandId = matchingBrand.id;
           }
@@ -511,7 +516,7 @@ export const ProductFormPage: React.FC = () => {
     console.log('ID produktu:', id);
 
     // Načteme obrázek před navigací
-    const imageUrl = `http://localhost:4000/api/products/${id}/image`;
+    const imageUrl = `${API_URL}/products/${id}/image`;
     console.log('URL obrázku:', imageUrl);
 
     try {
@@ -587,7 +592,7 @@ export const ProductFormPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
       <div className="mb-6 flex items-center">
         <Button variant="outline" onClick={() => navigate('/products')}>
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -694,13 +699,13 @@ export const ProductFormPage: React.FC = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Kategorie</label>
                 <select
                   value={formData.categoryId}
                   onChange={(e) => {
-                    setFormData({ ...formData, categoryId: e.target.value, subcategoryId: '' });
+                    setFormData({ ...formData, categoryId: e.target.value, subcategoryId: '', installationType: '' });
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   disabled={isInActiveFlyer}
@@ -718,12 +723,30 @@ export const ProductFormPage: React.FC = () => {
                   value={formData.subcategoryId}
                   onChange={(e) => setFormData({ ...formData, subcategoryId: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  disabled={!formData.categoryId || isInActiveFlyer}
+                  disabled={!formData.categoryId || subcategories.length === 0 || isInActiveFlyer}
                 >
                   <option value="">Vyberte podkategorii</option>
                   {subcategories.map((subcategory) => (
                     <option key={subcategory.id} value={subcategory.id}>{subcategory.name}</option>
                   ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Typ spotřebiče</label>
+                <select
+                  value={formData.installationType}
+                  onChange={(e) => setFormData({ ...formData, installationType: e.target.value as 'BUILT_IN' | 'FREESTANDING' | '' })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  disabled={(() => {
+                    if (!formData.categoryId || isInActiveFlyer) return true;
+                    const selectedCategory = categories.find(c => c.id === formData.categoryId);
+                    return !selectedCategory || !selectedCategory.requiresInstallationType;
+                  })()}
+                >
+                  <option value="">Vyberte typ</option>
+                  <option value="BUILT_IN">Vestavné spotřebiče</option>
+                  <option value="FREESTANDING">Volně stojící spotřebiče</option>
                 </select>
               </div>
             </div>
@@ -1173,6 +1196,8 @@ export const ProductFormPage: React.FC = () => {
           onCancel={handleDuplicateEanCancel}
         />
       )}
+
+      <AppFooter />
     </div>
   );
 };

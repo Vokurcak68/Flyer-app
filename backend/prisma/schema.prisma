@@ -76,11 +76,12 @@ model Brand {
 }
 
 model Category {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  mssqlCode   String?  @map("mssql_code") // Mapping code for MSSQL integration
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id                      String   @id @default(uuid())
+  name                    String   @unique
+  mssqlCode               String?  @map("mssql_code") // Mapping code for MSSQL integration
+  requiresInstallationType Boolean  @default(false) @map("requires_installation_type") // If true, products must specify built-in vs freestanding
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
 
   subcategories Subcategory[]
   products      Product[]
@@ -104,22 +105,23 @@ model Subcategory {
 }
 
 model Product {
-  id            String   @id @default(uuid())
-  supplierId    String   @map("supplier_id")
-  brandId       String   @map("brand_id")
-  categoryId    String?  @map("category_id")
-  subcategoryId String?  @map("subcategory_id")
-  eanCode       String   @map("ean_code")
-  name          String
-  description   String?
-  supplierNote  String?  @map("supplier_note") @db.VarChar(100)
-  imageData     Bytes?   @map("image_data")
-  imageMimeType String?  @map("image_mime_type")
-  price         Decimal  @db.Decimal(10, 2)
-  originalPrice Decimal? @map("original_price") @db.Decimal(10, 2)
-  isActive      Boolean  @default(true) @map("is_active")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  id                 String              @id @default(uuid())
+  supplierId         String              @map("supplier_id")
+  brandId            String              @map("brand_id")
+  categoryId         String?             @map("category_id")
+  subcategoryId      String?             @map("subcategory_id")
+  eanCode            String              @map("ean_code")
+  name               String
+  description        String?
+  supplierNote       String?             @map("supplier_note") @db.VarChar(100)
+  imageData          Bytes?              @map("image_data")
+  imageMimeType      String?             @map("image_mime_type")
+  price              Decimal             @db.Decimal(10, 2)
+  originalPrice      Decimal?            @map("original_price") @db.Decimal(10, 2)
+  installationType   InstallationType?   @map("installation_type") // Built-in vs Freestanding (only for categories with requiresInstallationType)
+  isActive           Boolean             @default(true) @map("is_active")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
 
   supplier     User         @relation(fields: [supplierId], references: [id])
   brand        Brand        @relation(fields: [brandId], references: [id])
@@ -136,6 +138,11 @@ model Product {
   @@index([categoryId])
   @@index([subcategoryId])
   @@map("products")
+}
+
+enum InstallationType {
+  BUILT_IN      // Vestavné spotřebiče
+  FREESTANDING  // Volně stojící spotřebiče
 }
 
 // Global icon library managed by admin
