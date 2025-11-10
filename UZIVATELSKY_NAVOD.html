@@ -482,8 +482,10 @@
                     <p>Systém pro správu letáků je webová aplikace určená pro tvorbu, správu a schvalování propagačních letáků. Aplikace podporuje kompletní workflow od vytvoření letáku, přes jeho schvalování až po finální distribuci.</p>
 
                     <div class="alert alert-success" style="margin-top: 20px;">
-                        <strong>🎉 Nové ve verzi 3.1.2:</strong>
+                        <strong>🎉 Nové ve verzi 3.1.5:</strong>
                         <ul style="margin-top: 10px; margin-left: 20px;">
+                            <li><strong>Barevné pozadí ikon podle značky</strong> - Ikony mohou mít pozadí v barvě značky produktu</li>
+                            <li><strong>Lepší viditelnost ikon</strong> - Šedivé pozadí pro bílé/průhledné ikony</li>
                             <li><strong>Brand management s barvami</strong> - Značky mohou mít vlastní barvy pro produkty</li>
                             <li><strong>Pre-approval workflow</strong> - Dvoustupňové schvalování letáků</li>
                             <li><strong>Automatické datum v patičce</strong> - Footer může automaticky zobrazit datum platnosti</li>
@@ -709,7 +711,87 @@
                 </div>
 
                 <div class="feature">
-                    <h3>4. Správa promo obrázků</h3>
+                    <h3>4. Správa ikon produktů</h3>
+
+                    <div class="alert alert-info">
+                        <strong>💡 Nová funkcionalita v3.1.5:</strong> Ikony nyní podporují barevné pozadí podle značky produktu! Každá ikona může mít zaškrtnuté "Použít barvu značky jako pozadí", což zajistí automatické barevné zvýraznění ikony podle barvy značky produktu.
+                    </div>
+
+                    <h4 style="margin: 20px 0 10px 0;">4.1 Vytvoření nové ikony</h4>
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        V menu klikněte na <strong>Ikony</strong>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Klikněte na <span class="button btn-primary">+ Nová ikona</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Vyplňte povinné údaje:
+                        <ul style="margin-top: 10px; margin-left: 30px;">
+                            <li>Název ikony</li>
+                            <li>Obrázek ikony (PNG doporučeno, max 5MB)</li>
+                        </ul>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        <strong>NOVÉ!</strong> Zaškrtněte "Použít barvu značky jako pozadí", pokud chcete, aby ikona měla barevné pozadí podle značky produktu
+                    </div>
+                    <div class="step">
+                        <span class="step-number">5</span>
+                        Zaškrtněte "Ikona energetické třídy", pokud se jedná o energetický štítek (bude 2× širší)
+                    </div>
+                    <div class="step">
+                        <span class="step-number">6</span>
+                        Přiřaďte kategorie a značky, pro které je ikona určena
+                    </div>
+                    <div class="step">
+                        <span class="step-number">7</span>
+                        Klikněte na <span class="button btn-success">Uložit</span>
+                    </div>
+
+                    <div class="alert alert-success">
+                        <strong>✅ Jak funguje barevné pozadí ikon:</strong>
+                        <ul style="margin-top: 10px; margin-left: 20px;">
+                            <li><strong>Pokud je zaškrtnuto "Použít barvu značky":</strong> Ikona se zobrazí s pozadím v barvě značky produktu (např. Samsung ikony s modrým pozadím)</li>
+                            <li><strong>V PDF:</strong> Barevné pozadí se správně vykreslí i v generovaném PDF</li>
+                            <li><strong>Pro průhledné ikony:</strong> Ideální pro bílé nebo průhledné PNG ikony, které by jinak nebyly viditelné</li>
+                        </ul>
+                    </div>
+
+                    <h4 style="margin: 20px 0 10px 0;">4.2 Viditelnost ikon (NOVÉ!)</h4>
+                    <div class="alert alert-info">
+                        <strong>💡 Lepší viditelnost:</strong> Pro lepší viditelnost bílých a průhledných ikon mají všechny ikony nyní šedivé pozadí v těchto místech:
+                        <ul style="margin-top: 10px; margin-left: 20px;">
+                            <li>Seznam ikon (admin)</li>
+                            <li>Detail ikony při editaci</li>
+                            <li>Výběr ikon v produktu</li>
+                            <li>Vybrané ikony u produktu</li>
+                        </ul>
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Screenshot: Formulář pro vytvoření ikony s checkboxem "Použít barvu značky"</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Formulář ikony s checkboxy "Ikona energetické třídy" a "Použít barvu značky jako pozadí"]
+                        </div>
+                    </div>
+
+                    <h4 style="margin: 20px 0 10px 0;">4.3 Doporučení pro ikony</h4>
+                    <div class="card">
+                        <div class="card-header">✅ Best Practices</div>
+                        <ul style="margin-top: 10px; margin-left: 20px;">
+                            <li><strong>Formát:</strong> PNG s průhledným pozadím pro nejlepší výsledky</li>
+                            <li><strong>Velikost:</strong> 64x64 px nebo 128x128 px</li>
+                            <li><strong>Barva ikon:</strong> Pro ikony s "Použít barvu značky" používejte bílé nebo světlé ikony, které budou dobře viditelné na barevném pozadí</li>
+                            <li><strong>Energetické štítky:</strong> Zaškrtněte "Ikona energetické třídy" pro energetické štítky (A+++, A++, atd.) - budou 2× širší</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>5. Správa promo obrázků</h3>
 
                     <div class="step">
                         <span class="step-number">1</span>
@@ -768,7 +850,7 @@
                         </div>
                     </div>
 
-                    <h4 style="margin: 20px 0 10px 0;">4.1 Omezení pro header promo</h4>
+                    <h4 style="margin: 20px 0 10px 0;">5.1 Omezení pro header promo</h4>
                     <div class="alert alert-warning">
                         <strong>⚠️ Důležité omezení:</strong> Header promo obrázky (header_2x1 a header_2x2) lze použít pouze:
                         <ul style="margin-top: 10px; margin-left: 20px;">
@@ -780,9 +862,9 @@
                 </div>
 
                 <div class="feature">
-                    <h3>5. Vytvoření letáku</h3>
+                    <h3>6. Vytvoření letáku</h3>
 
-                    <h4 style="margin: 20px 0 10px 0;">5.1 Nový leták</h4>
+                    <h4 style="margin: 20px 0 10px 0;">6.1 Nový leták</h4>
                     <div class="step">
                         <span class="step-number">1</span>
                         V menu klikněte na <strong>Letáky</strong>
@@ -816,7 +898,7 @@
                         <strong>✅ Barevné produkty pro Suppliery:</strong> V editoru vidíte produkty s barvami podle jejich značek (např. Samsung modře, Apple šedě). End users vidí všechny produkty černě.
                     </div>
 
-                    <h4 style="margin: 20px 0 10px 0;">5.2 Přidání stránky</h4>
+                    <h4 style="margin: 20px 0 10px 0;">6.2 Přidání stránky</h4>
                     <div class="step">
                         <span class="step-number">1</span>
                         V editoru letáku klikněte na <span class="button btn-outline">+ Přidat stránku</span>
@@ -826,7 +908,7 @@
                         Nová stránka se automaticky vytvoří s 8 prázdnými sloty (2x4 grid)
                     </div>
 
-                    <h4 style="margin: 20px 0 10px 0;">5.3 Přidání produktů na stránku</h4>
+                    <h4 style="margin: 20px 0 10px 0;">6.3 Přidání produktů na stránku</h4>
                     <div class="step">
                         <span class="step-number">1</span>
                         V pravém panelu vyhledejte produkt
@@ -841,10 +923,10 @@
                     </div>
 
                     <div class="alert alert-info">
-                        <strong>💡 Tip:</strong> Každá stránka má 8 slotů v mřížce 2x4. Produkty lze přesouvat mezi sloty pomocí drag & drop.
+                        <strong>💡 Tip:</strong> Každá stránka má 8 slotů v mřížce 2x4. Produkty lze přesouvat mezi sloty pomocí drag & drop. Pokud mají produkty přiřazené ikony s "Použít barvu značky", zobrazí se tyto ikony s barevným pozadím podle barvy značky.
                     </div>
 
-                    <h4 style="margin: 20px 0 10px 0;">5.4 Přidání promo obrázku do patičky</h4>
+                    <h4 style="margin: 20px 0 10px 0;">6.4 Přidání promo obrázku do patičky</h4>
                     <div class="step">
                         <span class="step-number">1</span>
                         Přepněte na záložku <strong>Promos</strong> v pravém panelu
@@ -860,9 +942,9 @@
                 </div>
 
                 <div class="feature">
-                    <h3>6. Validace a odeslání letáku</h3>
+                    <h3>7. Validace a odeslání letáku</h3>
 
-                    <h4 style="margin: 20px 0 10px 0;">6.1 Uložení konceptu</h4>
+                    <h4 style="margin: 20px 0 10px 0;">7.1 Uložení konceptu</h4>
                     <div class="step">
                         <span class="step-number">1</span>
                         Klikněte na <span class="button btn-outline">💾 Uložit</span>
@@ -872,7 +954,7 @@
                         Leták se uloží jako koncept a můžete na něm dále pracovat
                     </div>
 
-                    <h4 style="margin: 20px 0 10px 0;">6.2 Odeslání k autorizaci</h4>
+                    <h4 style="margin: 20px 0 10px 0;">7.2 Odeslání k autorizaci</h4>
                     <div class="step">
                         <span class="step-number">1</span>
                         Zkontrolujte, že všechny produkty jsou správně umístěny
@@ -895,7 +977,7 @@
                         </ul>
                     </div>
 
-                    <h4 style="margin: 20px 0 10px 0;">6.3 Řešení validačních chyb</h4>
+                    <h4 style="margin: 20px 0 10px 0;">7.3 Řešení validačních chyb</h4>
                     <div class="step">
                         <span class="step-number">1</span>
                         Pokud validace najde chyby, zobrazí se modální okno se seznamem chyb
@@ -967,7 +1049,7 @@
                         <strong>✅ Export chyb:</strong> Chyby můžete exportovat do TXT nebo HTML/PDF formátu pro sdílení s kolegy nebo archivaci.
                     </div>
 
-                    <h4 style="margin: 20px 0 10px 0;">6.4 Úspěšné odeslání</h4>
+                    <h4 style="margin: 20px 0 10px 0;">7.4 Úspěšné odeslání</h4>
                     <div class="step">
                         <span class="step-number">1</span>
                         Pokud všechny produkty projdou validací, leták se odešle ke schválení
@@ -983,7 +1065,7 @@
                 </div>
 
                 <div class="feature">
-                    <h3>7. Generování PDF</h3>
+                    <h3>8. Generování PDF</h3>
 
                     <div class="step">
                         <span class="step-number">1</span>
@@ -1003,12 +1085,12 @@
                     </div>
 
                     <div class="alert alert-info">
-                        <strong>💡 PDF náhled:</strong> PDF obsahuje všechny stránky letáku s produkty, cenami a promo obrázky v profesionálním layoutu.
+                        <strong>💡 PDF náhled:</strong> PDF obsahuje všechny stránky letáku s produkty, cenami a promo obrázky v profesionálním layoutu. Ikony s "Použít barvu značky" se zobrazí s barevným pozadím podle značky produktu.
                     </div>
                 </div>
 
                 <div class="feature">
-                    <h3>8. Odmítnutý leták</h3>
+                    <h3>9. Odmítnutý leták</h3>
 
                     <div class="step">
                         <span class="step-number">1</span>
@@ -1299,7 +1381,7 @@
                 </h2>
 
                 <div class="alert alert-success">
-                    <strong>🎉 Nové v3.1.2:</strong> End users nyní mohou snadno vytvářet vlastní letáky s automatickým nastavením dat a cenovým filtrem pro rychlý výběr produktů!
+                    <strong>🎉 Nové v3.1.5:</strong> End users nyní mohou snadno vytvářet vlastní letáky s automatickým nastavením dat a cenovým filtrem pro rychlý výběr produktů! Produkty mají černé hlavičky pro jednotný vzhled.
                 </div>
 
                 <div class="feature">
@@ -1521,6 +1603,30 @@
                 </div>
 
                 <div class="feature">
+                    <h3>Ikony a značky</h3>
+
+                    <div class="card">
+                        <div class="card-header">❓ Co znamená "Použít barvu značky jako pozadí" u ikon?</div>
+                        <p>Pokud je tato možnost zaškrtnuta, ikona se zobrazí s pozadím v barvě značky produktu. To je ideální pro bílé nebo průhledné PNG ikony, které by jinak nebyly dobře viditelné.</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">❓ Proč nevidím bílé ikony?</div>
+                        <p>Bílé ikony mohou být špatně viditelné na bílém pozadí. Systém automaticky přidává šedivé pozadí v seznamech a při výběru ikon. Pro produkty v letácích použijte možnost "Použít barvu značky jako pozadí".</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">❓ Kolik ikon mohu přiřadit k produktu?</div>
+                        <p>Každý produkt může mít maximálně 4 ikony. Ikony se zobrazují na levé straně obrázku produktu v letáku.</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">❓ Co jsou energetické štítky?</div>
+                        <p>Energetické štítky (A+++, A++, atd.) jsou speciální typ ikon, které se zobrazují 2× širší než běžné ikony. Při vytváření ikony zaškrtněte "Ikona energetické třídy".</p>
+                    </div>
+                </div>
+
+                <div class="feature">
                     <h3>Produkty a EAN kódy</h3>
 
                     <div class="card">
@@ -1611,7 +1717,7 @@
             <footer style="background: #2c3e50; color: white; padding: 30px 40px; margin-top: 40px;">
                 <div style="text-align: center;">
                     <h3>Systém pro správu letáků</h3>
-                    <p style="margin-top: 10px; opacity: 0.8;">Verze 3.1.2 | Poslední aktualizace: 6. listopadu 2025</p>
+                    <p style="margin-top: 10px; opacity: 0.8;">Verze 3.1.5 | Poslední aktualizace: 10. listopadu 2025</p>
                     <p style="margin-top: 20px; font-size: 0.9em;">
                         <strong>Technická podpora:</strong> podpora@example.com | +420 123 456 789
                     </p>
