@@ -5,8 +5,11 @@ import { productsService } from '../../services/productsService';
 import { Input } from '../../components/ui/Input';
 import { AppFooter } from '../../components/layout/AppFooter';
 
+type FilterType = 'all' | 'active' | 'discontinued';
+
 export const ActiveFlyersProductsPage: React.FC = () => {
   const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<FilterType>('all');
   const queryClient = useQueryClient();
 
   const { data: products = [], isLoading } = useQuery({
@@ -47,11 +50,22 @@ export const ActiveFlyersProductsPage: React.FC = () => {
     }
   };
 
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(search.toLowerCase()) ||
-    product.eanCode.toLowerCase().includes(search.toLowerCase()) ||
-    product.brandName.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredProducts = products
+    .filter((product) => {
+      // Apply status filter
+      if (filter === 'active' && product.discontinued) return false;
+      if (filter === 'discontinued' && !product.discontinued) return false;
+      return true;
+    })
+    .filter((product) => {
+      // Apply search filter
+      if (!search) return true;
+      return (
+        product.name.toLowerCase().includes(search.toLowerCase()) ||
+        product.eanCode.toLowerCase().includes(search.toLowerCase()) ||
+        product.brandName.toLowerCase().includes(search.toLowerCase())
+      );
+    });
 
   const discontinuedCount = products.filter(p => p.discontinued).length;
   const reactivatedCount = products.filter(p => !p.discontinued && p.soldOut).length;
@@ -87,9 +101,14 @@ export const ActiveFlyersProductsPage: React.FC = () => {
         </p>
       </div>
 
-      {/* Statistics */}
+      {/* Statistics - now clickable filters */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow p-6">
+        <button
+          onClick={() => setFilter('all')}
+          className={`bg-white rounded-lg shadow p-6 text-left transition-all hover:shadow-lg ${
+            filter === 'all' ? 'ring-2 ring-blue-600 shadow-lg' : ''
+          }`}
+        >
           <div className="flex items-center">
             <Package className="h-8 w-8 text-blue-600 mr-3" />
             <div>
@@ -97,8 +116,13 @@ export const ActiveFlyersProductsPage: React.FC = () => {
               <p className="text-2xl font-bold text-gray-900">{products.length}</p>
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
+        </button>
+        <button
+          onClick={() => setFilter('active')}
+          className={`bg-white rounded-lg shadow p-6 text-left transition-all hover:shadow-lg ${
+            filter === 'active' ? 'ring-2 ring-green-600 shadow-lg' : ''
+          }`}
+        >
           <div className="flex items-center">
             <CheckCircle className="h-8 w-8 text-green-600 mr-3" />
             <div>
@@ -106,8 +130,13 @@ export const ActiveFlyersProductsPage: React.FC = () => {
               <p className="text-2xl font-bold text-green-700">{activeCount}</p>
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
+        </button>
+        <button
+          onClick={() => setFilter('discontinued')}
+          className={`bg-white rounded-lg shadow p-6 text-left transition-all hover:shadow-lg ${
+            filter === 'discontinued' ? 'ring-2 ring-red-600 shadow-lg' : ''
+          }`}
+        >
           <div className="flex items-center">
             <AlertCircle className="h-8 w-8 text-red-600 mr-3" />
             <div>
@@ -115,7 +144,7 @@ export const ActiveFlyersProductsPage: React.FC = () => {
               <p className="text-2xl font-bold text-red-700">{discontinuedCount}</p>
             </div>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Search */}

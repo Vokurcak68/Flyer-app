@@ -11,6 +11,7 @@ import {
   Query,
   Res,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { FlyersService } from './flyers.service';
@@ -238,7 +239,7 @@ export class FlyersController {
   }
 
   @Post(':id/generate-pdf')
-  @Roles('approver')
+  @Roles('approver', 'admin')
   async generatePDF(@Param('id') flyerId: string, @Request() req) {
     // Get full flyer data with images for PDF generation
     const flyer = await this.flyersService.findOneForPdf(
@@ -249,12 +250,9 @@ export class FlyersController {
 
     // Generate PDF (returns base64 string)
     const pdfData = await this.pdfService.generateFlyerPDF(flyer, req.user.role);
-    await this.flyersService.update(
-      flyerId,
-      { pdfData, pdfMimeType: 'application/pdf' },
-      req.user.userId,
-      req.user.role,
-    );
+
+    // Use special method that doesn't check permissions (approvers can update PDF)
+    await this.flyersService.updatePdfData(flyerId, pdfData, 'application/pdf');
 
     return {
       success: true,

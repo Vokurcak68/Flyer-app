@@ -610,11 +610,11 @@ export class PdfService {
       doc.opacity(0.3);
 
       // Draw "VYPRODÁNO" text
-      doc.fontSize(48)
+      doc.fontSize(36)
          .font('Vodafone-Rg-Bold')
          .fillColor('#DC2626') // red-600
-         .text('VYPRODÁNO', centerX - 100, centerY - 24, {
-           width: 200,
+         .text('VYPRODÁNO', centerX - 120, centerY - 18, {
+           width: 240,
            align: 'center',
          });
 

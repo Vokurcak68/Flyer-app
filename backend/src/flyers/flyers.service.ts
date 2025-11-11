@@ -1953,4 +1953,24 @@ export class FlyersService {
       },
     });
   }
+
+  /**
+   * Update PDF data for a flyer (used by approvers to regenerate PDF)
+   * This method bypasses the normal update restrictions
+   */
+  async updatePdfData(id: string, pdfData: Buffer, pdfMimeType: string) {
+    const flyer = await this.prisma.flyer.findUnique({ where: { id } });
+
+    if (!flyer) {
+      throw new NotFoundException('Flyer not found');
+    }
+
+    return this.prisma.flyer.update({
+      where: { id },
+      data: {
+        pdfData,
+        pdfMimeType,
+      },
+    });
+  }
 }

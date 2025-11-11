@@ -619,6 +619,20 @@
                             <li>Potvrďte smazání</li>
                         </ul>
                     </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Formulář pro vytvoření nového uživatele</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Formulář s vyplněnými poli - jméno, příjmení, email, heslo, role (dropdown), přiřazení značek (checkbox nebo multiselect)]
+                        </div>
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Přehled uživatelů systému</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Tabulka se sloupci - jméno, email, role, značky, akce (ikona tužky pro editaci, ikona koše pro smazání)]
+                        </div>
+                    </div>
                 </div>
 
                 <div class="feature">
@@ -642,6 +656,20 @@
                             <li>Úprava názvů ikon</li>
                             <li>Smazání nepoužívaných ikon</li>
                         </ul>
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Formulář pro přidání nové ikony</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Formulář s polem pro název, checkbox "Ikona energetické třídy", checkbox "Použít barvu značky jako pozadí", tlačítko pro nahrání souboru]
+                        </div>
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Přehled ikon v systému</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Grid/seznam ikon s náhledy (šedivé pozadí!), názvy a akcemi (editace, smazání)]
+                        </div>
                     </div>
                 </div>
 
@@ -673,6 +701,20 @@
                             <li>Klikněte na ikonu koše u příslušné značky</li>
                             <li>Potvrďte smazání (pouze pokud značka není používána)</li>
                         </ul>
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Formulář pro vytvoření nové značky</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Formulář s polem pro název, barva značky (color picker), tlačítko pro nahrání loga]
+                        </div>
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Přehled značek v systému</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Tabulka s logy, názvy, barvami značek a akcemi (editace, smazání)]
+                        </div>
                     </div>
                 </div>
 
@@ -709,6 +751,68 @@
                         <strong>Viditelnost pro koncové uživatele:</strong>
                         <p>Promo obrázky označené jako "Zobrazit koncovým uživatelům" jsou dostupné při vytváření letáků pro koncové uživatele. Tímto můžete kontrolovat, které propagační materiály jsou k dispozici pro jednotlivé role.</p>
                     </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Formulář pro přidání promo obrázku</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Formulář s poli - název, značka (dropdown), typ (dropdown), checkbox "Zobrazit koncovým uživatelům", checkbox "Vyplnit datum" (jen pro Patička), nahrání souboru]
+                        </div>
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Přehled promo obrázků s filtrováním</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Přehled promo obrázků s náhledy, filtr podle značky, informace o typu a viditelnosti]
+                        </div>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <h3>📦 Produkty v letácích</h3>
+                    <p>V sekci "Produkty v letácích" můžete zobrazit všechny produkty, které jsou právě použity v aktivních letácích, a synchronizovat jejich stav dostupnosti s ERP systémem.</p>
+
+                    <div class="card">
+                        <strong>Synchronizace stavu "Vyprodáno":</strong>
+                        <ol>
+                            <li>Klikněte na tlačítko "Synchronizovat stav vyprodáno"</li>
+                            <li>Systém porovná produkty v aktivních letácích s aktuálními daty z ERP</li>
+                            <li>Produkty, které už nejsou v ERP dostupné (ukončeny), budou automaticky označeny jako "Vyprodáno"</li>
+                            <li>Produkty, které se opět objevily v ERP, budou odznačeny jako "Vyprodáno"</li>
+                            <li>Potvrzovací dialog zobrazí počet produktů, které budou označeny/odznačeny</li>
+                        </ol>
+                    </div>
+
+                    <div class="card">
+                        <strong>Filtrování produktů:</strong>
+                        <ul>
+                            <li>V horní části stránky jsou tři velké obdélníky s počty produktů</li>
+                            <li>Kliknutím na obdélník <strong>"Celkem produktů"</strong> (modrý) zobrazíte všechny produkty</li>
+                            <li>Kliknutím na obdélník <strong>"Aktivní v ERP"</strong> (zelený) zobrazíte pouze aktivní produkty</li>
+                            <li>Kliknutím na obdélník <strong>"Ukončené"</strong> (červený) zobrazíte pouze ukončené produkty</li>
+                            <li>Aktivní filtr je zvýrazněn barevným rámečkem</li>
+                            <li>Filtry můžete kombinovat s vyhledáváním v poli "Hledat..."</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <strong>Zobrazení stavu vyprodáno:</strong>
+                        <ul>
+                            <li>Produkty označené jako "Vyprodáno" se v aktivních letácích zobrazují s vodotiskem "VYPRODÁNO"</li>
+                            <li>Vodotisk je zobrazen šikmo přes produkt s 30% průhledností červenou barvou</li>
+                            <li>V PDF letácích je vodotisk také automaticky zakreslen</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>ℹ️ Automatická synchronizace:</strong> Synchronizace probíhá obousměrně - označuje produkty jako vyprodané i odznačuje produkty, které se opět objevily v ERP a jsou dostupné.
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Stránka Produkty v letácích se tlačítkem synchronizace</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Tabulka s produkty v aktivních letácích, tlačítko "Synchronizovat stav vyprodáno", sloupce s názvem produktu, EAN kódem, cenou, stavem vyprodáno]
+                        </div>
+                    </div>
                 </div>
 
                 <div class="alert alert-warning">
@@ -743,17 +847,11 @@
                         Klikněte na tlačítko <span class="button btn-primary">Přihlásit se</span>
                     </div>
 
-                    <div class="mockup">
-                        <div class="mockup-header">📱 Přihlašovací obrazovka</div>
-                        <div class="form-group">
-                            <label class="form-label">Email</label>
-                            <input type="text" class="form-input" placeholder="vas@email.cz" disabled>
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Přihlašovací obrazovka</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Přihlašovací obrazovka s poli pro email a heslo a tlačítkem "Přihlásit se"]
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Heslo</label>
-                            <input type="password" class="form-input" placeholder="••••••••" disabled>
-                        </div>
-                        <button class="button btn-primary">Přihlásit se</button>
                     </div>
                 </div>
 
@@ -790,6 +888,13 @@
                         Klikněte na <span class="button btn-success">Uložit</span>
                     </div>
 
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Formulář pro vytvoření nového produktu</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Formulář s vyplněnými poli - název, EAN kód, akční cena, původní cena, kategorie, značka, náhled nahraného obrázku, výběr ikon (4 sloty)]
+                        </div>
+                    </div>
+
                     <div class="alert alert-warning">
                         <strong>⚠️ Pozor:</strong> EAN kód musí existovat v ERP systému! Systém automaticky ověřuje platnost EAN při vytváření produktu.
                     </div>
@@ -812,6 +917,13 @@
                         <strong>💡 Příklad poznámky:</strong> "NOVINKA 2024", "POSLEDNÍ KUSY", "VÝPRODEJ" atd.
                     </div>
 
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Zobrazení poznámky dodavatele v produktu</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Detail produktu v letáku s poznámkou dodavatele (tučně na oranžovém pozadí nad cenou)]
+                        </div>
+                    </div>
+
                     <h4 style="margin: 20px 0 10px 0;">2.1.2 Kopírování produktu</h4>
                     <div class="step">
                         <span class="step-number">1</span>
@@ -826,8 +938,22 @@
                         Upravte potřebné údaje (zejména EAN kód) a uložte
                     </div>
 
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Vytvoření kopie existujícího produktu</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Formulář s předvyplněnými daty a tlačítkem "Vytvořit kopii"]
+                        </div>
+                    </div>
+
                     <div class="alert alert-warning">
                         <strong>⚠️ Ochrana produktů:</strong> Produkty používané v aktivních nebo schválených letácích nelze upravovat ani mazat. Po uplynutí platnosti letáku se tato ochrana automaticky zruší.
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Přehled produktů s chráněnými položkami</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Tabulka produktů - některé mají ikonu zámku (nelze editovat/mazat)]
+                        </div>
                     </div>
 
                     <h4 style="margin: 20px 0 10px 0;">2.2 Import produktů z CSV</h4>
@@ -850,6 +976,13 @@
 
                     <div class="alert alert-info">
                         <strong>💡 Formát CSV:</strong> Soubor musí obsahovat sloupce: <code>name</code>, <code>eanCode</code>, <code>price</code>, <code>originalPrice</code>, <code>categoryId</code>, <code>brandId</code>
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Náhled importovaných produktů z CSV</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Dialog s náhledem dat před importem v tabulce]
+                        </div>
                     </div>
                 </div>
 
@@ -875,6 +1008,13 @@
                     <div class="step">
                         <span class="step-number">5</span>
                         Uložte změny
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Formulář pro vytvoření značky dodavatelem</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Formulář s polem pro název, výběr barvy a nahráním loga (PNG s průhledným pozadím)]
+                        </div>
                     </div>
                 </div>
 
@@ -920,6 +1060,20 @@
                     <div class="alert alert-info">
                         <strong>💡 Automatické vyplnění data:</strong> Když zaškrtnete "Vyplnit datum platnosti" u typu Footer, systém automaticky vypíše datum z pole "Platnost do" bílým tučným písmem vpravo v patičce. To je užitečné pro patičky s informacemi o platnosti akce.
                     </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Formulář pro vytvoření promo obrázku</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Formulář s dropdown pro typ (Single, Horizontal, Square, Full Page, Footer) a checkbox "Vyplnit datum platnosti"]
+                        </div>
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Ukázka patičky s automaticky vyplněným datem</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Patička letáku s automaticky vygenerovaným datem (bílé tučné písmo vpravo)]
+                        </div>
+                    </div>
                 </div>
 
                 <div class="feature">
@@ -948,31 +1102,17 @@
                         Klikněte na <span class="button btn-success">Vytvořit</span>
                     </div>
 
-                    <div class="mockup">
-                        <div class="mockup-header">📄 Editor letáku - přehled</div>
-                        <div style="display: flex; gap: 20px;">
-                            <div style="flex: 2;">
-                                <strong>Náhled stránky</strong>
-                                <div class="page-preview">
-                                    <div class="product-grid">
-                                        <div class="product-slot">🖼️</div>
-                                        <div class="product-slot">🖼️</div>
-                                        <div class="product-slot">🖼️</div>
-                                        <div class="product-slot">🖼️</div>
-                                        <div class="product-slot"></div>
-                                        <div class="product-slot"></div>
-                                        <div class="product-slot"></div>
-                                        <div class="product-slot"></div>
-                                    </div>
-                                    <div class="page-number">Strana 1</div>
-                                </div>
-                            </div>
-                            <div style="flex: 1;">
-                                <strong>Seznam produktů</strong>
-                                <div class="card">Produkt 1</div>
-                                <div class="card">Produkt 2</div>
-                                <div class="card">Produkt 3</div>
-                            </div>
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Formulář pro vytvoření nového letáku</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Formulář s poli - název akce, platnost od (date picker), platnost do (date picker)]
+                        </div>
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Editor letáku - hlavní pracovní plocha</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Celá obrazovka s levým panelem (náhled stránky grid 2x4), pravým panelem (záložky Produkty/Promos, vyhledávání, seznam produktů), horní lišta (název letáku, datum od/do, tlačítka Uložit/Odeslat)]
                         </div>
                     </div>
 
@@ -998,6 +1138,13 @@
                         <strong>💡 Tip:</strong> Během vytváření kopie je tlačítko "Vytvořit kopii" deaktivované, aby se zabránilo vytvoření více kopií najednou.
                     </div>
 
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Kopírování existujícího letáku</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Horní panel s tlačítkem "Vytvořit kopii" a progress indikátor během kopírování]
+                        </div>
+                    </div>
+
                     <h4 style="margin: 20px 0 10px 0;">5.3 Přidání stránky</h4>
                     <div class="step">
                         <span class="step-number">1</span>
@@ -1006,6 +1153,13 @@
                     <div class="step">
                         <span class="step-number">2</span>
                         Nová stránka se automaticky vytvoří s 8 prázdnými sloty (2x4 grid)
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Přidání nové stránky do letáku</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Editor s více stránkami, tlačítko "+ Přidat stránku" a nově přidaná prázdná stránka s 8 prázdnými sloty]
+                        </div>
                     </div>
 
                     <h4 style="margin: 20px 0 10px 0;">5.4 Přidání produktů na stránku</h4>
@@ -1024,6 +1178,13 @@
 
                     <div class="alert alert-info">
                         <strong>💡 Tip:</strong> Každá stránka má 8 slotů v mřížce 2x4. Produkty lze přesouvat mezi sloty pomocí drag & drop.
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Přidání produktu pomocí drag & drop</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Produkt během přetahování s vizuálním indikátorem cílového slotu]
+                        </div>
                     </div>
 
                     <h4 style="margin: 20px 0 10px 0;">5.5 Přidání promo obrázku do patičky</h4>
@@ -1047,6 +1208,13 @@
                     <div class="alert alert-info">
                         <strong>💡 Automatické datum:</strong> Datum se zobrazuje ve formátu DD.MM.RRRR (např. 31.12.2024) a je umístěno vpravo s odsazením od kraje patičky.
                     </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Stránka s patičkou a automatickým datem</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Stránka letáku s 8 produkty nahoře a patičkou dole s automatickým datem]
+                        </div>
+                    </div>
                 </div>
 
                 <div class="feature">
@@ -1060,6 +1228,13 @@
                     <div class="step">
                         <span class="step-number">2</span>
                         Leták se uloží jako koncept a můžete na něm dále pracovat
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Uložení letáku jako koncept</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Editor s tlačítkem "💾 Uložit" a stavem letáku "Koncept" (šedý badge)]
+                        </div>
                     </div>
 
                     <h4 style="margin: 20px 0 10px 0;">6.2 Odeslání k autorizaci</h4>
@@ -1085,54 +1260,23 @@
                         </ul>
                     </div>
 
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Odeslání letáku k autorizaci</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Tlačítko "📤 Odeslat k autorizaci" a loading spinner během validace]
+                        </div>
+                    </div>
+
                     <h4 style="margin: 20px 0 10px 0;">6.3 Řešení validačních chyb</h4>
                     <div class="step">
                         <span class="step-number">1</span>
                         Pokud validace najde chyby, zobrazí se modální okno se seznamem chyb
                     </div>
 
-                    <div class="mockup">
-                        <div class="mockup-header">⚠️ Validační chyby letáku</div>
-                        <div class="alert alert-danger">
-                            <strong>Nalezeno 2 chyby</strong>
-                        </div>
-                        <div class="card" style="border-left: 4px solid #e74c3c;">
-                            <div class="card-header">
-                                1. iPhone 14 Pro
-                                <button class="button btn-outline" style="float: right;">✏️ Editovat produkt</button>
-                            </div>
-                            <p><strong>EAN:</strong> 1234567890123</p>
-                            <p><strong>Chyby:</strong></p>
-                            <ul>
-                                <li>EAN kód nebyl nalezen v ERP systému</li>
-                            </ul>
-                        </div>
-                        <div class="card" style="border-left: 4px solid #e74c3c;">
-                            <div class="card-header">
-                                2. Samsung Galaxy S23
-                                <button class="button btn-outline" style="float: right;">✏️ Editovat produkt</button>
-                            </div>
-                            <p><strong>EAN:</strong> 9876543210987</p>
-                            <p><strong>Chyby:</strong></p>
-                            <ul>
-                                <li>Nesouhlasí akční cena (ERP: 25990 Kč, Leták: 24990 Kč)</li>
-                            </ul>
-                            <p><strong>Detail cen:</strong></p>
-                            <table class="table">
-                                <tr>
-                                    <td>Akční cena v letáku:</td>
-                                    <td><strong>24990 Kč</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Akční cena v ERP:</td>
-                                    <td><strong style="color: #27ae60;">25990 Kč</strong></td>
-                                </tr>
-                            </table>
-                        </div>
-                        <div style="margin-top: 20px;">
-                            <button class="button btn-outline">📄 Exportovat TXT</button>
-                            <button class="button btn-outline">📋 Exportovat HTML/PDF</button>
-                            <button class="button btn-danger" style="float: right;">Zavřít</button>
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Modální okno s validačními chybami</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Modální okno s nadpisem "⚠️ Validační chyby letáku", seznam produktů s chybami (EAN, název, popis chyby), tlačítka "Editovat produkt", "Export do TXT", "Export do PDF/HTML"]
                         </div>
                     </div>
 
@@ -1157,6 +1301,13 @@
                         <strong>✅ Export chyb:</strong> Chyby můžete exportovat do TXT nebo HTML/PDF formátu pro sdílení s kolegy nebo archivaci.
                     </div>
 
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Export validačních chyb do PDF</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Vygenerovaný PDF dokument s validačními chybami v přehledném formátu]
+                        </div>
+                    </div>
+
                     <h4 style="margin: 20px 0 10px 0;">6.4 Úspěšné odeslání</h4>
                     <div class="step">
                         <span class="step-number">1</span>
@@ -1169,6 +1320,13 @@
                     <div class="step">
                         <span class="step-number">3</span>
                         Leták je nyní zamčen pro úpravy
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Leták odeslaný k předschválení</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Detail letáku se stavem "Čeká na předschválení" (oranžový badge) a zamčeným editorem (produkty nelze přesouvat)]
+                        </div>
                     </div>
                 </div>
 
@@ -1195,6 +1353,13 @@
                     <div class="alert alert-info">
                         <strong>💡 PDF náhled:</strong> PDF obsahuje všechny stránky letáku s produkty, cenami a promo obrázky v profesionálním layoutu.
                     </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Ukázka vygenerovaného PDF letáku</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Otevřené PDF v prohlížeči - stránka A4 s produkty, cenami, promo obrázky v profesionálním layoutu]
+                        </div>
+                    </div>
                 </div>
 
                 <div class="feature">
@@ -1220,6 +1385,13 @@
                         <span class="step-number">5</span>
                         Odešlete leták znovu k autorizaci
                     </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Detail odmítnutého letáku</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Detail letáku se stavem "Zamítnuto" (červený badge), text s důvodem zamítnutí a tlačítko "✏️ Upravit"]
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -1242,35 +1414,11 @@
                         Zobrazí se seznam letáků čekajících na předschválení
                     </div>
 
-                    <div class="mockup">
-                        <div class="mockup-header">📋 Letáky čekající na předschválení</div>
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Název</th>
-                                    <th>Dodavatel</th>
-                                    <th>Platnost</th>
-                                    <th>Stav</th>
-                                    <th>Akce</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Letní akce 2025</td>
-                                    <td>Jan Novák</td>
-                                    <td>01.06.2025 - 30.06.2025</td>
-                                    <td><span class="status-badge status-pending">Čeká na předschválení</span></td>
-                                    <td><button class="button btn-primary btn-sm">Zobrazit</button></td>
-                                </tr>
-                                <tr>
-                                    <td>Black Friday 2025</td>
-                                    <td>Marie Svobodová</td>
-                                    <td>15.11.2025 - 30.11.2025</td>
-                                    <td><span class="status-badge status-pending">Čeká na předschválení</span></td>
-                                    <td><button class="button btn-primary btn-sm">Zobrazit</button></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Seznam letáků čekajících na předschválení</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Tabulka s letáky čekajícími na předschválení - název, dodavatel, platnost od-do, stav, tlačítko "Zobrazit detail"]
+                        </div>
                     </div>
                 </div>
 
@@ -1295,6 +1443,13 @@
                     <div class="step">
                         <span class="step-number">3</span>
                         Vygenerujte PDF náhled pomocí <span class="button btn-outline">📄 Náhled PDF</span>
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Detail letáku v režimu předschválení</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Detail s náhledem všech stránek, tlačítko "📄 Náhled PDF", kontrolní seznam (EAN kódy, ceny, obrázky), tlačítka "✅ Předschválit" a "❌ Zamítnout"]
+                        </div>
                     </div>
                 </div>
 
@@ -1321,6 +1476,20 @@
                     <div class="alert alert-success">
                         <strong>✅ Info:</strong> Po předschválení je leták automaticky předán Schvalovatelovi k finálnímu schválení.
                     </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Předschválení letáku - dialog</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Potvrzovací dialog s textem "Opravdu chcete předschválit tento leták?" a tlačítky "Ano, předschválit" / "Zrušit"]
+                        </div>
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Leták po předschválení</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Detail letáku se stavem "Čeká na schválení" (žlutý badge) a informací o předschvalovateli]
+                        </div>
+                    </div>
                 </div>
 
                 <div class="feature">
@@ -1335,15 +1504,10 @@
                         V dialogovém okně zadejte důvod zamítnutí
                     </div>
 
-                    <div class="mockup">
-                        <div class="mockup-header">❌ Zamítnutí letáku</div>
-                        <div class="form-group">
-                            <label class="form-label">Důvod zamítnutí *</label>
-                            <textarea class="form-input" rows="4" placeholder="Prosím uveďte podrobný důvod zamítnutí...">Nesprávné ceny u produktů iPhone 14 a Samsung Galaxy S23. Zkontrolujte aktuální ceny v ERP systému.</textarea>
-                        </div>
-                        <div style="margin-top: 20px;">
-                            <button class="button btn-danger">Zamítnout leták</button>
-                            <button class="button btn-outline">Zrušit</button>
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Dialog pro zamítnutí letáku</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Modální dialog s textarea pro důvod zamítnutí a tlačítky "Zamítnout leták" (červené) / "Zrušit"]
                         </div>
                     </div>
 
@@ -1381,6 +1545,13 @@
                             <li>Poznámky</li>
                         </ul>
                     </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Historie schvalování letáku</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Sekce "Historie schvalování" s časovou osou akcí - kdo, kdy, jakou akci provedl, případné poznámky/důvody]
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -1403,30 +1574,11 @@
                         Zobrazí se letáky, které prošly předschválením
                     </div>
 
-                    <div class="mockup">
-                        <div class="mockup-header">📋 Letáky čekající na finální schválení</div>
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Název</th>
-                                    <th>Dodavatel</th>
-                                    <th>Předschvalovatel</th>
-                                    <th>Platnost</th>
-                                    <th>Stav</th>
-                                    <th>Akce</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Letní akce 2025</td>
-                                    <td>Jan Novák</td>
-                                    <td>Petra Dvořáková</td>
-                                    <td>01.06.2025 - 30.06.2025</td>
-                                    <td><span class="status-badge status-pending">Čeká na schválení</span></td>
-                                    <td><button class="button btn-primary btn-sm">Zobrazit</button></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Seznam letáků čekajících na finální schválení</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Tabulka s letáky čekajícími na finální schválení - název, dodavatel, předschvalovatel, platnost, stav, tlačítko "Zobrazit detail"]
+                        </div>
                     </div>
                 </div>
 
@@ -1448,6 +1600,13 @@
                     <div class="step">
                         <span class="step-number">4</span>
                         Vygenerujte PDF pro finální kontrolu
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Detail letáku v režimu finálního schválení</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Detail s náhledem stránek, informace o předschválení (kdo předschválil, kdy), tlačítko "📄 Náhled PDF", tlačítka "✅ Schválit" a "❌ Zamítnout"]
+                        </div>
                     </div>
                 </div>
 
@@ -1473,6 +1632,20 @@
 
                     <div class="alert alert-success">
                         <strong>✅ Aktivní leták:</strong> Schválený leták v období platnosti se automaticky zobrazí Koncový uživatelům jako aktivní.
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Schválení letáku - potvrzení</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Potvrzovací dialog a následně detail se stavem "Schváleno" (zelený badge)]
+                        </div>
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Aktivní leták po schválení</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Detail aktivního letáku se stavem "Aktivní" (zelený badge) a informacemi o schválení]
+                        </div>
                     </div>
                 </div>
 
@@ -1515,7 +1688,34 @@
                             <li>Zobrazit PDF</li>
                             <li>Předčasně ukončit platnost</li>
                             <li>Zobrazit detail</li>
+                            <li><strong>Přegenerovat PDF</strong> - aktualizuje PDF s nejnovějšími údaji (např. vodotisk "Vyprodáno")</li>
                         </ul>
+                    </div>
+
+                    <div class="card">
+                        <strong>Přegenerování PDF:</strong>
+                        <ol>
+                            <li>U aktivního letáku klikněte na tlačítko <span class="button btn-primary btn-sm">🔄 Generovat PDF</span></li>
+                            <li>Potvrďte přegenerování v dialogovém okně</li>
+                            <li>Systém vytvoří nové PDF s aktuálními daty (např. produkty označené jako vyprodané budou mít vodotisk)</li>
+                            <li>Původní PDF bude nahrazeno novým</li>
+                        </ol>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>ℹ️ Kdy použít přegenerování PDF:</strong>
+                        <ul>
+                            <li>Když administrátor synchronizoval stav "Vyprodáno" a je potřeba aktualizovat PDF s vodotisky</li>
+                            <li>Když je potřeba opravit chybu v PDF bez nutnosti znovu schvalovat celý leták</li>
+                            <li>PDF se přegeneruje s aktuálním stavem všech produktů v letáku</li>
+                        </ul>
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Přehled všech aktivních letáků s tlačítkem pro generování PDF</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Stránka s přehledem všech aktivních letáků - karty s náhledem, název, platnost, tlačítka "📄 PDF", "🔄 Generovat PDF", "🛑 Ukončit předčasně", "👁️ Detail"]
+                        </div>
                     </div>
                 </div>
             </section>
@@ -1544,27 +1744,10 @@
                         </ul>
                     </div>
 
-                    <div class="mockup">
-                        <div class="mockup-header">🚀 Aktivní letáky</div>
-                        <div class="grid">
-                            <div class="card">
-                                <div class="card-header">Letní akce 2025</div>
-                                <p><strong>Platnost:</strong> 01.06.2025 - 30.06.2025</p>
-                                <p><strong>Značky:</strong> Samsung, Apple</p>
-                                <div style="margin-top: 15px;">
-                                    <button class="button btn-primary btn-sm">📄 Zobrazit PDF</button>
-                                    <button class="button btn-outline btn-sm">👁️ Detail</button>
-                                </div>
-                            </div>
-                            <div class="card">
-                                <div class="card-header">Týdenní nabídka</div>
-                                <p><strong>Platnost:</strong> 10.06.2025 - 16.06.2025</p>
-                                <p><strong>Značky:</strong> Xiaomi, Huawei</p>
-                                <div style="margin-top: 15px;">
-                                    <button class="button btn-primary btn-sm">📄 Zobrazit PDF</button>
-                                    <button class="button btn-outline btn-sm">👁️ Detail</button>
-                                </div>
-                            </div>
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Dashboard koncového uživatele</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Dashboard s kartami aktivních letáků, vyhledávací pole, filtr podle značek, tlačítka "📄 Zobrazit PDF" / "👁️ Detail"]
                         </div>
                     </div>
                 </div>
@@ -1590,6 +1773,13 @@
                             <li>Sdílet</li>
                         </ul>
                     </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Zobrazení PDF letáku v prohlížeči</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: PDF otevřené v novém okně prohlížeče s možnostmi stažení, tisku, sdílení (toolbar prohlížeče)]
+                        </div>
+                    </div>
                 </div>
 
                 <div class="feature">
@@ -1609,6 +1799,13 @@
                             <li>Období platnosti</li>
                             <li>Promo obrázky</li>
                         </ul>
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Detail letáku pro koncového uživatele</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Detailní zobrazení s náhledem všech stránek, seznam produktů s cenami, promo obrázky, informace o platnosti]
+                        </div>
                     </div>
                 </div>
 
@@ -1632,6 +1829,13 @@
                             <li>Názvu</li>
                         </ul>
                     </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Filtrace a řazení aktivních letáků</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Rozhraní s aktivními filtry - vyhledávací pole (vyplněné), filtr podle značek (vybrané značky), dropdown pro řazení (např. "Od nejnovějšího")]
+                        </div>
+                    </div>
                 </div>
 
                 <div class="feature">
@@ -1652,6 +1856,13 @@
 
                     <div class="alert alert-info">
                         <strong>💡 Info:</strong> Koncový uživatel může vytvářet letáky, ale nemůže je odesílat ke schválení. To musí udělat Dodavatel.
+                    </div>
+
+                    <div class="screenshot">
+                        <div class="screenshot-label">📸 Stránka 'Moje letáky'</div>
+                        <div style="background: #e9ecef; padding: 60px; text-align: center; border-radius: 4px;">
+                            [MÍSTO PRO SCREENSHOT: Přehled vlastních konceptů end usera, tlačítko "+ Nový leták", seznam konceptů s možností editace]
+                        </div>
                     </div>
                 </div>
             </section>
@@ -1751,7 +1962,7 @@
 
                     <div class="card">
                         <div class="card-header">❓ Koho kontaktovat při problémech?</div>
-                        <p>Kontaktujte technickou podporu na email: podpora@example.com nebo telefonicky: +420 123 456 789</p>
+                        <p>Kontaktujte technickou podporu na email: eletak@oresi.cz</p>
                     </div>
                 </div>
 
@@ -1765,9 +1976,9 @@
             <footer style="background: #2c3e50; color: white; padding: 30px 40px; margin-top: 40px;">
                 <div style="text-align: center;">
                     <h3>Systém pro správu letáků</h3>
-                    <p style="margin-top: 10px; opacity: 0.8;">Verze 1.0 | Poslední aktualizace: 2. listopadu 2025</p>
+                    <p style="margin-top: 10px; opacity: 0.8;">Verze 3.1.7 | Poslední aktualizace: 11. listopadu 2025</p>
                     <p style="margin-top: 20px; font-size: 0.9em;">
-                        <strong>Technická podpora:</strong> podpora@example.com | +420 123 456 789
+                        <strong>Technická podpora:</strong> eletak@oresi.cz
                     </p>
                 </div>
             </footer>
