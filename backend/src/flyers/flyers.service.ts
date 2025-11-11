@@ -390,6 +390,7 @@ export class FlyersService {
                     eanCode: true,
                     price: true,
                     originalPrice: true,
+                    soldOut: true,
                     imageData: true, // INCLUDED for PDF generation
                     imageMimeType: true, // INCLUDED for PDF generation
                     brandId: true,
@@ -512,6 +513,7 @@ export class FlyersService {
                     eanCode: true,
                     price: true,
                     originalPrice: true,
+                    soldOut: true,
                     // imageData: excluded for performance - frontend uses URL
                     // imageMimeType: excluded for performance
                     brandId: true,
