@@ -238,6 +238,7 @@ export class FlyersController {
   }
 
   @Post(':id/generate-pdf')
+  @Roles('approver')
   async generatePDF(@Param('id') flyerId: string, @Request() req) {
     // Get full flyer data with images for PDF generation
     const flyer = await this.flyersService.findOneForPdf(
