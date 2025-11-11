@@ -27,11 +27,22 @@ export const ActiveFlyersProductsPage: React.FC = () => {
 
   const handleMarkSoldOut = () => {
     const discontinuedCount = products.filter(p => p.discontinued).length;
-    if (discontinuedCount === 0) {
-      alert('Žádné ukončené produkty k označení');
+    const reactivatedCount = products.filter(p => !p.discontinued && p.soldOut).length;
+
+    if (discontinuedCount === 0 && reactivatedCount === 0) {
+      alert('Žádné změny k provedení');
       return;
     }
-    if (confirm(`Opravdu chcete označit ${discontinuedCount} ukončených produktů jako vyprodáno?`)) {
+
+    const messages = [];
+    if (discontinuedCount > 0) {
+      messages.push(`${discontinuedCount} ukončených produktů bude označeno jako vyprodáno`);
+    }
+    if (reactivatedCount > 0) {
+      messages.push(`${reactivatedCount} produktů bude odznačeno (zpět v ERP)`);
+    }
+
+    if (confirm(`${messages.join('\n')}\n\nPokračovat?`)) {
       markSoldOutMutation.mutate();
     }
   };
@@ -43,7 +54,9 @@ export const ActiveFlyersProductsPage: React.FC = () => {
   );
 
   const discontinuedCount = products.filter(p => p.discontinued).length;
+  const reactivatedCount = products.filter(p => !p.discontinued && p.soldOut).length;
   const activeCount = products.length - discontinuedCount;
+  const hasChangesToApply = discontinuedCount > 0 || reactivatedCount > 0;
 
   if (isLoading) {
     return (
@@ -62,11 +75,11 @@ export const ActiveFlyersProductsPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Produkty v aktivních letácích</h1>
           <button
             onClick={handleMarkSoldOut}
-            disabled={markSoldOutMutation.isPending || discontinuedCount === 0}
+            disabled={markSoldOutMutation.isPending || !hasChangesToApply}
             className="flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
           >
             <PlayCircle className="h-5 w-5 mr-2" />
-            {markSoldOutMutation.isPending ? 'Zpracovávám...' : 'Označit ukončené jako vyprodáno'}
+            {markSoldOutMutation.isPending ? 'Zpracovávám...' : 'Synchronizovat stav vyprodáno'}
           </button>
         </div>
         <p className="text-gray-600">

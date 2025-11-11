@@ -948,6 +948,7 @@ export class ProductsService {
                 eanCode: slot.product.eanCode,
                 price: slot.product.price,
                 originalPrice: slot.product.originalPrice,
+                soldOut: slot.product.soldOut || false,
                 brandName: slot.product.brand.name,
                 brandColor: slot.product.brand.color,
                 categoryName: slot.product.category?.name || null,
@@ -987,36 +988,71 @@ export class ProductsService {
     // Get products from active flyers
     const productsInActiveFlyers = await this.getActiveFlyersProducts();
 
-    // Filter discontinued products
+    // Filter discontinued products (not in ERP)
     const discontinuedProducts = productsInActiveFlyers.filter(p => p.discontinued);
 
-    if (discontinuedProducts.length === 0) {
-      return {
-        success: true,
-        message: 'Žádné ukončené produkty nenalezeny v aktivních letácích',
-        updatedCount: 0,
-      };
+    // Filter active products (in ERP) that are currently marked as soldOut
+    const reactivatedProducts = productsInActiveFlyers.filter(p => !p.discontinued && p.soldOut);
+
+    let markedSoldOutCount = 0;
+    let reactivatedCount = 0;
+
+    // Mark discontinued products as soldOut
+    if (discontinuedProducts.length > 0) {
+      const discontinuedIds = discontinuedProducts.map(p => p.id);
+      const result = await this.prisma.product.updateMany({
+        where: {
+          id: {
+            in: discontinuedIds,
+          },
+        },
+        data: {
+          soldOut: true,
+        },
+      });
+      markedSoldOutCount = result.count;
     }
 
-    // Update soldOut flag for discontinued products
-    const productIds = discontinuedProducts.map(p => p.id);
-
-    const result = await this.prisma.product.updateMany({
-      where: {
-        id: {
-          in: productIds,
+    // Unmark reactivated products (back in ERP)
+    if (reactivatedProducts.length > 0) {
+      const reactivatedIds = reactivatedProducts.map(p => p.id);
+      const result = await this.prisma.product.updateMany({
+        where: {
+          id: {
+            in: reactivatedIds,
+          },
         },
-      },
-      data: {
-        soldOut: true,
-      },
-    });
+        data: {
+          soldOut: false,
+        },
+      });
+      reactivatedCount = result.count;
+    }
+
+    // Build message
+    const messages: string[] = [];
+    if (markedSoldOutCount > 0) {
+      messages.push(`Označeno ${markedSoldOutCount} produktů jako vyprodáno`);
+    }
+    if (reactivatedCount > 0) {
+      messages.push(`Odznačeno ${reactivatedCount} produktů (zpět v ERP)`);
+    }
+    if (messages.length === 0) {
+      messages.push('Žádné změny nebyly provedeny');
+    }
 
     return {
       success: true,
-      message: `Označeno ${result.count} produktů jako vyprodáno`,
-      updatedCount: result.count,
-      updatedProducts: discontinuedProducts.map(p => ({
+      message: messages.join(', '),
+      markedSoldOutCount,
+      reactivatedCount,
+      totalUpdated: markedSoldOutCount + reactivatedCount,
+      discontinuedProducts: discontinuedProducts.map(p => ({
+        id: p.id,
+        name: p.name,
+        eanCode: p.eanCode,
+      })),
+      reactivatedProducts: reactivatedProducts.map(p => ({
         id: p.id,
         name: p.name,
         eanCode: p.eanCode,

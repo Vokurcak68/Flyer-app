@@ -141,6 +141,7 @@ export const productsService = {
     eanCode: string;
     price: number;
     originalPrice: number | null;
+    soldOut: boolean;
     brandName: string;
     brandColor: string | null;
     categoryName: string | null;
@@ -159,8 +160,15 @@ export const productsService = {
   async markDiscontinuedAsSoldOut(): Promise<{
     success: boolean;
     message: string;
-    updatedCount: number;
-    updatedProducts: Array<{
+    markedSoldOutCount: number;
+    reactivatedCount: number;
+    totalUpdated: number;
+    discontinuedProducts: Array<{
+      id: string;
+      name: string;
+      eanCode: string;
+    }>;
+    reactivatedProducts: Array<{
       id: string;
       name: string;
       eanCode: string;
