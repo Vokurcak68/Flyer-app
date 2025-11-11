@@ -1,19 +1,34 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { FileText, Search } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { FileText, Search, RefreshCw } from 'lucide-react';
 import { flyersService } from '../../services/flyersService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { formatDate } from '../../utils/helpers';
 import { AppFooter } from '../../components/layout/AppFooter';
+import { useAuthStore } from '../../store/authStore';
 
 export const ActiveFlyersPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  const isApprover = user?.role === 'approver';
 
   const { data: flyers = [], isLoading } = useQuery({
     queryKey: ['flyers', 'active'],
     queryFn: () => flyersService.getActiveFlyers(),
+  });
+
+  const generatePdfMutation = useMutation({
+    mutationFn: (flyerId: string) => flyersService.generatePdf(flyerId),
+    onSuccess: (data, flyerId) => {
+      alert('PDF bylo úspěšně přegenerováno');
+      queryClient.invalidateQueries({ queryKey: ['flyers', 'active'] });
+    },
+    onError: (error: any) => {
+      alert(error.response?.data?.message || 'Chyba při generování PDF');
+    },
   });
 
   // Filter by search query
@@ -122,6 +137,21 @@ export const ActiveFlyersPage: React.FC = () => {
                     <FileText className="w-4 h-4 mr-1" />
                     Zobrazit PDF
                   </Button>
+                  {isApprover && (
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      onClick={() => {
+                        if (window.confirm('Opravdu chcete přegenerovat PDF? Současné PDF bude nahrazeno.')) {
+                          generatePdfMutation.mutate(flyer.id);
+                        }
+                      }}
+                      disabled={generatePdfMutation.isPending}
+                    >
+                      <RefreshCw className="w-4 h-4 mr-1" />
+                      {generatePdfMutation.isPending ? 'Generuji...' : 'Generovat PDF'}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
