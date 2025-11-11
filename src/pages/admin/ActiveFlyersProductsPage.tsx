@@ -42,7 +42,7 @@ export const ActiveFlyersProductsPage: React.FC = () => {
       messages.push(`${reactivatedCount} produktů bude odznačeno (zpět v ERP)`);
     }
 
-    if (confirm(`${messages.join('\n')}\n\nPokračovat?`)) {
+    if (window.confirm(`${messages.join('\n')}\n\nPokračovat?`)) {
       markSoldOutMutation.mutate();
     }
   };
