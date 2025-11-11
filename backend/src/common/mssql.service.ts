@@ -217,6 +217,48 @@ export class MssqlService implements OnModuleInit {
     }
   }
 
+  /**
+   * Check if products exist in ERP by their EAN codes
+   * Returns map of EAN -> exists boolean
+   */
+  async checkProductsExistence(eanCodes: string[]): Promise<Map<string, boolean>> {
+    try {
+      if (!this.pool || !this.pool.connected) {
+        this.logger.warn('MSSQL connection not established, reconnecting...');
+        await this.onModuleInit();
+      }
+
+      if (eanCodes.length === 0) {
+        return new Map();
+      }
+
+      // Build IN clause for SQL query
+      const eanList = eanCodes.map(ean => `'${ean}'`).join(',');
+      const query = `SELECT DISTINCT Barcode FROM hvw_vok_Oresi_EletakNew_NC WHERE Barcode IN (${eanList})`;
+
+      const result = await this.pool.request().query(query);
+
+      // Create map of found EANs
+      const foundEans = new Set(result.recordset.map(record => record.Barcode));
+
+      // Return map with all EANs and their existence status
+      const existenceMap = new Map<string, boolean>();
+      for (const ean of eanCodes) {
+        existenceMap.set(ean, foundEans.has(ean));
+      }
+
+      return existenceMap;
+    } catch (error) {
+      this.logger.error('Error checking products existence in ERP:', error);
+      // Return all as not found on error
+      const errorMap = new Map<string, boolean>();
+      for (const ean of eanCodes) {
+        errorMap.set(ean, false);
+      }
+      return errorMap;
+    }
+  }
+
   async onModuleDestroy() {
     if (this.pool) {
       await this.pool.close();

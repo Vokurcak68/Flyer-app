@@ -150,4 +150,11 @@ export class ProductsController {
       erpInstallationType: result.erpInstallationType,
     };
   }
+
+  @Get('active-flyers/products')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  async getActiveFllyersProducts() {
+    return this.productsService.getActiveFlyersProducts();
+  }
 }

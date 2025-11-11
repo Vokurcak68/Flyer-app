@@ -134,4 +134,25 @@ export const productsService = {
     }>(`/products/check-duplicate-ean/${ean}`);
     return response.data;
   },
+
+  async getActiveFlyersProducts(): Promise<Array<{
+    id: string;
+    name: string;
+    eanCode: string;
+    price: number;
+    originalPrice: number | null;
+    brandName: string;
+    brandColor: string | null;
+    categoryName: string | null;
+    discontinued: boolean;
+    flyers: Array<{
+      id: string;
+      name: string;
+      validFrom: Date;
+      validTo: Date;
+    }>;
+  }>> {
+    const response = await api.get('/products/active-flyers/products');
+    return response.data;
+  },
 };

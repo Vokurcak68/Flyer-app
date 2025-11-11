@@ -20,6 +20,7 @@ import { ApprovalsPage } from './pages/approvals/ApprovalsPage';
 import { ApprovalReviewPage } from './pages/approvals/ApprovalReviewPage';
 import { UsersListPage } from './pages/admin/UsersListPage';
 import { UserFormPage } from './pages/admin/UserFormPage';
+import { ActiveFlyersProductsPage } from './pages/admin/ActiveFlyersProductsPage';
 import { IconsListPage } from './pages/icons/IconsListPage';
 import { IconFormPage } from './pages/icons/IconFormPage';
 
@@ -99,6 +100,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <IconFormPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="admin/active-flyers-products"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <ActiveFlyersProductsPage />
               </ProtectedRoute>
             }
           />

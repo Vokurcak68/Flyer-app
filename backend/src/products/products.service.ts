@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MssqlService } from '../common/mssql.service';
 import { CreateProductDto, UpdateProductDto, ProductFilterDto } from './dto';
 import { Prisma } from '@prisma/client';
 import * as archiver from 'archiver';
@@ -11,7 +12,10 @@ import * as os from 'os';
 
 @Injectable()
 export class ProductsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private mssqlService: MssqlService,
+  ) {}
 
   async create(createProductDto: CreateProductDto, userId: string) {
     // Check if EAN code already exists
@@ -877,5 +881,105 @@ export class ProductsService {
       fs.rmSync(tempDir, { recursive: true, force: true });
       throw error;
     }
+  }
+
+  /**
+   * Get all products from active and valid flyers with ERP existence check
+   */
+  async getActiveFlyersProducts() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Get all active flyers with valid dates
+    const activeFlyers = await this.prisma.flyer.findMany({
+      where: {
+        status: 'active',
+        isDraft: false,
+        validFrom: {
+          lte: today,
+        },
+        validTo: {
+          gte: today,
+        },
+      },
+      include: {
+        pages: {
+          include: {
+            slots: {
+              where: {
+                slotType: 'product',
+              },
+              include: {
+                product: {
+                  include: {
+                    brand: {
+                      select: {
+                        name: true,
+                        color: true,
+                      },
+                    },
+                    category: {
+                      select: {
+                        name: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Collect all unique products with flyer information
+    const productsMap = new Map();
+
+    for (const flyer of activeFlyers) {
+      for (const page of flyer.pages) {
+        for (const slot of page.slots) {
+          if (slot.product) {
+            const productId = slot.product.id;
+
+            if (!productsMap.has(productId)) {
+              productsMap.set(productId, {
+                id: slot.product.id,
+                name: slot.product.name,
+                eanCode: slot.product.eanCode,
+                price: slot.product.price,
+                originalPrice: slot.product.originalPrice,
+                brandName: slot.product.brand.name,
+                brandColor: slot.product.brand.color,
+                categoryName: slot.product.category?.name || null,
+                flyers: [],
+              });
+            }
+
+            // Add flyer info (only once per flyer, not per page)
+            const existingFlyerIndex = productsMap.get(productId).flyers.findIndex(f => f.id === flyer.id);
+            if (existingFlyerIndex === -1) {
+              productsMap.get(productId).flyers.push({
+                id: flyer.id,
+                name: flyer.name,
+                validFrom: flyer.validFrom,
+                validTo: flyer.validTo,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    const products = Array.from(productsMap.values());
+
+    // Check existence in ERP
+    const eanCodes = products.map(p => p.eanCode);
+    const existenceMap = await this.mssqlService.checkProductsExistence(eanCodes);
+
+    // Add discontinued flag to products
+    return products.map(product => ({
+      ...product,
+      discontinued: !existenceMap.get(product.eanCode), // true if not found in ERP
+    }));
   }
 }

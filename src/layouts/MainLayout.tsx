@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
-import { LogOut, Package, FileText, CheckCircle, Home, Grid, Tag, Users, Image, Star, HelpCircle, FolderTree } from 'lucide-react';
+import { LogOut, Package, FileText, CheckCircle, Home, Grid, Tag, Users, Image, Star, HelpCircle, FolderTree, ListChecks } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
 // Main layout component
@@ -33,6 +33,7 @@ export const MainLayout: React.FC = () => {
           { to: '/dashboard', icon: Home, label: 'Přehled' },
           { to: '/admin/users', icon: Users, label: 'Uživatelé' },
           { to: '/admin/icons', icon: Star, label: 'Ikony' },
+          { to: '/admin/active-flyers-products', icon: ListChecks, label: 'Produkty v letácích' },
           { to: '/brands', icon: Tag, label: 'Značky' },
           { to: '/categories', icon: FolderTree, label: 'Kategorie' },
           { to: '/promo-images', icon: Image, label: 'Promo obrázky' },
