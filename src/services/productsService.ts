@@ -100,6 +100,7 @@ export const productsService = {
     erpProductName?: string;
     erpBrand?: string;
     erpCategoryCode?: string;
+    erpInstallationType?: 'BUILT_IN' | 'FREESTANDING';
   }> {
     const params: any = {};
     if (price !== undefined) params.price = price.toString();
@@ -114,6 +115,7 @@ export const productsService = {
       erpProductName?: string;
       erpBrand?: string;
       erpCategoryCode?: string;
+      erpInstallationType?: 'BUILT_IN' | 'FREESTANDING';
     }>(`/products/${ean}/validate-ean`, { params });
     return response.data;
   },

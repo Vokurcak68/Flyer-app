@@ -291,6 +291,11 @@ export const ProductFormPage: React.FC = () => {
           }
         }
 
+        // Auto-fill installation type if empty and ERP has value
+        if (!newFormData.installationType && result.erpInstallationType) {
+          newFormData.installationType = result.erpInstallationType;
+        }
+
         // Auto-fill price if zero
         if (newFormData.price === 0 && result.erpPrice !== undefined) {
           newFormData.price = result.erpPrice;
@@ -739,7 +744,12 @@ export const ProductFormPage: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, installationType: e.target.value as 'BUILT_IN' | 'FREESTANDING' | '' })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   disabled={(() => {
-                    if (!formData.categoryId || isInActiveFlyer) return true;
+                    // Allow field to be enabled if:
+                    // 1. Category is selected AND category requires installation type, OR
+                    // 2. Value was auto-filled from ERP (even without category)
+                    if (isInActiveFlyer) return true;
+                    if (formData.installationType && !formData.categoryId) return false; // ERP filled, no category yet
+                    if (!formData.categoryId) return true;
                     const selectedCategory = categories.find(c => c.id === formData.categoryId);
                     return !selectedCategory || !selectedCategory.requiresInstallationType;
                   })()}
@@ -1087,6 +1097,15 @@ export const ProductFormPage: React.FC = () => {
                   } else {
                     // Other tab: show non-energy icons that match brand/category
                     if (icon.isEnergyClass) return false;
+
+                    // Check if selected brand has a color
+                    const selectedBrand = brands.find(b => b.id === formData.brandId);
+                    const brandHasNoColor = selectedBrand && !selectedBrand.color;
+
+                    // If brand has no color, filter out icons with "(brand)" in name
+                    if (brandHasNoColor && icon.name.toLowerCase().includes('(brand)')) {
+                      return false;
+                    }
 
                     // Check if icon matches product's brand
                     const matchesBrand = formData.brandId && icon.brands?.some(

@@ -67,26 +67,33 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
                 }}
               >
                 {/* Create 4 fixed slots, fill with icons from top */}
-                {[0, 1, 2, 3].map((slotIndex) => {
-                  const icon = product.icons[slotIndex];
-                  return (
-                    <div key={slotIndex} className="h-6 flex items-center">
-                      {icon && (
-                        <div
-                          className={`h-6 flex items-center justify-center ${icon.isEnergyClass ? 'w-12' : 'w-6'}`}
-                          style={icon.useBrandColor && brandColor ? { backgroundColor: brandColor } : undefined}
-                        >
-                          <img
-                            src={icon.imageUrl}
-                            alt={icon.name}
-                            className={`h-6 object-contain ${icon.isEnergyClass ? 'w-12' : 'w-6'}`}
-                            title={icon.name}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                {(() => {
+                  // Filter out icons with "(brand)" in name if brand has no color
+                  const filteredIcons = !brandColor
+                    ? product.icons.filter(icon => !icon.name.toLowerCase().includes('(brand)'))
+                    : product.icons;
+
+                  return [0, 1, 2, 3].map((slotIndex) => {
+                    const icon = filteredIcons[slotIndex];
+                    return (
+                      <div key={slotIndex} className="h-6 flex items-center">
+                        {icon && (
+                          <div
+                            className={`h-6 flex items-center justify-center ${icon.isEnergyClass ? 'w-12' : 'w-6'}`}
+                            style={icon.useBrandColor && brandColor ? { backgroundColor: brandColor } : undefined}
+                          >
+                            <img
+                              src={icon.imageUrl}
+                              alt={icon.name}
+                              className={`h-6 object-contain ${icon.isEnergyClass ? 'w-12' : 'w-6'}`}
+                              title={icon.name}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             )}
           </div>

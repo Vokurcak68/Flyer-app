@@ -45,6 +45,7 @@ export class MssqlService implements OnModuleInit {
     erpProductName?: string;
     erpBrand?: string;
     erpCategoryCode?: string;
+    erpInstallationType?: 'BUILT_IN' | 'FREESTANDING';
   }> {
     try {
       if (!this.pool || !this.pool.connected) {
@@ -52,7 +53,7 @@ export class MssqlService implements OnModuleInit {
         await this.onModuleInit();
       }
 
-      let query = 'SELECT TOP 1 Barcode, AkcniCena, CenaMO, KodDodavatele, Znacka, Kategorie FROM hvw_vok_Oresi_EletakNew_NC WHERE Barcode = @ean';
+      let query = 'SELECT TOP 1 Barcode, AkcniCena, CenaMO, KodDodavatele, Znacka, Kategorie, typ FROM hvw_vok_Oresi_EletakNew_NC WHERE Barcode = @ean';
 
       // Add ActionID filter if provided
       if (actionId !== undefined) {
@@ -77,6 +78,19 @@ export class MssqlService implements OnModuleInit {
       const erpPrice = parseFloat(record.AkcniCena);
       const erpOriginalPrice = parseFloat(record.CenaMO);
 
+      // Map installation type from ERP
+      let erpInstallationType: 'BUILT_IN' | 'FREESTANDING' | undefined;
+
+      if (record.typ) {
+        const typValue = record.typ.toString().trim().toUpperCase();
+
+        if (typValue === 'BI') {
+          erpInstallationType = 'BUILT_IN';
+        } else if (typValue === 'FS') {
+          erpInstallationType = 'FREESTANDING';
+        }
+      }
+
       // Check if prices match (if provided)
       let pricesMatch = true;
       if (price !== undefined && originalPrice !== undefined) {
@@ -91,6 +105,7 @@ export class MssqlService implements OnModuleInit {
         erpProductName: record.KodDodavatele,
         erpBrand: record.Znacka,
         erpCategoryCode: record.Kategorie,
+        erpInstallationType,
       };
     } catch (error) {
       this.logger.error(`Error validating EAN ${ean}:`, error);

@@ -147,6 +147,7 @@ export class ProductsController {
       erpProductName: result.erpProductName,
       erpBrand: result.erpBrand,
       erpCategoryCode: result.erpCategoryCode,
+      erpInstallationType: result.erpInstallationType,
     };
   }
 }
