@@ -119,6 +119,7 @@ model Product {
   price              Decimal             @db.Decimal(10, 2)
   originalPrice      Decimal?            @map("original_price") @db.Decimal(10, 2)
   installationType   InstallationType?   @map("installation_type") // Built-in vs Freestanding (only for categories with requiresInstallationType)
+  soldOut            Boolean             @default(false) @map("sold_out") // Mark product as sold out (shows watermark)
   isActive           Boolean             @default(true) @map("is_active")
   createdAt          DateTime            @default(now()) @map("created_at")
   updatedAt          DateTime            @updatedAt @map("updated_at")

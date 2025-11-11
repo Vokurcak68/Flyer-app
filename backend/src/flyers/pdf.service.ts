@@ -597,6 +597,30 @@ export class PdfService {
       }
     }
 
+    // Sold Out Watermark
+    if (product.soldOut) {
+      doc.save(); // Save graphics state
+
+      // Calculate center of the product slot
+      const centerX = x + width / 2;
+      const centerY = y + height / 2;
+
+      // Set rotation and transparency
+      doc.rotate(-45, { origin: [centerX, centerY] });
+      doc.opacity(0.3);
+
+      // Draw "VYPRODÁNO" text
+      doc.fontSize(48)
+         .font('Vodafone-Rg-Bold')
+         .fillColor('#DC2626') // red-600
+         .text('VYPRODÁNO', centerX - 100, centerY - 24, {
+           width: 200,
+           align: 'center',
+         });
+
+      doc.restore(); // Restore graphics state (removes rotation and opacity)
+    }
+
     // Reset color
     doc.fillColor('#000');
   }

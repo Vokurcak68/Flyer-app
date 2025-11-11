@@ -1,17 +1,40 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Search, AlertCircle, CheckCircle, Package } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Search, AlertCircle, CheckCircle, Package, PlayCircle } from 'lucide-react';
 import { productsService } from '../../services/productsService';
 import { Input } from '../../components/ui/Input';
 import { AppFooter } from '../../components/layout/AppFooter';
 
 export const ActiveFlyersProductsPage: React.FC = () => {
   const [search, setSearch] = useState('');
+  const queryClient = useQueryClient();
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['active-flyers-products'],
     queryFn: () => productsService.getActiveFlyersProducts(),
   });
+
+  const markSoldOutMutation = useMutation({
+    mutationFn: () => productsService.markDiscontinuedAsSoldOut(),
+    onSuccess: (data) => {
+      alert(data.message);
+      queryClient.invalidateQueries({ queryKey: ['active-flyers-products'] });
+    },
+    onError: (error: any) => {
+      alert(error.response?.data?.message || 'Chyba při označování produktů');
+    },
+  });
+
+  const handleMarkSoldOut = () => {
+    const discontinuedCount = products.filter(p => p.discontinued).length;
+    if (discontinuedCount === 0) {
+      alert('Žádné ukončené produkty k označení');
+      return;
+    }
+    if (confirm(`Opravdu chcete označit ${discontinuedCount} ukončených produktů jako vyprodáno?`)) {
+      markSoldOutMutation.mutate();
+    }
+  };
 
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -37,6 +60,14 @@ export const ActiveFlyersProductsPage: React.FC = () => {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-2xl font-bold text-gray-900">Produkty v aktivních letácích</h1>
+          <button
+            onClick={handleMarkSoldOut}
+            disabled={markSoldOutMutation.isPending || discontinuedCount === 0}
+            className="flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          >
+            <PlayCircle className="h-5 w-5 mr-2" />
+            {markSoldOutMutation.isPending ? 'Zpracovávám...' : 'Označit ukončené jako vyprodáno'}
+          </button>
         </div>
         <p className="text-gray-600">
           Přehled produktů obsažených v aktuálně platných aktivních letácích se stavem dostupnosti v ERP

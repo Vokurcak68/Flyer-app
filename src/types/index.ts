@@ -87,6 +87,7 @@ export interface Product {
   originalPrice?: number;
   icons?: ProductIcon[];
   isActive?: boolean;
+  soldOut?: boolean;
   createdAt: string;
   updatedAt: string;
 }

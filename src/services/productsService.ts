@@ -155,4 +155,18 @@ export const productsService = {
     const response = await api.get('/products/active-flyers/products');
     return response.data;
   },
+
+  async markDiscontinuedAsSoldOut(): Promise<{
+    success: boolean;
+    message: string;
+    updatedCount: number;
+    updatedProducts: Array<{
+      id: string;
+      name: string;
+      eanCode: string;
+    }>;
+  }> {
+    const response = await api.post('/products/active-flyers/mark-discontinued-sold-out');
+    return response.data;
+  },
 };

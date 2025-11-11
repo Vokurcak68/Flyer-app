@@ -28,7 +28,25 @@ export const ProductFlyerLayout: React.FC<ProductFlyerLayoutProps> = ({
   const headerColor = brandColor || '#000000';
 
   return (
-    <div className={`bg-white h-full flex flex-col overflow-hidden ${className}`}>
+    <div className={`bg-white h-full flex flex-col overflow-hidden ${className} relative`}>
+      {/* Sold Out Watermark */}
+      {product.soldOut && (
+        <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
+          <div
+            className="text-red-600 font-bold opacity-30 whitespace-nowrap"
+            style={{
+              fontSize: '3rem',
+              transform: 'rotate(-45deg)',
+              fontFamily: '"Vodafone Rg", "Arial Black", sans-serif',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
+              letterSpacing: '0.1em'
+            }}
+          >
+            VYPRODÁNO
+          </div>
+        </div>
+      )}
+
       {/* Header with brand color */}
       <div className="text-white px-2 py-1.5 flex-none flex items-center justify-center gap-2" style={{ backgroundColor: headerColor }}>
         {product.brandName && (

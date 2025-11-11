@@ -982,4 +982,45 @@ export class ProductsService {
       discontinued: !existenceMap.get(product.eanCode), // true if not found in ERP
     }));
   }
+
+  async markDiscontinuedAsSoldOut() {
+    // Get products from active flyers
+    const productsInActiveFlyers = await this.getActiveFlyersProducts();
+
+    // Filter discontinued products
+    const discontinuedProducts = productsInActiveFlyers.filter(p => p.discontinued);
+
+    if (discontinuedProducts.length === 0) {
+      return {
+        success: true,
+        message: 'Žádné ukončené produkty nenalezeny v aktivních letácích',
+        updatedCount: 0,
+      };
+    }
+
+    // Update soldOut flag for discontinued products
+    const productIds = discontinuedProducts.map(p => p.id);
+
+    const result = await this.prisma.product.updateMany({
+      where: {
+        id: {
+          in: productIds,
+        },
+      },
+      data: {
+        soldOut: true,
+      },
+    });
+
+    return {
+      success: true,
+      message: `Označeno ${result.count} produktů jako vyprodáno`,
+      updatedCount: result.count,
+      updatedProducts: discontinuedProducts.map(p => ({
+        id: p.id,
+        name: p.name,
+        eanCode: p.eanCode,
+      })),
+    };
+  }
 }
