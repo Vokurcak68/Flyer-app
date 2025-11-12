@@ -978,10 +978,16 @@ export class ProductsService {
     const existenceMap = await this.mssqlService.checkProductsExistence(eanCodes);
 
     // Add discontinued flag to products
-    return products.map(product => ({
-      ...product,
-      discontinued: !existenceMap.get(product.eanCode), // true if not found in ERP
-    }));
+    // Product is discontinued if:
+    // 1. EAN not found in ERP (!exists), OR
+    // 2. EAN found but has Ukončeno = true in ERP
+    return products.map(product => {
+      const erpStatus = existenceMap.get(product.eanCode);
+      return {
+        ...product,
+        discontinued: !erpStatus?.exists || erpStatus?.discontinued,
+      };
+    });
   }
 
   async markDiscontinuedAsSoldOut() {

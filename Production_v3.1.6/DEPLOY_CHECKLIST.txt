@@ -1,0 +1,298 @@
+================================================================================
+  DEPLOYMENT CHECKLIST - Flyer App v3.1.6
+  NEW FEATURES: Installation Type, Brand Color Icons, Screenshots
+  Build Date: 2025-11-10
+  BUILD VERIFIED: v3.1.6 with 3 database migrations
+================================================================================
+
+BUILD VERIFICATION COMPLETED:
+==============================
+[X] Backend version: 3.1.6
+[X] Frontend version: 3.1.6 (footer)
+[X] Frontend URLs verified: 0x localhost:4000, 13x /api
+[X] Production .env verified: from backend/.env.production
+[X] Database migrations: 3 migrations in MIGRATE.sql
+[X] Build integrity: Clean production build
+
+WHAT'S NEW IN v3.1.6:
+=====================
+1. TYP INSTALACE PRODUKTŮ
+   - Kategorie: nové pole requires_installation_type (boolean)
+   - Produkty: nové pole installation_type (BUILT_IN/FREESTANDING)
+   - Conditional dropdown: zobrazí se pouze pokud kategorie vyžaduje typ
+   - Validace: nelze uložit produkt bez typu pokud kategorie to vyžaduje
+
+2. BAREVNÉ POZADÍ IKON
+   - Ikony: nové pole use_brand_color (boolean)
+   - Pokud true, ikona má barevné pozadí v barvě značky
+   - Funguje v náhledu i PDF
+
+3. ŠEDÉ POZADÍ U BÍLÝCH IKON
+   - Bílé/průhledné ikony automaticky dostanou šedé pozadí
+   - Zajišťuje viditelnost na bílém pozadí
+
+4. 46 PLACEHOLDERŮ PRO SCREENSHOTY
+   - UZIVATELSKY_NAVOD.html: 46 šedých placeholderů s 📸
+   - SCREENSHOTY_TODO.md: guide pro vytvoření screenshotů
+
+5. AKTUALIZACE KONTAKTŮ
+   - Email: eletak@oresi.cz (bez diakritiky)
+   - Telefon: odstraněn
+
+6. ZMENŠENÁ MEZERA V PATIČCE
+   - Z mt-12 pt-6 na mt-3 pt-1.5
+
+PRE-DEPLOYMENT:
+===============
+[_] Create backup of current backend:
+    Copy C:\inetpub\flyer-app\backend → C:\inetpub\flyer-app\backup_3.1.5_YYYYMMDD
+
+[_] Stop FlcyManagementAPI service:
+    Stop-Service FlcyManagementAPI
+
+[_] Verify backup created successfully
+
+DATABASE MIGRATION (CRITICAL!):
+================================
+[_] **DŮLEŽITÉ: Před nasazením kódu spusť migrace!**
+
+[_] Navigate to backend folder:
+    cd C:\inetpub\flyer-app\backend
+
+[_] Run database migrations:
+    npx prisma migrate deploy
+
+[_] Verify migrations completed:
+    - Migration 1: Rename is_built_in → requires_installation_type ✓
+    - Migration 2: Create ENUM InstallationType + add to products ✓
+    - Migration 3: Add use_brand_color to icons ✓
+
+[_] Check for migration errors:
+    If errors occur, STOP deployment and investigate!
+
+DEPLOYMENT:
+===========
+[_] Copy Production_v3.1.6 contents to C:\inetpub\flyer-app\backend\
+
+[_] **VERIFY .env file contains:**
+    [_] DATABASE_URL=postgresql://flyer_app_user:...@localhost:5432/flyer_app_production
+    [_] API_URL=https://eflyer.kuchyneoresi.eu
+    [_] FRONTEND_URL=https://eflyer.kuchyneoresi.eu
+    [_] NODE_ENV=production
+    [_] PORT=4000
+
+[_] Install dependencies if needed:
+    npm ci --production
+
+[_] Start FlcyManagementAPI service:
+    Start-Service FlcyManagementAPI
+
+[_] Wait 30 seconds for service to fully start
+
+POST-DEPLOYMENT VERIFICATION:
+==============================
+[_] Backend health: https://eflyer.kuchyneoresi.eu/api/health
+    Should return: {"status":"ok"}
+
+[_] **VERSION CHECK (CRITICAL):**
+    [_] Open app in browser: https://eflyer.kuchyneoresi.eu
+    [_] Check footer at bottom of page
+    [_] **MUST SHOW: Verze: 3.1.6**
+        (pokud vidíš 3.1.5 nebo starší, deployment se nenahrál správně!)
+
+[_] Check console:
+    [_] NO errors
+    [_] NO "Mixed Content" warnings
+
+FEATURE TESTING:
+================
+[_] **TEST 1 - TYP INSTALACE PRODUKTŮ:**
+    [_] Login as admin
+    [_] Přejdi do Správa kategorií
+    [_] Edituj kategorii (např. "Lednice")
+    [_] Zaškrtni "Vyžaduje typ instalace"
+    [_] Ulož kategorii
+    [_] Přejdi do Správa produktů → Přidat produkt
+    [_] Vyber kategorii "Lednice"
+    [_] **OVĚŘ: Objevil se dropdown "Typ instalace"** ✓
+    [_] Vyber "Vestavné (Built-in)"
+    [_] Ulož produkt
+    [_] Edituj produkt
+    [_] **OVĚŘ: Typ instalace zůstal zachován** ✓
+    [_] Zkus uložit bez výběru typu
+    [_] **OVĚŘ: Validační chyba** ✓
+
+[_] **TEST 2 - BAREVNÉ POZADÍ IKON:**
+    [_] Login as admin
+    [_] Přejdi do Správa ikon
+    [_] Vytvoř novou ikonu nebo edituj existující
+    [_] Zaškrtni "Použít barvu značky jako pozadí"
+    [_] Ulož ikonu
+    [_] Vytvoř leták s produktem (který má brand s definovanou barvou)
+    [_] Přidej ikonu s use_brand_color=true do produktu
+    [_] **OVĚŘ: Ikona má barevné pozadí v náhledu letáku** ✓
+    [_] Vygeneruj PDF (Stáhnout PDF)
+    [_] Otevři PDF
+    [_] **OVĚŘ: Ikona má barevné pozadí v PDF** ✓
+
+[_] **TEST 3 - ŠEDÉ POZADÍ U BÍLÝCH IKON:**
+    [_] Použij ikonu s bílým/průhledným obsahem
+    [_] Neškrtávej "Použít barvu značky"
+    [_] Přidej ikonu do letáku
+    [_] **OVĚŘ: Ikona má šedé pozadí (viditelnost na bílém)** ✓
+    [_] Zkontroluj v PDF
+    [_] **OVĚŘ: Šedé pozadí i v PDF** ✓
+
+[_] **TEST 4 - SCREENSHOTY V NÁPOVĚDĚ:**
+    [_] Otevři UZIVATELSKY_NAVOD.html v prohlížeči
+    [_] **OVĚŘ: Obsahuje 46 placeholderů s 📸 emoji** ✓
+    [_] **OVĚŘ: Každý placeholder má popis co má být na obrázku** ✓
+
+[_] **TEST 5 - KONTAKTY A PATIČKA:**
+    [_] Otevři UZIVATELSKY_NAVOD.html
+    [_] Scrolluj na konec (sekce "Kontakt")
+    [_] **OVĚŘ: Email je eletak@oresi.cz (bez háčků/čárek)** ✓
+    [_] **OVĚŘ: Telefon není zobrazen** ✓
+    [_] Otevři aplikaci
+    [_] **OVĚŘ: Mezera nad patičkou je menší než předtím** ✓
+
+[_] **TEST 6 - REGRESE - ZÁKLADNÍ FUNKCE:**
+    [_] Vytvoř nový leták
+    [_] Přidej produkty na stránky
+    [_] Přidaj promo obrázek
+    [_] Ulož leták
+    [_] Odeslat k autorizaci
+    [_] Reload page
+    [_] **OVĚŘ: Promo obrázek stále v letáku** ✓
+    [_] Login as pre_approver
+    [_] **OVĚŘ: Promo v PDF** ✓
+
+DATABASE VERIFICATION (TECHNICAL):
+==================================
+[_] Connect to production database
+
+[_] Verify schema changes:
+    SELECT column_name, data_type
+    FROM information_schema.columns
+    WHERE table_name = 'categories'
+    AND column_name = 'requires_installation_type';
+
+    **OVĚŘ: Sloupec existuje, typ boolean** ✓
+
+[_] Verify ENUM creation:
+    SELECT enumlabel
+    FROM pg_enum e
+    JOIN pg_type t ON e.enumtypid = t.oid
+    WHERE t.typname = 'InstallationType';
+
+    **OVĚŘ: Vrátí BUILT_IN a FREESTANDING** ✓
+
+[_] Verify product column:
+    SELECT column_name, data_type
+    FROM information_schema.columns
+    WHERE table_name = 'products'
+    AND column_name = 'installation_type';
+
+    **OVĚŘ: Sloupec existuje, typ USER-DEFINED** ✓
+
+[_] Verify icons column:
+    SELECT column_name, data_type
+    FROM information_schema.columns
+    WHERE table_name = 'icons'
+    AND column_name = 'use_brand_color';
+
+    **OVĚŘ: Sloupec existuje, typ boolean** ✓
+
+SUCCESS CRITERIA:
+=================
+✓ Version 3.1.6 displayed in footer
+✓ Database migrations completed successfully
+✓ Installation type dropdown appears when category requires it
+✓ Brand color icons work in preview and PDF
+✓ White icons have gray background
+✓ 46 screenshot placeholders in user manual
+✓ Contact email updated, phone removed
+✓ Footer spacing reduced
+✓ No console errors
+✓ No regression issues
+
+DEPLOYMENT LOG:
+===============
+Date: _____________
+Time: _____________
+Version in footer: _________ (MUST be 3.1.6!)
+
+Database Migration Results:
+- Migration 1 (rename column): SUCCESS / FAILED
+- Migration 2 (enum + column): SUCCESS / FAILED
+- Migration 3 (use_brand_color): SUCCESS / FAILED
+
+Feature Test Results:
+- Test 1 (Installation Type): PASS / FAIL
+- Test 2 (Brand Color Icons): PASS / FAIL
+- Test 3 (Gray Background): PASS / FAIL
+- Test 4 (Screenshots): PASS / FAIL
+- Test 5 (Contacts/Footer): PASS / FAIL
+- Test 6 (Regression): PASS / FAIL
+
+Technical Checks:
+- Console errors: YES / NO (MUST be NO!)
+- Backend health OK: YES / NO (MUST be YES!)
+- Database schema OK: YES / NO (MUST be YES!)
+
+Final status: SUCCESS / ROLLBACK
+
+Deployed by: _____________
+
+================================================================================
+IMPORTANT: If version shows 3.1.5 or older, the deployment did not work!
+           Stop service, verify files copied correctly, restart service.
+================================================================================
+
+TROUBLESHOOTING:
+================
+If version doesn't update:
+1. Stop-Service FlcyManagementAPI
+2. Delete contents of C:\inetpub\flyer-app\backend
+3. Copy Production_v3.1.6 files again
+4. Verify .env is correct
+5. Start-Service FlcyManagementAPI
+6. Hard refresh browser (Ctrl+F5)
+
+If database migrations fail:
+1. Check database connection in .env
+2. Verify database user has ALTER permissions
+3. Check if columns already exist (may need to skip migrations)
+4. Contact developer before proceeding
+
+If installation type dropdown doesn't appear:
+1. Verify migration 1 and 2 completed
+2. Check category has requires_installation_type=true
+3. Check browser console for errors
+4. Clear cache and reload
+
+If brand color icons don't work:
+1. Verify migration 3 completed
+2. Check icon has use_brand_color=true
+3. Check product has brand with color defined
+4. Check browser console for errors
+
+If any test fails:
+1. DO NOT continue deployment
+2. Note which test failed
+3. Check logs for errors
+4. Consider rollback if critical
+5. Contact developer
+
+ROLLBACK PROCEDURE:
+===================
+If deployment fails and needs rollback:
+
+1. Stop-Service FlcyManagementAPI
+2. Delete C:\inetpub\flyer-app\backend contents
+3. Copy backup_3.1.5_YYYYMMDD contents back
+4. Start-Service FlcyManagementAPI
+5. Verify old version works
+6. Database rollback may be needed - contact developer!
+
+================================================================================

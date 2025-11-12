@@ -1,0 +1,232 @@
+================================================================================
+  DEPLOYMENT CHECKLIST - Flyer Management System v3.1.9
+================================================================================
+
+Datum: 12. listopadu 2025
+Verze: 3.1.9 (Hotfix)
+Environment: Production (https://eflyer.kuchyneoresi.eu)
+
+================================================================================
+  PRE-DEPLOYMENT CHECKLIST
+================================================================================
+
+☐ 1. KOMUNIKACE
+   ☐ Informuj uživatele o plánovaném deployment window
+   ☐ Požádej uživatele aby se odhlásili
+   ☐ Nastav maintenance mode (volitelné)
+
+☐ 2. ZÁLOHY
+   ☐ Databáze:
+      cd /var/www/flyer-app/backend
+      pg_dump -U flyer_app_user flyer_app_production > backup_$(date +%Y%m%d_%H%M%S).sql
+
+   ☐ Backend soubory:
+      cp -r /var/www/flyer-app/backend /var/www/flyer-app/backend_backup_$(date +%Y%m%d)
+
+   ☐ Frontend soubory:
+      cp -r /var/www/flyer-app/frontend /var/www/flyer-app/frontend_backup_$(date +%Y%m%d)
+
+☐ 3. VERIFIKACE BALÍČKU
+   ☐ Rozbal Production_v3.1.9.zip (pokud je ZIP)
+   ☐ Zkontroluj strukturu:
+      - dist/ (backend compiled)
+      - frontend/ (frontend build)
+      - prisma/ (schema + migrations)
+      - package.json (backend)
+      - .env (production config)
+
+   ☐ Ověř .env obsahuje:
+      DATABASE_URL s flyer_app_production
+      NODE_ENV=production
+      API_URL=https://eflyer.kuchyneoresi.eu
+      FRONTEND_URL=https://eflyer.kuchyneoresi.eu
+
+☐ 4. PŘÍPRAVA SERVERU
+   ☐ SSH připojení: ssh user@eflyer.kuchyneoresi.eu
+   ☐ Zkontroluj volné místo: df -h
+   ☐ Zkontroluj běžící procesy: pm2 status
+
+================================================================================
+  DEPLOYMENT STEPS
+================================================================================
+
+☐ 5. ZASTAVENÍ SLUŽEB
+   ☐ pm2 stop flyer-app-backend
+   ☐ pm2 status (ověř že je stopped)
+
+☐ 6. DATABÁZOVÉ ZMĚNY
+   ☐ DŮLEŽITÉ: v3.1.9 NEOBSAHUJE ŽÁDNÉ DB ZMĚNY!
+   ☐ Tento release je pouze frontend hotfix
+   ☐ Databáze zůstává beze změn
+   ☐ PŘESKOČ TENTO KROK - pokračuj na krok 7 (Backend deployment)
+
+☐ 7. BACKEND DEPLOYMENT
+   ☐ Smazat starý dist:
+      rm -rf /var/www/flyer-app/backend/dist
+
+   ☐ Zkopíruj nový dist:
+      cp -r Production_v3.1.9/dist /var/www/flyer-app/backend/
+
+   ☐ Zkopíruj .env:
+      cp Production_v3.1.9/.env /var/www/flyer-app/backend/
+
+   ☐ Zkopíruj package.json:
+      cp Production_v3.1.9/package.json /var/www/flyer-app/backend/
+
+   ☐ Instalace dependencies:
+      cd /var/www/flyer-app/backend
+      npm install --production
+
+   ☐ Zkontroluj že dist/src/main.js existuje:
+      ls -la /var/www/flyer-app/backend/dist/src/main.js
+
+☐ 8. FRONTEND DEPLOYMENT
+   ☐ Smazat starý frontend:
+      rm -rf /var/www/flyer-app/frontend/*
+
+   ☐ Zkopíruj nový frontend:
+      cp -r Production_v3.1.9/frontend/* /var/www/flyer-app/frontend/
+
+   ☐ Nastav správná oprávnění:
+      chown -R www-data:www-data /var/www/flyer-app/frontend
+      chmod -R 755 /var/www/flyer-app/frontend
+
+☐ 9. START SLUŽEB
+   ☐ pm2 start flyer-app-backend
+   ☐ pm2 save
+   ☐ pm2 status (ověř že je online)
+
+☐ 10. NGINX (pokud potřeba)
+   ☐ Zkontroluj konfiguraci: nginx -t
+   ☐ Reload nginx: sudo systemctl reload nginx
+
+================================================================================
+  POST-DEPLOYMENT VERIFICATION
+================================================================================
+
+☐ 11. BACKEND VERIFIKACE
+   ☐ Backend běží:
+      pm2 status
+
+   ☐ Backend logy OK (žádné errors):
+      pm2 logs flyer-app-backend --lines 50
+
+   ☐ Health check:
+      curl https://eflyer.kuchyneoresi.eu/api/health
+
+   ☐ Zkontroluj console na errors:
+      pm2 logs --err
+
+☐ 12. FRONTEND VERIFIKACE
+   ☐ Frontend načítá:
+      curl -I https://eflyer.kuchyneoresi.eu
+
+   ☐ Static assets načítají:
+      curl -I https://eflyer.kuchyneoresi.eu/static/js/main.[hash].js
+
+   ☐ Otevři v prohlížeči: https://eflyer.kuchyneoresi.eu
+   ☐ Zkontroluj console - žádné 404 errors
+
+☐ 13. FUNKČNÍ TESTY
+   ☐ Test 1: Přihlášení
+      - Přihlas se jako admin/supplier/approver
+      - Ověř že dashboard načítá
+
+   ☐ Test 2: Detekce ukončených produktů v ERP (KRITICKÝ HOTFIX v3.1.9!)
+      - Jako admin: jdi na "Produkty v letácích"
+      - Ověř že produkty s Ukončeno = true v ERP mají červenou ikonu
+      - Ověř že produkty které nejsou v ERP vůbec mají červenou ikonu
+      - Ověř že produkty v ERP s Ukončeno = false mají zelenou ikonu
+      - Klikni "Synchronizovat stav vyprodáno"
+      - Ověř že ukončené produkty jsou označeny jako soldOut
+      - Stáhni PDF letáku s ukončenými produkty
+      - Ověř že vodotisk "VYPRODÁNO" se zobrazuje u ukončených produktů
+
+   ☐ Test 3: Vodotisk vyprodáno (z v3.1.7)
+      - Jako admin: jdi na "Produkty v letácích"
+      - Klikni "Synchronizovat stav vyprodáno"
+      - Ověř že se vodotisk zobrazuje u ukončených produktů
+
+   ☐ Test 4: Filtry produktů (z v3.1.7)
+      - V "Produkty v letácích"
+      - Klikni na zelený "Aktivní v ERP"
+      - Ověř že filtr funguje a zobrazují se jen aktivní
+      - Klikni na červený "Ukončené"
+      - Ověř že se zobrazují jen ukončené
+
+   ☐ Test 5: Generování PDF schvalovatelem (z v3.1.7)
+      - Jako approver: jdi na "Aktivní letáky"
+      - Klikni "Generovat PDF" u letáku
+      - Stáhni PDF a ověř že vodotisky jsou viditelné
+
+   ☐ Test 6: Existující funkce
+      - Vytvoř nový leták
+      - Přidej produkty
+      - Odešli ke schválení
+      - Ověř schvalovací workflow
+
+☐ 14. MONITORING
+   ☐ CPU usage normální: htop
+   ☐ Memory usage normální: free -h
+   ☐ Disk space OK: df -h
+   ☐ PM2 monitoring: pm2 monit
+
+================================================================================
+  ROLLBACK PROCEDURA (pokud je problém)
+================================================================================
+
+☐ 15. ROLLBACK KROKY
+   ☐ pm2 stop flyer-app-backend
+
+   ☐ Restore databáze (POUZE pokud jsi dělal migraci):
+      psql -U flyer_app_user flyer_app_production < backup_[timestamp].sql
+
+   ☐ Restore backend:
+      rm -rf /var/www/flyer-app/backend
+      cp -r /var/www/flyer-app/backend_backup_[date] /var/www/flyer-app/backend
+
+   ☐ Restore frontend:
+      rm -rf /var/www/flyer-app/frontend
+      cp -r /var/www/flyer-app/frontend_backup_[date] /var/www/flyer-app/frontend
+
+   ☐ pm2 start flyer-app-backend
+   ☐ pm2 save
+
+   ☐ Ověř že aplikace běží na staré verzi
+
+POZNÁMKA: Rollback na v3.1.7 je bezpečný - není třeba rollback databáze!
+
+================================================================================
+  DEPLOYMENT LOG
+================================================================================
+
+Deployment prováděl: _______________________
+Datum a čas: _______________________
+Start času: _______________________
+Konec času: _______________________
+Downtime: _______ minut
+
+Problémy během deployment:
+☐ Žádné problémy
+☐ Problémy (popis níže):
+
+___________________________________________________________________________
+___________________________________________________________________________
+___________________________________________________________________________
+
+Poznámky:
+___________________________________________________________________________
+___________________________________________________________________________
+___________________________________________________________________________
+
+Podpis: _______________________
+
+================================================================================
+  KONTAKTY
+================================================================================
+
+Technická podpora: eletak@oresi.cz
+Developer: Claude Code
+Dokumentace: README.txt, DEPLOYMENT_NOTES.md
+
+================================================================================

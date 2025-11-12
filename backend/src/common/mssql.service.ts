@@ -219,9 +219,9 @@ export class MssqlService implements OnModuleInit {
 
   /**
    * Check if products exist in ERP by their EAN codes
-   * Returns map of EAN -> exists boolean
+   * Returns map of EAN -> { exists: boolean, discontinued: boolean }
    */
-  async checkProductsExistence(eanCodes: string[]): Promise<Map<string, boolean>> {
+  async checkProductsExistence(eanCodes: string[]): Promise<Map<string, { exists: boolean; discontinued: boolean }>> {
     try {
       if (!this.pool || !this.pool.connected) {
         this.logger.warn('MSSQL connection not established, reconnecting...');
@@ -234,26 +234,33 @@ export class MssqlService implements OnModuleInit {
 
       // Build IN clause for SQL query
       const eanList = eanCodes.map(ean => `'${ean}'`).join(',');
-      const query = `SELECT DISTINCT Barcode FROM hvw_vok_Oresi_EletakNew_NC WHERE Barcode IN (${eanList})`;
+      const query = `SELECT DISTINCT Barcode, Ukončeno FROM hvw_vok_Oresi_EletakNew_NC WHERE Barcode IN (${eanList})`;
 
       const result = await this.pool.request().query(query);
 
-      // Create map of found EANs
-      const foundEans = new Set(result.recordset.map(record => record.Barcode));
+      // Create map of EAN -> { exists, discontinued }
+      const existenceMap = new Map<string, { exists: boolean; discontinued: boolean }>();
 
-      // Return map with all EANs and their existence status
-      const existenceMap = new Map<string, boolean>();
+      // First, set all EANs as not found
       for (const ean of eanCodes) {
-        existenceMap.set(ean, foundEans.has(ean));
+        existenceMap.set(ean, { exists: false, discontinued: true });
+      }
+
+      // Update with found EANs and their discontinued status
+      for (const record of result.recordset) {
+        existenceMap.set(record.Barcode, {
+          exists: true,
+          discontinued: record.Ukončeno === true || record.Ukončeno === 1,
+        });
       }
 
       return existenceMap;
     } catch (error) {
       this.logger.error('Error checking products existence in ERP:', error);
-      // Return all as not found on error
-      const errorMap = new Map<string, boolean>();
+      // Return all as not found/discontinued on error
+      const errorMap = new Map<string, { exists: boolean; discontinued: boolean }>();
       for (const ean of eanCodes) {
-        errorMap.set(ean, false);
+        errorMap.set(ean, { exists: false, discontinued: true });
       }
       return errorMap;
     }

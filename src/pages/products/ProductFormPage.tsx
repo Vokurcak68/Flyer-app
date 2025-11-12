@@ -743,16 +743,7 @@ export const ProductFormPage: React.FC = () => {
                   value={formData.installationType}
                   onChange={(e) => setFormData({ ...formData, installationType: e.target.value as 'BUILT_IN' | 'FREESTANDING' | '' })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  disabled={(() => {
-                    // Allow field to be enabled if:
-                    // 1. Category is selected AND category requires installation type, OR
-                    // 2. Value was auto-filled from ERP (even without category)
-                    if (isInActiveFlyer) return true;
-                    if (formData.installationType && !formData.categoryId) return false; // ERP filled, no category yet
-                    if (!formData.categoryId) return true;
-                    const selectedCategory = categories.find(c => c.id === formData.categoryId);
-                    return !selectedCategory || !selectedCategory.requiresInstallationType;
-                  })()}
+                  disabled={isInActiveFlyer}
                 >
                   <option value="">Vyberte typ</option>
                   <option value="BUILT_IN">Vestavné spotřebiče</option>

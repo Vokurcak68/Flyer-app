@@ -46,7 +46,7 @@ export class IconsController {
     const { data, mimeType } = await this.iconsService.getImage(id);
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
-    res.send(data);
+    res.end(Buffer.from(data));
   }
 
   @Put(':id')

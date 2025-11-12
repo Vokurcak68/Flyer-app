@@ -1,0 +1,255 @@
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateProductDto, UpdateProductDto, ProductFilterDto } from './dto';
+export declare class ProductsService {
+    private prisma;
+    constructor(prisma: PrismaService);
+    create(createProductDto: CreateProductDto, userId: string): Promise<{
+        id: any;
+        eanCode: any;
+        name: any;
+        description: any;
+        supplierNote: any;
+        price: number;
+        originalPrice: number;
+        isActive: any;
+        brandId: any;
+        brandName: any;
+        brandColor: any;
+        categoryId: any;
+        categoryName: any;
+        subcategoryId: any;
+        subcategoryName: any;
+        installationType: any;
+        brand: {
+            id: any;
+            name: any;
+        };
+        supplier: {
+            id: any;
+            email: any;
+            firstName: any;
+            lastName: any;
+        };
+        icons: any;
+        createdAt: any;
+        updatedAt: any;
+    }>;
+    findAll(filterDto: ProductFilterDto, userId?: string, userRole?: string): Promise<{
+        data: {
+            id: any;
+            eanCode: any;
+            name: any;
+            description: any;
+            supplierNote: any;
+            price: number;
+            originalPrice: number;
+            isActive: any;
+            brandId: any;
+            brandName: any;
+            brandColor: any;
+            categoryId: any;
+            categoryName: any;
+            subcategoryId: any;
+            subcategoryName: any;
+            installationType: any;
+            brand: {
+                id: any;
+                name: any;
+            };
+            supplier: {
+                id: any;
+                email: any;
+                firstName: any;
+                lastName: any;
+            };
+            icons: any;
+            createdAt: any;
+            updatedAt: any;
+        }[];
+        meta: {
+            total: number;
+            page: number;
+            limit: number;
+            totalPages: number;
+        };
+    }>;
+    findOne(id: string): Promise<{
+        isInActiveFlyer: boolean;
+        id: any;
+        eanCode: any;
+        name: any;
+        description: any;
+        supplierNote: any;
+        price: number;
+        originalPrice: number;
+        isActive: any;
+        brandId: any;
+        brandName: any;
+        brandColor: any;
+        categoryId: any;
+        categoryName: any;
+        subcategoryId: any;
+        subcategoryName: any;
+        installationType: any;
+        brand: {
+            id: any;
+            name: any;
+        };
+        supplier: {
+            id: any;
+            email: any;
+            firstName: any;
+            lastName: any;
+        };
+        icons: any;
+        createdAt: any;
+        updatedAt: any;
+    }>;
+    findProductsByEan(eanCode: string, userId: string): Promise<{
+        exists: boolean;
+        count: number;
+        latestProduct: {
+            id: any;
+            eanCode: any;
+            name: any;
+            description: any;
+            supplierNote: any;
+            price: number;
+            originalPrice: number;
+            isActive: any;
+            brandId: any;
+            brandName: any;
+            brandColor: any;
+            categoryId: any;
+            categoryName: any;
+            subcategoryId: any;
+            subcategoryName: any;
+            installationType: any;
+            brand: {
+                id: any;
+                name: any;
+            };
+            supplier: {
+                id: any;
+                email: any;
+                firstName: any;
+                lastName: any;
+            };
+            icons: any;
+            createdAt: any;
+            updatedAt: any;
+        };
+        allProducts: {
+            id: any;
+            eanCode: any;
+            name: any;
+            description: any;
+            supplierNote: any;
+            price: number;
+            originalPrice: number;
+            isActive: any;
+            brandId: any;
+            brandName: any;
+            brandColor: any;
+            categoryId: any;
+            categoryName: any;
+            subcategoryId: any;
+            subcategoryName: any;
+            installationType: any;
+            brand: {
+                id: any;
+                name: any;
+            };
+            supplier: {
+                id: any;
+                email: any;
+                firstName: any;
+                lastName: any;
+            };
+            icons: any;
+            createdAt: any;
+            updatedAt: any;
+        }[];
+    }>;
+    update(id: string, updateProductDto: UpdateProductDto, userId: string): Promise<{
+        id: any;
+        eanCode: any;
+        name: any;
+        description: any;
+        supplierNote: any;
+        price: number;
+        originalPrice: number;
+        isActive: any;
+        brandId: any;
+        brandName: any;
+        brandColor: any;
+        categoryId: any;
+        categoryName: any;
+        subcategoryId: any;
+        subcategoryName: any;
+        installationType: any;
+        brand: {
+            id: any;
+            name: any;
+        };
+        supplier: {
+            id: any;
+            email: any;
+            firstName: any;
+            lastName: any;
+        };
+        icons: any;
+        createdAt: any;
+        updatedAt: any;
+    }>;
+    remove(id: string, userId: string): Promise<{
+        id: any;
+        eanCode: any;
+        name: any;
+        description: any;
+        supplierNote: any;
+        price: number;
+        originalPrice: number;
+        isActive: any;
+        brandId: any;
+        brandName: any;
+        brandColor: any;
+        categoryId: any;
+        categoryName: any;
+        subcategoryId: any;
+        subcategoryName: any;
+        installationType: any;
+        brand: {
+            id: any;
+            name: any;
+        };
+        supplier: {
+            id: any;
+            email: any;
+            firstName: any;
+            lastName: any;
+        };
+        icons: any;
+        createdAt: any;
+        updatedAt: any;
+    }>;
+    getProductImageData(id: string): Promise<{
+        imageData: Buffer<ArrayBufferLike>;
+        imageMimeType: string;
+    }>;
+    private isProductInActiveApprovedFlyer;
+    private validateEanCodeUniqueness;
+    private validateUserBrandAccess;
+    private validateIconIds;
+    private formatProductResponse;
+    exportProductsToZip(userId: string): Promise<{
+        zipBuffer: Buffer;
+        filename: string;
+    }>;
+    importProductsFromZip(zipBuffer: Buffer, userId: string): Promise<{
+        imported: number;
+        updated: number;
+        skipped: number;
+        errors: string[];
+    }>;
+}
