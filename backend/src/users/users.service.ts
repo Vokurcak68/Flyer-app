@@ -105,7 +105,8 @@ export class UsersService {
 
     // If password is being updated, hash it
     if (updateUserDto.password) {
-      updateData.password = await bcrypt.hash(updateUserDto.password, 10);
+      delete updateData.password; // Remove password field
+      updateData.passwordHash = await bcrypt.hash(updateUserDto.password, 10);
     }
 
     // Update user

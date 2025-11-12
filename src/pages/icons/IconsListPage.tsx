@@ -119,7 +119,7 @@ export const IconsListPage: React.FC = () => {
               {filteredIcons.map((icon: any) => (
                 <tr key={icon.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="bg-gray-100 rounded p-1 inline-block">
+                    <div className={`rounded p-1 inline-block ${icon.useBrandColor ? 'bg-gray-300' : 'bg-gray-100'}`}>
                       <img
                         src={icon.imageUrl}
                         alt={icon.name}

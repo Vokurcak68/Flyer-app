@@ -51,9 +51,10 @@ export const UserFormPage: React.FC = () => {
   const saveMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       if (isEdit && id) {
-        // Při editaci neposíláme heslo
+        // Při editaci posíláme heslo pouze pokud bylo vyplněno (změna hesla)
         const { password, ...updateData } = data;
-        return usersService.updateUser(id, updateData);
+        const dataToSend = password ? { ...updateData, password } : updateData;
+        return usersService.updateUser(id, dataToSend);
       } else {
         return usersService.createUser(data);
       }
@@ -105,17 +106,15 @@ export const UserFormPage: React.FC = () => {
             required
           />
 
-          {!isEdit && (
-            <Input
-              label="Heslo *"
-              type="password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              required
-              minLength={6}
-              placeholder="Minimálně 6 znaků"
-            />
-          )}
+          <Input
+            label={isEdit ? "Nové heslo (volitelné)" : "Heslo *"}
+            type="password"
+            value={formData.password}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            required={!isEdit}
+            minLength={6}
+            placeholder={isEdit ? "Vyplňte pouze pro změnu hesla (min. 6 znaků)" : "Minimálně 6 znaků"}
+          />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>

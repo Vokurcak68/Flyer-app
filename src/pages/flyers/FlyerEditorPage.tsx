@@ -504,6 +504,18 @@ export const FlyerEditorPage: React.FC = () => {
         alert('❌ Produkt nelze vložit do letáku!\n\nProdukt musí mít přiřazenou ikonu s energetickým štítkem.\nPřidejte energetický štítek v editaci produktu.');
         return;
       }
+
+      // Validate that EAN code is not already used in the flyer
+      const isEanUsed = flyerData.pages.some(page =>
+        page.slots.some(slot =>
+          slot.type === 'product' && slot.product && slot.product.eanCode === product.eanCode
+        )
+      );
+      if (isEanUsed) {
+        alert(`❌ Produkt nelze vložit do letáku!\n\nProdukt s EAN kódem "${product.eanCode}" už je v letáku použit.\nV jednom letáku nesmí být dva produkty se stejným EAN kódem.`);
+        return;
+      }
+
       newSlots[slotIndex] = { type: 'product', product };
     } else if (promo) {
       if (promo.defaultSize === 'footer') {

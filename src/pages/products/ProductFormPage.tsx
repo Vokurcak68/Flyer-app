@@ -349,12 +349,12 @@ export const ProductFormPage: React.FC = () => {
         iconIds: data.iconIds,
         categoryId: data.categoryId || undefined,
         subcategoryId: data.subcategoryId || undefined,
+        brandId: data.brandId, // Include brandId for both create and edit
       };
 
-      // Only include eanCode and brandId when creating (not when editing)
+      // Only include eanCode when creating (not when editing)
       if (!isEdit) {
         payload.eanCode = data.ean;  // Backend expects eanCode
-        payload.brandId = data.brandId;
       }
 
       // Only include image data if a new file was uploaded

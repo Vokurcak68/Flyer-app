@@ -75,6 +75,7 @@ export interface Product {
   eanCode: string;
   name: string;
   description?: string;
+  supplierNote?: string;
   brandId: string;
   brandName?: string;
   brandColor?: string | null;

@@ -1248,9 +1248,24 @@ export class FlyersService {
 
     // Validate all products against ERP with actionId filter
     const productsMap = new Map();
+    const eanCodesMap = new Map<string, string>(); // EAN -> Product Name
     for (const page of flyer.pages) {
       for (const slot of page.slots) {
         if (slot.product && !productsMap.has(slot.product.id)) {
+          // Check for duplicate EAN codes
+          if (eanCodesMap.has(slot.product.eanCode)) {
+            throw new BadRequestException({
+              message: 'V letáku jsou dva produkty se stejným EAN kódem',
+              errors: [{
+                productId: slot.product.id,
+                productName: slot.product.name,
+                eanCode: slot.product.eanCode,
+                errors: [`Produkt "${slot.product.name}" má stejný EAN kód (${slot.product.eanCode}) jako produkt "${eanCodesMap.get(slot.product.eanCode)}". V jednom letáku nesmí být dva produkty se stejným EAN kódem.`],
+              }],
+            });
+          }
+
+          eanCodesMap.set(slot.product.eanCode, slot.product.name);
           productsMap.set(slot.product.id, {
             id: slot.product.id,
             name: slot.product.name,

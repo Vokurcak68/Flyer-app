@@ -232,6 +232,11 @@ export const ProductsListPage: React.FC = () => {
                       )}
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-gray-900 truncate">{product.name}</div>
+                        {product.supplierNote && (
+                          <div className="text-xs text-gray-500 mt-1 truncate" title={product.supplierNote}>
+                            {product.supplierNote}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>

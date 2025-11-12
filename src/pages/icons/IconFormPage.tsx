@@ -167,7 +167,7 @@ export const IconFormPage: React.FC = () => {
                 <div className="flex-shrink-0">
                   {imagePreview ? (
                     <div className="relative">
-                      <div className="h-32 w-32 bg-gray-100 rounded border-2 border-gray-300 flex items-center justify-center p-2">
+                      <div className={`h-32 w-32 rounded border-2 border-gray-300 flex items-center justify-center p-2 ${formData.useBrandColor ? 'bg-gray-300' : 'bg-gray-100'}`}>
                         <img
                           src={imagePreview}
                           alt="Náhled"
