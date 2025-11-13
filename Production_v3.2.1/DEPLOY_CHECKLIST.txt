@@ -1,0 +1,303 @@
+================================================================================
+  DEPLOYMENT CHECKLIST - Flyer Management System v3.2.1
+  Verze: 3.2.1 | Datum: 12. listopadu 2025
+================================================================================
+
+DŮLEŽITÉ: Tento checklist postupujte krok za krokem. Zaškrtněte každý krok
+          po jeho dokončení.
+
+================================================================================
+  PRE-DEPLOYMENT CHECKS
+================================================================================
+
+[ ] 1. Přečíst README.txt a DEPLOYMENT_NOTES.md
+[ ] 2. Ověřit že máte přístup k produkčnímu serveru (SSH)
+[ ] 3. Ověřit že máte práva pro PM2 a sudo operace
+[ ] 4. Informovat uživatele o plánovaném downtime (~2 minuty)
+[ ] 5. Připravit rollback plán (viz sekce ROLLBACK níže)
+
+================================================================================
+  KROK 1: ZÁLOHA (KRITICKÉ!)
+================================================================================
+
+⚠️  NIKDY nepřeskakujte zálohu!
+
+[ ] 1.1. Připojit se na produkční server:
+        ssh user@production-server
+
+[ ] 1.2. Přejít do správné složky:
+        cd /var/www/flyer-app
+
+[ ] 1.3. Vytvořit zálohu backendu:
+        cp -r backend backend_backup_$(date +%Y%m%d_%H%M%S)
+
+[ ] 1.4. Vytvořit zálohu frontendu:
+        cp -r frontend frontend_backup_$(date +%Y%m%d_%H%M%S)
+
+[ ] 1.5. Ověřit že zálohy byly vytvořeny:
+        ls -la | grep backup
+
+        Očekávaný výstup:
+        drwxr-xr-x ... backend_backup_YYYYMMDD_HHMMSS
+        drwxr-xr-x ... frontend_backup_YYYYMMDD_HHMMSS
+
+================================================================================
+  KROK 2: STOP SLUŽEB
+================================================================================
+
+[ ] 2.1. Zastavit PM2 backend službu:
+        pm2 stop flyer-app-backend
+
+[ ] 2.2. Ověřit že služba je zastavená:
+        pm2 status
+
+        Očekávaný výstup:
+        flyer-app-backend │ stopped │ ...
+
+⏱️  POZNÁMKA: Od tohoto momentu je aplikace offline!
+
+================================================================================
+  KROK 3: DEPLOY BACKEND
+================================================================================
+
+[ ] 3.1. Smazat starou dist složku:
+        rm -rf /var/www/flyer-app/backend/dist
+
+[ ] 3.2. Zkopírovat novou dist složku:
+        cp -r [CESTA_K_BUILDU]/Production_v3.2.1/dist /var/www/flyer-app/backend/
+
+[ ] 3.3. Zkopírovat .env soubor:
+        cp [CESTA_K_BUILDU]/Production_v3.2.1/.env /var/www/flyer-app/backend/
+
+[ ] 3.4. Zkopírovat package.json:
+        cp [CESTA_K_BUILDU]/Production_v3.2.1/package.json /var/www/flyer-app/backend/
+
+[ ] 3.5. Zkopírovat prisma složku:
+        cp -r [CESTA_K_BUILDU]/Production_v3.2.1/prisma /var/www/flyer-app/backend/
+
+[ ] 3.6. Nainstalovat production dependencies:
+        cd /var/www/flyer-app/backend && npm install --production
+
+[ ] 3.7. Ověřit že dist/src/main.js existuje:
+        ls -la /var/www/flyer-app/backend/dist/src/main.js
+
+================================================================================
+  KROK 4: DEPLOY FRONTEND
+================================================================================
+
+[ ] 4.1. Smazat staré frontend soubory:
+        rm -rf /var/www/flyer-app/frontend/*
+
+[ ] 4.2. Zkopírovat nové frontend soubory:
+        cp -r [CESTA_K_BUILDU]/Production_v3.2.1/frontend/* /var/www/flyer-app/frontend/
+
+[ ] 4.3. Nastavit ownership:
+        chown -R www-data:www-data /var/www/flyer-app/frontend
+
+[ ] 4.4. Nastavit permissions:
+        chmod -R 755 /var/www/flyer-app/frontend
+
+[ ] 4.5. Ověřit že index.html existuje:
+        ls -la /var/www/flyer-app/frontend/index.html
+
+================================================================================
+  KROK 5: START SLUŽEB
+================================================================================
+
+[ ] 5.1. Spustit PM2 backend službu:
+        pm2 start flyer-app-backend
+
+[ ] 5.2. Uložit PM2 konfiguraci:
+        pm2 save
+
+[ ] 5.3. Ověřit že služba běží:
+        pm2 status
+
+        Očekávaný výstup:
+        flyer-app-backend │ online │ ...
+
+⏱️  POZNÁMKA: Aplikace je nyní zpět online!
+
+================================================================================
+  KROK 6: OVĚŘENÍ DEPLOYMENTU
+================================================================================
+
+[ ] 6.1. Zkontrolovat PM2 status:
+        pm2 status
+
+        ✅ flyer-app-backend je "online"
+        ✅ Restart count je rozumný (ne příliš vysoký)
+
+[ ] 6.2. Zkontrolovat PM2 logy:
+        pm2 logs flyer-app-backend --lines 20
+
+        ✅ Žádné kritické chyby
+        ✅ "Nest application successfully started" viditelné
+        ✅ Databáze připojena
+
+[ ] 6.3. Zkontrolovat health endpoint:
+        curl https://eflyer.kuchyneoresi.eu/api/health
+
+        Očekávaná odpověď:
+        {"status":"ok"}
+
+[ ] 6.4. Zkontrolovat frontend v prohlížeči:
+        Otevřít: https://eflyer.kuchyneoresi.eu
+
+        ✅ Stránka se načte
+        ✅ Přihlašovací formulář je viditelný
+        ✅ TESTOVACÍ ÚČTY NEJSOU VIDITELNÉ (klíčová změna!)
+        ✅ Verze v patičce: 3.2.1
+
+================================================================================
+  KROK 7: FUNKČNÍ TESTOVÁNÍ
+================================================================================
+
+[ ] 7.1. Přihlášení:
+        ✅ Přihlásit se jako admin
+        ✅ Ověřit že testovací účty nejsou viditelné na login page
+        ✅ Dashboard se načte správně
+
+[ ] 7.2. Schvalovatel - nové menu:
+        ✅ Přihlásit se jako schvalovatel (approver)
+        ✅ Ověřit že v menu je položka "Produkty v letácích"
+        ✅ Kliknout na "Produkty v letácích"
+        ✅ Stránka se načte bez chyby
+
+[ ] 7.3. Produkty v letácích - nové funkce:
+        ✅ Zobrazuje se sloupec "Vyprodáno"
+        ✅ Ikony: ✅ (vyprodáno) a ⚪ (není vyprodáno)
+        ✅ 4. filtr "Označené vyprodáno" funguje
+        ✅ Modrý help box je viditelný
+
+[ ] 7.4. Filtry:
+        ✅ Filtr "Vše" zobrazuje všechny produkty
+        ✅ Filtr "Aktivní" zobrazuje pouze aktivní
+        ✅ Filtr "Ukončené" zobrazuje pouze ukončené
+        ✅ Filtr "Označené vyprodáno" zobrazuje jen vyprodané
+
+[ ] 7.5. Admin - změna hesla:
+        ✅ Jako admin otevřít User Management
+        ✅ Editovat uživatele
+        ✅ Pole "Heslo" je volitelné
+        ✅ Změnit heslo a uložit
+        ✅ Odhlásit se a přihlásit s novým heslem
+
+[ ] 7.6. Poznámka dodavatele:
+        ✅ Otevřít Products List
+        ✅ U produktů s supplierNote se zobrazuje jako 2. řádek
+        ✅ Text je šedý a truncated
+
+[ ] 7.7. Změna značky produktu:
+        ✅ Editovat produkt
+        ✅ Změnit značku (Brand)
+        ✅ Uložit produkt
+        ✅ Ověřit že nová značka je uložena
+
+================================================================================
+  KROK 8: REGRESSION TESTING
+================================================================================
+
+[ ] 8.1. ERP detekce ukončených produktů (v3.1.9):
+        ✅ Synchronizovat stav vyprodáno
+        ✅ Ověřit že ukončené produkty z ERP jsou detekované
+
+[ ] 8.2. ERP auto-fill installation type (v3.1.8):
+        ✅ Vytvořit nový produkt
+        ✅ Ověřit že installation type se vyplní z ERP
+
+[ ] 8.3. PDF generování pro dodavatele (v3.1.8):
+        ✅ Generovat PDF jako dodavatel
+        ✅ Ověřit že PDF obsahuje správné produkty
+
+[ ] 8.4. Sold-out watermark (v3.1.7):
+        ✅ Označit produkt jako vyprodáno
+        ✅ Generovat PDF
+        ✅ Ověřit watermark na vyprodaném produktu
+
+================================================================================
+  KROK 9: MONITORING
+================================================================================
+
+[ ] 9.1. Sledovat PM2 logy prvních 5 minut:
+        pm2 logs flyer-app-backend
+
+        ✅ Žádné chyby
+        ✅ API požadavky se zpracovávají normálně
+
+[ ] 9.2. Zkontrolovat disk space:
+        df -h
+
+        ✅ Dostatek místa na disku
+
+[ ] 9.3. Zkontrolovat memory usage:
+        pm2 status
+
+        ✅ Memory usage je v normálních mezích
+
+================================================================================
+  KROK 10: DOKUMENTACE A KOMUNIKACE
+================================================================================
+
+[ ] 10.1. Zaznamenat deployment:
+         Datum: _______________
+         Čas začátku: _______________
+         Čas konce: _______________
+         Downtime: _______________
+         Deployed by: _______________
+
+[ ] 10.2. Informovat uživatele o dokončení
+[ ] 10.3. Aktualizovat deployment log
+[ ] 10.4. Archivovat staré zálohy (starší než 30 dní)
+
+================================================================================
+  ROLLBACK PROCEDURE (V případě problémů)
+================================================================================
+
+⚠️  Použijte pouze pokud deployment selhal!
+
+[ ] R.1. Stop služeb:
+        pm2 stop flyer-app-backend
+
+[ ] R.2. Obnovit backend ze zálohy:
+        rm -rf /var/www/flyer-app/backend
+        cp -r /var/www/flyer-app/backend_backup_YYYYMMDD_HHMMSS /var/www/flyer-app/backend
+
+[ ] R.3. Obnovit frontend ze zálohy:
+        rm -rf /var/www/flyer-app/frontend
+        cp -r /var/www/flyer-app/frontend_backup_YYYYMMDD_HHMMSS /var/www/flyer-app/frontend
+
+[ ] R.4. Start služeb:
+        pm2 start flyer-app-backend
+        pm2 save
+
+[ ] R.5. Ověřit rollback:
+        pm2 status
+        curl https://eflyer.kuchyneoresi.eu/api/health
+
+[ ] R.6. Informovat tým o rollbacku a důvodu
+
+================================================================================
+  COMPLETION SIGN-OFF
+================================================================================
+
+Deployment completed: [ ] YES [ ] NO
+
+Deployed by: ___________________________  Date: _______________
+
+Verified by: ___________________________  Date: _______________
+
+Notes:
+________________________________________________________________________
+________________________________________________________________________
+________________________________________________________________________
+
+================================================================================
+  KONTAKT
+================================================================================
+
+Support: eletak@oresi.cz
+Developed by: NetMate CZ (https://netmate.cz)
+Designed by: Oresi (https://oresi.cz)
+
+================================================================================

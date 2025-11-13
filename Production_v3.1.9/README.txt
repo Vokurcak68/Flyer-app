@@ -14,27 +14,29 @@ Environment: Production (https://eflyer.kuchyneoresi.cz)
 🐛 HOTFIX - Detekce ukončených produktů z ERP
 
    PROBLÉM v v3.1.8:
-   - Produkty které existovaly v ERP ale měly pole Ukončeno = true
+   - Produkty které existovaly v ERP ale měly pole Ukonceno = 1
      nebyly detekovány jako ukončené
    - Vodotisk "VYPRODÁNO" se nezobrazoval u těchto produktů
    - Synchronizace stavu neoznačovala tyto produkty jako soldOut
 
    ŘEŠENÍ:
-   - Metoda checkProductsExistence() nyní kontroluje pole Ukončeno z ERP view
-   - SQL dotaz: SELECT DISTINCT Barcode, Ukončeno FROM hvw_vok_Oresi_EletakNew_NC
+   - Metoda checkProductsExistence() nyní kontroluje pole Ukonceno z ERP view
+   - SQL dotaz: SELECT DISTINCT Barcode, ISNULL(Ukonceno, 0) as Ukonceno
+   - NULL hodnoty se považují za 0 (ne ukončeno)
    - Produkt je discontinued pokud:
      * BUĎTO není ve view vůbec (!exists)
-     * NEBO je ve view ale má Ukončeno = true
+     * NEBO je ve view ale má Ukonceno = 1 (pouze 1, ne 0 ani NULL)
 
    ZMĚNĚNÉ SOUBORY:
-   - backend/src/common/mssql.service.ts (řádky 220-267)
-     * Přidán SELECT Ukončeno v SQL dotazu
+   - backend/src/common/mssql.service.ts (řádky 220-269)
+     * SQL: ISNULL(Ukonceno, 0) - NULL se považuje za 0
      * Metoda nyní vrací { exists: boolean, discontinued: boolean }
-     * Kontrola: record.Ukončeno === true || record.Ukončeno === 1
+     * Kontrola: record.Ukonceno == 1 (loose equality pro number i string)
+     * DŮLEŽITÉ: Název sloupce je "Ukonceno" bez diakritiky!
 
    - backend/src/products/products.service.ts (řádky 976-990)
      * Upravena logika: discontinued: !erpStatus?.exists || erpStatus?.discontinued
-     * Produkt je ukončený pokud není v ERP NEBO má Ukončeno = true
+     * Produkt je ukončený pokud není v ERP NEBO má Ukonceno = 1
 
 ================================================================================
   ZMĚNY OD v3.1.6
@@ -44,7 +46,7 @@ Verze 3.1.7 přinesla:
 ✨ Vodotisk "VYPRODÁNO" pro ukončené produkty
 ✨ Synchronizace stavu vyprodáno s ERP (admin)
 ✨ Filtry produktů v aktivních letácích (admin)
-✨ Tlačítko "Generovat PDF" pro schvalov atele
+✨ Tlačítko "Generovat PDF" pro schvalovatele
 🐛 Fix: Icon image serving (res.end místo res.send)
 
 Verze 3.1.8 přinesla:
@@ -52,7 +54,8 @@ Verze 3.1.8 přinesla:
 🐛 Hotfix: Generování PDF pro supplier - přidána práva
 
 Verze 3.1.9 přinesla:
-🐛 Hotfix: Detekce ukončených produktů - kontrola pole Ukončeno v ERP
+🐛 Hotfix: Detekce ukončených produktů - kontrola pole Ukonceno v ERP
+🐛 Hotfix: Type coercion fix - loose equality (==) místo strict (===)
 
 ================================================================================
   RYCHLÝ START DEPLOYMENT
@@ -102,13 +105,13 @@ Verze 3.1.9 přinesla:
 
 ⚡ PRIORITY TEST - Detekce ukončených produktů z ERP
 
-Test: Ověření detekce produktů s Ukončeno = true v ERP
+Test: Ověření detekce produktů s Ukonceno = 1 v ERP
    1. Přihlas se jako admin
    2. Klikni na "Produkty v letácích" v menu
    3. Zobrazí se seznam produktů v aktivních letácích
-   4. ✓ Produkty které mají Ukončeno = true v ERP jsou označeny červenou ikonou
+   4. ✓ Produkty které mají Ukonceno = 1 v ERP jsou označeny červenou ikonou
    5. ✓ Produkty které nejsou v ERP vůbec jsou také označeny červenou ikonou
-   6. ✓ Produkty které jsou v ERP a mají Ukončeno = false jsou označeny zelenou ikonou
+   6. ✓ Produkty které jsou v ERP a mají Ukonceno = 0 jsou označeny zelenou ikonou
    7. Klikni na červený filtr "Ukončené"
    8. ✓ Zobrazí se pouze produkty s červenou ikonou
    9. Klikni "Synchronizovat stav vyprodáno"
@@ -118,8 +121,10 @@ Test: Ověření detekce produktů s Ukončeno = true v ERP
 
 DŮLEŽITÉ:
 - Tento test je kritický pro v3.1.9 hotfix
-- Ukončené produkty = produkty které buď nejsou v ERP, nebo mají Ukončeno = true
+- Ukončené produkty = produkty které buď nejsou v ERP, nebo mají Ukonceno = 1
 - Vodotisk se má zobrazit u všech ukončených produktů
+- TEST DATA: Barcode 8806094305029 (Ukonceno=0) = aktivní
+             Barcode 8806094348668 (Ukonceno=1) = ukončený
 
 ═══ KOMPLETNÍ TESTY (Regression testing) ═══
 
@@ -147,8 +152,9 @@ Pro v3.1.9 je klíčový test výše + testy z v3.1.7 a v3.1.8.
 
 ⚠️  DŮLEŽITÉ PRO TESTOVÁNÍ:
     - Detekce ukončených produktů je nyní přesnější
-    - Produkty s Ukončeno = true v ERP budou nyní správně označeny
+    - Produkty s Ukonceno = 1 v ERP budou nyní správně označeny
     - Vodotisk "VYPRODÁNO" se bude zobrazovat u více produktů než v3.1.8
+    - Type coercion fix: loose equality (==) místo strict (===)
 
 ================================================================================
   PODPORA

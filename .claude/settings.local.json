@@ -15,7 +15,15 @@
       "Bash(then echo \"$file\")",
       "Bash(fi)",
       "Bash(done)",
-      "Bash(./build-production.bat)"
+      "Bash(./build-production.bat)",
+      "Bash(powershell -ExecutionPolicy Bypass -Command:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File .\\build-production.ps1)",
+      "Bash(powershell -ExecutionPolicy Bypass -File \"C:\\Projekty\\flyer-app\\build-production.ps1\")",
+      "Bash(npm run build:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(xcopy:*)",
+      "Bash(copy backendpackage.json Production_v3.2.1package.json)",
+      "Bash(copy backend.env.production Production_v3.2.1.env)"
     ],
     "deny": [],
     "ask": []

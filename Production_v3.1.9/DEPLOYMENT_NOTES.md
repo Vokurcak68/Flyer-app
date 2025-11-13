@@ -9,10 +9,10 @@
 
 ## Executive Summary
 
-Verze 3.1.9 je **hotfix** opravující logiku detekce ukončených produktů. Předchozí verze kontrolovaly pouze existenci EAN v ERP, ale nekontrolovaly pole `Ukončeno` v ERP view.
+Verze 3.1.9 je **hotfix** opravující logiku detekce ukončených produktů. Předchozí verze kontrolovaly pouze existenci EAN v ERP, ale nekontrolovaly pole `Ukonceno` v ERP view. Navíc byl problém s type coercion (strict vs loose equality).
 
 **Klíčové body:**
-- ✅ Backend fix (kontrola pole Ukončeno v ERP)
+- ✅ Backend fix (kontrola pole Ukonceno v ERP + type coercion fix)
 - ✅ Frontend beze změn (kromě čísla verze)
 - ✅ ŽÁDNÉ databázové změny
 - ✅ Zpětně kompatibilní s v3.1.8
@@ -24,16 +24,21 @@ Verze 3.1.9 je **hotfix** opravující logiku detekce ukončených produktů. P�
 
 ### 🐛 Bug Fixes
 
-**Issue #3:** Produkty s `Ukončeno = true` v ERP nebyly detekovány jako ukončené
-**Root Cause:** Metoda `checkProductsExistence()` kontrolovala pouze existenci EAN v ERP, ale ignorovala pole `Ukončeno`
-**Impact:** Produkty které existovaly v ERP ale měly `Ukončeno = true` nebyly označeny jako discontinued a nezobrazoval se u nich vodotisk "VYPRODÁNO"
+**Issue #3:** Produkty s `Ukonceno = 1` v ERP nebyly detekovány jako ukončené
+**Root Cause:**
+1. Metoda `checkProductsExistence()` kontrolovala pouze existenci EAN v ERP, ale ignorovala pole `Ukonceno`
+2. Type coercion issue - strict equality `===` nefungovala když SQL Server vrací string "1" místo number 1
+
+**Impact:** Produkty které existovaly v ERP ale měly `Ukonceno = 1` nebyly označeny jako discontinued a nezobrazoval se u nich vodotisk "VYPRODÁNO"
 
 **Fix:**
 - Metoda `checkProductsExistence()` nyní vrací `{ exists: boolean, discontinued: boolean }`
-- SQL dotaz SELECT nyní obsahuje pole `Ukončeno`: `SELECT DISTINCT Barcode, Ukončeno FROM hvw_vok_Oresi_EletakNew_NC`
+- SQL dotaz SELECT nyní obsahuje pole `Ukonceno`: `SELECT DISTINCT Barcode, ISNULL(Ukonceno, 0) as Ukonceno FROM hvw_vok_Oresi_EletakNew_NC`
 - Produkt je discontinued pokud:
   - BUĎTO není ve view vůbec (`!exists`)
-  - NEBO je ve view ale má `Ukončeno = true`
+  - NEBO je ve view ale má `Ukonceno = 1`
+- Type coercion fix: Změna z `record.Ukonceno === 1` na `record.Ukonceno == 1` (loose equality)
+- DŮLEŽITÉ: Název sloupce je "Ukonceno" bez diakritiky (ne "Ukončeno")!
 
 **Fixes from v3.1.8:**
 - Fix #1: Pole "Typ spotřebiče" - ERP auto-fill nyní funguje správně
@@ -47,7 +52,7 @@ Verze 3.1.9 je **hotfix** opravující logiku detekce ukončených produktů. P�
 
 | File | Change | Lines | Description |
 |------|--------|-------|-------------|
-| `backend/src/common/mssql.service.ts` | Modified | 220-267 | Přidána kontrola pole Ukončeno z ERP view |
+| `backend/src/common/mssql.service.ts` | Modified | 220-269 | Přidána kontrola pole Ukonceno z ERP view + type coercion fix |
 | `backend/src/products/products.service.ts` | Modified | 976-990 | Upravena logika pro detekci discontinued produktů |
 
 ### Frontend
@@ -80,18 +85,24 @@ async checkProductsExistence(eanCodes: string[]): Promise<Map<string, boolean>> 
 **After (v3.1.9):**
 ```typescript
 async checkProductsExistence(eanCodes: string[]): Promise<Map<string, { exists: boolean; discontinued: boolean }>> {
-  const query = `SELECT DISTINCT Barcode, Ukončeno FROM hvw_vok_Oresi_EletakNew_NC WHERE Barcode IN (${eanList})`;
+  // Use ISNULL to treat NULL as 0 (not discontinued)
+  const query = `SELECT DISTINCT Barcode, ISNULL(Ukonceno, 0) as Ukonceno FROM hvw_vok_Oresi_EletakNew_NC WHERE Barcode IN (${eanList})`;
 
   // Pro každý EAN vrací:
   // - exists: zda EAN existuje v ERP
-  // - discontinued: zda má Ukončeno = true
+  // - discontinued: zda má Ukonceno = 1 (pouze 1, ne 0 ani NULL)
 
   return existenceMap.set(record.Barcode, {
     exists: true,
-    discontinued: record.Ukončeno === true || record.Ukončeno === 1,
+    discontinued: record.Ukonceno == 1, // Loose equality - handles both number 1 and string "1"
   });
 }
 ```
+
+**DŮLEŽITÉ ZMĚNY:**
+1. SQL: `ISNULL(Ukonceno, 0)` - NULL se považuje za 0 (ne ukončeno)
+2. Název sloupce: `Ukonceno` (bez háčku nad e) - ne `Ukončeno`!
+3. Type coercion: `==` místo `===` (loose equality pro number i string)
 
 ### products.service.ts Changes
 
@@ -109,7 +120,7 @@ return products.map(product => {
   const erpStatus = existenceMap.get(product.eanCode);
   return {
     ...product,
-    discontinued: !erpStatus?.exists || erpStatus?.discontinued, // Kontrola existence A Ukončeno
+    discontinued: !erpStatus?.exists || erpStatus?.discontinued, // Kontrola existence A Ukonceno
   };
 });
 ```
@@ -167,9 +178,9 @@ curl https://eflyer.kuchyneoresi.eu/api/health
 1. Přihlas se jako admin
 2. Jdi na "Produkty v letácích"
 3. Zkontroluj seznam produktů
-4. ✅ Produkty které mají `Ukončeno = true` v ERP jsou označeny červenou ikonou
+4. ✅ Produkty které mají `Ukonceno = 1` v ERP jsou označeny červenou ikonou
 5. ✅ Produkty které nejsou v ERP vůbec jsou také označeny červenou ikonou
-6. ✅ Produkty které jsou v ERP a mají `Ukončeno = false` jsou označeny zelenou ikonou
+6. ✅ Produkty které jsou v ERP a mají `Ukonceno = 0` jsou označeny zelenou ikonou
 7. Klikni "Synchronizovat stav vyprodáno"
 8. ✅ Ukončené produkty jsou označeny jako soldOut
 9. ✅ Vodotisk "VYPRODÁNO" se zobrazuje u ukončených produktů v PDF
@@ -178,6 +189,10 @@ curl https://eflyer.kuchyneoresi.eu/api/health
 - Detekce ukončených produktů funguje správně
 - Vodotisk se zobrazuje u všech ukončených produktů
 - Synchronizace stavu funguje
+
+**Test Data:**
+- Barcode `8806094305029` (Ukonceno = 0) → má být aktivní (zelená ikona)
+- Barcode `8806094348668` (Ukonceno = 1) → má být ukončený (červená ikona)
 
 ### Regression Tests
 
@@ -223,6 +238,7 @@ pm2 status
 |------|-------------|--------|--------------|
 | Špatná detekce ukončených produktů | Low | Medium | Testováno s produkčními daty z ERP |
 | Změna struktury existenceMap | Low | Medium | Type-safe TypeScript, zkompilováno bez errors |
+| Type coercion problémy | Very Low | Low | Loose equality (==) funguje pro number i string |
 | Regression v jiných částech | Very Low | Medium | Změna je izolovaná na ERP kontrolu |
 | Databázové problémy | None | N/A | Žádné DB změny |
 
@@ -240,8 +256,10 @@ pm2 status
 ## Version History
 
 ### v3.1.9 (2025-11-12) - Hotfix
-- 🐛 Fix: Detekce ukončených produktů - nyní kontroluje pole Ukončeno v ERP view
-- 📝 Produkty jsou discontinued pokud: !exists NEBO Ukončeno = true
+- 🐛 Fix: Detekce ukončených produktů - nyní kontroluje pole Ukonceno v ERP view
+- 🐛 Fix: Type coercion - loose equality (==) místo strict (===)
+- 📝 Produkty jsou discontinued pokud: !exists NEBO Ukonceno = 1
+- 📝 Název sloupce je "Ukonceno" (bez diakritiky)
 
 ### v3.1.8 (2025-11-12) - Hotfix
 - 🐛 Fix: Pole "Typ spotřebiče" - ERP auto-fill nyní funguje správně

@@ -153,14 +153,14 @@ export class ProductsController {
 
   @Get('active-flyers/products')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles('admin', 'approver')
   async getActiveFllyersProducts() {
     return this.productsService.getActiveFlyersProducts();
   }
 
   @Post('active-flyers/mark-discontinued-sold-out')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles('admin', 'approver')
   async markDiscontinuedAsSoldOut() {
     return this.productsService.markDiscontinuedAsSoldOut();
   }

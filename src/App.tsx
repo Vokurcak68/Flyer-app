@@ -106,7 +106,7 @@ function App() {
           <Route
             path="admin/active-flyers-products"
             element={
-              <ProtectedRoute allowedRoles={['admin']}>
+              <ProtectedRoute allowedRoles={['admin', 'approver']}>
                 <ActiveFlyersProductsPage />
               </ProtectedRoute>
             }

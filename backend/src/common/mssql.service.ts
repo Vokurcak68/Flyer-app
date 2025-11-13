@@ -234,7 +234,8 @@ export class MssqlService implements OnModuleInit {
 
       // Build IN clause for SQL query
       const eanList = eanCodes.map(ean => `'${ean}'`).join(',');
-      const query = `SELECT DISTINCT Barcode, Ukončeno FROM hvw_vok_Oresi_EletakNew_NC WHERE Barcode IN (${eanList})`;
+      // Use ISNULL to treat NULL as 0 (not discontinued)
+      const query = `SELECT DISTINCT Barcode, ISNULL(Ukonceno, 0) as Ukonceno FROM hvw_vok_Oresi_EletakNew_NC WHERE Barcode IN (${eanList})`;
 
       const result = await this.pool.request().query(query);
 
@@ -247,10 +248,11 @@ export class MssqlService implements OnModuleInit {
       }
 
       // Update with found EANs and their discontinued status
+      // Only Ukonceno = 1 means discontinued (NULL and 0 are NOT discontinued)
       for (const record of result.recordset) {
         existenceMap.set(record.Barcode, {
           exists: true,
-          discontinued: record.Ukončeno === true || record.Ukončeno === 1,
+          discontinued: record.Ukonceno == 1, // Use loose equality to handle both number 1 and string "1"
         });
       }
 

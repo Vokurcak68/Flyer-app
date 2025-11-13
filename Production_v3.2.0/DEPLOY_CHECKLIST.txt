@@ -1,0 +1,31 @@
+================================================================================
+  DEPLOYMENT CHECKLIST - v3.2.0
+================================================================================
+
+PRE-DEPLOYMENT
+□ Backup databáze vytvořen
+□ Backup backend souborů vytvořen
+□ Backup frontend souborů vytvořen
+□ Uživatelé informováni
+
+DEPLOYMENT
+□ pm2 stop flyer-app-backend
+□ Zkopírovat dist/, package.json, .env
+□ npm install --production v backend/
+□ Zkopírovat frontend/*
+□ Nastavit oprávnění (chown, chmod)
+□ pm2 start flyer-app-backend
+
+POST-DEPLOYMENT
+□ Backend běží (pm2 status)
+□ Žádné errors (pm2 logs)
+□ Health check OK (curl /api/health)
+□ Frontend načítá
+□ Přihlášení funguje
+□ TEST: Změna značky produktu
+□ TEST: Změna hesla uživatele
+□ TEST: Poznámka dodavatele
+□ TEST: Duplicitní EAN validace
+□ TEST: Ikony - různé pozadí
+
+================================================================================

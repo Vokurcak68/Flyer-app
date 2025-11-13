@@ -13,16 +13,26 @@
 /build
 /backend/dist
 
-# env files - keep .env.development and .env.production for reference
+# env files - NEVER commit ANY .env files with real credentials!
+.env
+.env.*
+!.env.example
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env.development
+.env.production
 
 # Backend environment files - NEVER commit these!
 backend/.env
+backend/.env.*
+!backend/.env.example
 backend/.env.local
 backend/.env.production
+
+# Production builds - NEVER commit .env files in production folders!
+Production_*/.env
 
 # uploads
 backend/uploads/

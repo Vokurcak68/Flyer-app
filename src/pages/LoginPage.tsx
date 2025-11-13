@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, Smartphone, Tv, Refrigerator } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
@@ -15,14 +15,6 @@ export const LoginPage: React.FC = () => {
   const { login } = useAuthStore();
   const navigate = useNavigate();
 
-  // Load saved credentials on mount
-  useEffect(() => {
-    const savedEmail = localStorage.getItem('lastEmail');
-    const savedPassword = localStorage.getItem('lastPassword');
-    if (savedEmail) setEmail(savedEmail);
-    if (savedPassword) setPassword(savedPassword);
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -30,9 +22,6 @@ export const LoginPage: React.FC = () => {
 
     try {
       await login(email, password);
-      // Save credentials to localStorage on successful login
-      localStorage.setItem('lastEmail', email);
-      localStorage.setItem('lastPassword', password);
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Invalid email or password');
@@ -40,13 +29,6 @@ export const LoginPage: React.FC = () => {
       setIsLoading(false);
     }
   };
-
-  const demoAccounts = [
-    { email: 'admin@system.cz', password: 'admin123', role: 'Administrátor' },
-    { email: 'dodavatel@acme.cz', password: 'admin123', role: 'Dodavatel' },
-    { email: 'schvalovatel1@company.cz', password: 'admin123', role: 'Schvalovatel' },
-    { email: 'uzivatel@email.cz', password: 'admin123', role: 'Koncový uživatel' },
-  ];
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-700 px-4">
@@ -99,23 +81,6 @@ export const LoginPage: React.FC = () => {
             Přihlásit se
           </Button>
         </form>
-
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <p className="text-sm font-semibold text-gray-700 mb-3">Testovací účty:</p>
-          <div className="space-y-2">
-            {demoAccounts.map((account) => (
-              <div
-                key={account.email}
-                className="text-xs bg-gray-50 rounded-lg p-3 space-y-1"
-              >
-                <div className="font-medium text-gray-900">{account.role}</div>
-                <div className="text-gray-600">
-                  <span className="font-mono">{account.email}</span> / <span className="font-mono">{account.password}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
 
         <div className="mt-6 pt-6 border-t border-gray-200 text-center space-y-1">
           <p className="text-xs text-gray-400 mb-2">

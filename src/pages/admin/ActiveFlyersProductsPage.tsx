@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, AlertCircle, CheckCircle, Package, PlayCircle } from 'lucide-react';
+import { Search, AlertCircle, CheckCircle, Package, PlayCircle, ShoppingCart } from 'lucide-react';
 import { productsService } from '../../services/productsService';
 import { Input } from '../../components/ui/Input';
 import { AppFooter } from '../../components/layout/AppFooter';
 
-type FilterType = 'all' | 'active' | 'discontinued';
+type FilterType = 'all' | 'active' | 'discontinued' | 'soldOut';
 
 export const ActiveFlyersProductsPage: React.FC = () => {
   const [search, setSearch] = useState('');
@@ -55,6 +55,7 @@ export const ActiveFlyersProductsPage: React.FC = () => {
       // Apply status filter
       if (filter === 'active' && product.discontinued) return false;
       if (filter === 'discontinued' && !product.discontinued) return false;
+      if (filter === 'soldOut' && !product.soldOut) return false;
       return true;
     })
     .filter((product) => {
@@ -70,6 +71,7 @@ export const ActiveFlyersProductsPage: React.FC = () => {
   const discontinuedCount = products.filter(p => p.discontinued).length;
   const reactivatedCount = products.filter(p => !p.discontinued && p.soldOut).length;
   const activeCount = products.length - discontinuedCount;
+  const soldOutCount = products.filter(p => p.soldOut).length;
   const hasChangesToApply = discontinuedCount > 0 || reactivatedCount > 0;
 
   if (isLoading) {
@@ -96,13 +98,21 @@ export const ActiveFlyersProductsPage: React.FC = () => {
             {markSoldOutMutation.isPending ? 'Zpracovávám...' : 'Synchronizovat stav vyprodáno'}
           </button>
         </div>
-        <p className="text-gray-600">
+        <p className="text-gray-600 mb-2">
           Přehled produktů obsažených v aktuálně platných aktivních letácích se stavem dostupnosti v ERP
         </p>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-blue-900 mb-2">ℹ️ Nápověda:</h3>
+          <ul className="text-sm text-blue-800 space-y-1">
+            <li><strong>Stav v ERP:</strong> ✅ = Produkt je aktivní v ERP systému | ❌ = Produkt je ukončený nebo nenalezen v ERP</li>
+            <li><strong>Vyprodáno:</strong> ✅ = Produkt je označený jako vyprodáno v databázi | ⚪ = Produkt není označený jako vyprodáno</li>
+            <li><strong>Synchronizovat stav vyprodáno:</strong> Automaticky označí ukončené produkty jako vyprodáno a odznačí produkty zpět v ERP</li>
+          </ul>
+        </div>
       </div>
 
       {/* Statistics - now clickable filters */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <button
           onClick={() => setFilter('all')}
           className={`bg-white rounded-lg shadow p-6 text-left transition-all hover:shadow-lg ${
@@ -145,6 +155,20 @@ export const ActiveFlyersProductsPage: React.FC = () => {
             </div>
           </div>
         </button>
+        <button
+          onClick={() => setFilter('soldOut')}
+          className={`bg-white rounded-lg shadow p-6 text-left transition-all hover:shadow-lg ${
+            filter === 'soldOut' ? 'ring-2 ring-orange-600 shadow-lg' : ''
+          }`}
+        >
+          <div className="flex items-center">
+            <ShoppingCart className="h-8 w-8 text-orange-600 mr-3" />
+            <div>
+              <p className="text-sm text-gray-600">Označené vyprodáno</p>
+              <p className="text-2xl font-bold text-orange-700">{soldOutCount}</p>
+            </div>
+          </div>
+        </button>
       </div>
 
       {/* Search */}
@@ -168,7 +192,10 @@ export const ActiveFlyersProductsPage: React.FC = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Stav
+                  Stav v ERP
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Vyprodáno
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Název produktu
@@ -193,7 +220,7 @@ export const ActiveFlyersProductsPage: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
                     {search ? 'Žádné produkty nenalezeny' : 'Žádné produkty v aktivních letácích'}
                   </td>
                 </tr>
@@ -208,6 +235,17 @@ export const ActiveFlyersProductsPage: React.FC = () => {
                       ) : (
                         <div className="flex items-center text-green-600" title="Produkt je aktivní v ERP">
                           <CheckCircle className="h-5 w-5" />
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {product.soldOut ? (
+                        <div className="flex items-center text-orange-600" title="Označeno jako vyprodáno v databázi">
+                          <CheckCircle className="h-5 w-5" />
+                        </div>
+                      ) : (
+                        <div className="flex items-center text-gray-300" title="Není označeno jako vyprodáno">
+                          <AlertCircle className="h-5 w-5" />
                         </div>
                       )}
                     </td>
